@@ -287,6 +287,9 @@ public class ACTMod implements ModInitializer {
         internalCommandExecutor.registerModule(ItemUtils.class);
         internalCommandExecutor.registerModule(ReflectionUtils.class);
 
+        // Register Creative Tab
+        ADVANCED_CREATIVE_TAB.register();
+
         Optional<ModContainer> container = FabricLoader.getInstance().getModContainer(MOD_ID);
         if (container.isPresent()) {
             ModMetadata metadata = container.get().getMetadata();
@@ -296,7 +299,7 @@ public class ACTMod implements ModInitializer {
         }
 
         // Config
-        config.sync(FabricLoader.getInstance().getConfigDir().resolve(MOD_ID + ".toml"));
+        config.sync(FabricLoader.getInstance().getConfigDir().resolve(MOD_ID + ".json"));
         config.addCustomItemsCallback(this::syncItemConfig);
 
         // Register Argument Types

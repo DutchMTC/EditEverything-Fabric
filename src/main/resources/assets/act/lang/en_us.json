@@ -77,7 +77,7 @@
   "gui.act.modifier.meta.setColor.hue": "Hue",
   "gui.act.modifier.meta.setColor.saturation": "Saturation",
   "gui.act.modifier.meta.setColor.lightness": "Lightness",
-  "gui.act.modifier.meta.setEntity": "Set entity",
+  "gui.act.modifier.meta.setEntity": "Entity editor",
   "gui.act.modifier.meta.potion": "Potion editor",
   "gui.act.modifier.meta.potionType": "Potion Type",
   "gui.act.modifier.meta.potion.long": "Long",

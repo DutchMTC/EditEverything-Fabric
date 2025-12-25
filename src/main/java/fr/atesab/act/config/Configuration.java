@@ -71,8 +71,9 @@ public class Configuration {
             try (FileReader reader = new FileReader(file)) {
                 data = GSON.fromJson(reader, ConfigData.class);
                 if (data == null) data = new ConfigData();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                ACTMod.LOGGER.error("Failed to load config", e);
+                data = new ConfigData();
             }
         } else {
             // Defaults

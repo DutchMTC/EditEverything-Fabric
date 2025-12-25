@@ -462,6 +462,9 @@ public class ItemUtils {
     }
 
     public static String getGiveCode(ItemStack itemStack, boolean showCount) {
+        if (itemStack.isEmpty()) {
+            return "";
+        }
         net.minecraft.core.HolderLookup.Provider registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : VanillaRegistries.createLookup();
         
         ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());

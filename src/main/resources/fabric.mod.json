@@ -2,10 +2,11 @@
   "schemaVersion": 1,
   "id": "act",
   "version": "${version}",
-  "name": "Advanced creative tab 2",
+  "name": "Advanced Creative Tab 3.0",
   "description": "Borried about the old minecraft stuff? This mod is made for you! it add new items modifiers for your creative mode.",
   "authors": [
-    "ATE47"
+    "ATE47",
+    "Miyaki"
   ],
   "contact": {
     "homepage": "https://www.curseforge.com/minecraft/mc-mods/advanced-extended-creative-mode",
@@ -21,6 +22,9 @@
     ],
     "client": [
       "fr.atesab.act.ACTModClient"
+    ],
+    "modmenu": [
+      "fr.atesab.act.ModMenuIntegration"
     ]
   },
 

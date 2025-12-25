@@ -1,11 +1,12 @@
 package fr.atesab.act.utils;
 
 import fr.atesab.act.internalcommand.InternalCommandModule;
-import net.minecraftforge.resource.ResourcePackLoader;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Objects;
 
 @InternalCommandModule(name = "file")
@@ -59,15 +60,10 @@ public class FileUtils {
      * @throws IOException error while loading from the jar
      */
     public static InputStream fetchFromModJar(String modId, String path) throws IOException {
-        var pack = ResourcePackLoader.getPackFor(modId)
+        var container = FabricLoader.getInstance().getModContainer(modId)
                 .orElseThrow(() -> new RuntimeException("Can't find modid " + modId));
-        try {
-            return Objects.requireNonNull(pack.getRootResource(path)).get();
-        } catch (Throwable t) {
-            try (pack) {
-                throw t;
-            }
-        }
+        var pathInMod = container.findPath(path).orElseThrow(() -> new IOException("File not found in mod: " + path));
+        return Files.newInputStream(pathInMod);
     }
 
     private FileUtils() {

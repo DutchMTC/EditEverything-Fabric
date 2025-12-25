@@ -2,6 +2,7 @@ package fr.atesab.act.gui.modifier;
 
 import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.utils.GuiUtils;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
@@ -39,11 +40,11 @@ public class GuiBooleanButton extends ACTButton {
 
     private void updateDisplay() {
         boolean v = getter.get();
-        packedFGColor = GuiUtils.getRedGreen(v);
+        // packedFGColor = GuiUtils.getRedGreen(v); // Removed
         if (v)
-            setMessage(textYes);
+            setMessage(textYes.copy().withStyle(ChatFormatting.GREEN));
         else
-            setMessage(textNo);
+            setMessage(textNo.copy().withStyle(ChatFormatting.RED));
     }
 
     @Override

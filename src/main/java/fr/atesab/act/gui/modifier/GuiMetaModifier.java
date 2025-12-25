@@ -5,6 +5,7 @@ import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.gui.modifier.nbt.GuiNBTModifier;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -14,19 +15,32 @@ import java.util.function.Consumer;
 
 public class GuiMetaModifier extends GuiModifier<ItemStack> {
     private final ItemStack stack;
+    private final ItemStack originalStack;
 
     public GuiMetaModifier(Screen parent, Consumer<ItemStack> setter, ItemStack stack) {
         super(parent, Component.translatable("gui.act.modifier.meta"), setter);
         this.stack = stack;
+        this.originalStack = stack.copy();
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack);
-        GuiUtils.drawItemStack(itemRenderer, this, stack, width / 2 - 10, height / 2 - 21);
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+    public boolean isModified() {
+        return !ItemStack.matches(stack, originalStack);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        // do nothing
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.render(graphics, mouseX, mouseY, partialTicks);
+        GuiUtils.drawItemStack(graphics, stack, width / 2 - 10, height / 2 - 21);
         if (GuiUtils.isHover(width / 2 - 10, height / 2 - 21, 20, 20, mouseX, mouseY))
-            renderTooltip(matrixStack, stack, mouseX, mouseY);
+            graphics.renderTooltip(font, stack, mouseX, mouseY);
+        reRenderWidgets(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -37,13 +51,15 @@ public class GuiMetaModifier extends GuiModifier<ItemStack> {
                 () -> ItemUtils.isUnbreakable(stack)));
 
         addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 - 21 + 21 * ++i, 200, 20,
-                Component.translatable("gui.act.modifier.tag.editor"), b -> getMinecraft().setScreen(new GuiNBTModifier(GuiMetaModifier.this, stack::setTag,
-                stack.getTag() != null ? stack.getTag() : new CompoundTag()))));
-        addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 - 17 + 21 * ++i, 200, 20,
+                Component.translatable("gui.act.modifier.tag.editor"), b -> getMinecraft().setScreen(new GuiNBTModifier(GuiMetaModifier.this, tag -> ItemUtils.setTag(stack, tag),
+                ItemUtils.getTag(stack) != null ? ItemUtils.getTag(stack) : new CompoundTag()))));
+        addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 - 17 + 21 * ++i, 100, 20,
                 Component.translatable("gui.done"), b -> {
             set(stack);
             getMinecraft().setScreen(parent);
         }));
+        addRenderableWidget(new ACTButton(width / 2 + 1, height / 2 - 17 + 21 * i, 99, 20,
+                Component.translatable("gui.act.cancel"), b -> onCancel()));
         super.init();
     }
 

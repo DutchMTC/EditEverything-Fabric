@@ -79,8 +79,8 @@ public class ChatUtils {
             CompoundTag item = new CompoundTag();
             item.putString("id", ItemUtils.getRegistry(itemStack).toString());
             item.putInt("Count", itemStack.getCount());
-            if (itemStack.getTag() != null)
-                item.put("tag", itemStack.getTag());
+            if (ItemUtils.getTag(itemStack) != null)
+                item.put("tag", ItemUtils.getTag(itemStack));
             send(getPrefix().append(Component.translatable("gui.act.give.msg").append(": ")
                     .withStyle(ChatFormatting.GOLD).append(itemStack.getDisplayName().copy().withStyle(style -> {
                         style.withHoverEvent(

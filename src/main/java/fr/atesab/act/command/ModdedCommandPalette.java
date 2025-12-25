@@ -19,9 +19,9 @@ public class ModdedCommandPalette extends ModdedCommand {
                     .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY));
             for (var cf : ChatFormatting.values()) {
                 var t = "&" + cf.getChar();
-                compo = compo.append(t).append(" ").append(Component.literal(t).withStyle(cf)).append(" ");
+                compo.append(t).append(" ").append(Component.literal(t).withStyle(cf)).append(" ");
             }
-            c.getSource().sendSuccess(compo, false);
+            c.getSource().sendSuccess(() -> compo, false);
             return 1;
         };
     }

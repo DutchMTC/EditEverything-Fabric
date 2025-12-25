@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import fr.atesab.act.ACTMod;
 import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.gui.modifier.GuiBooleanButton;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -27,9 +28,14 @@ public class GuiConfig extends GuiACT {
     }
 
     @Override
-    public void render(PoseStack PoseStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(PoseStack);
-        super.render(PoseStack, mouseX, mouseY, partialTicks);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        // do nothing
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.render(graphics, mouseX, mouseY, partialTicks);
     }
 
 }

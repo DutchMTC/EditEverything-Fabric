@@ -21,7 +21,7 @@ public class ModdedCommandSpTp extends ModdedCommand {
             LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
         return command.then(Commands.argument("player", ConnectionPlayerArgument.player()).executes(c -> {
             var to = ConnectionPlayerArgument.getPlayer(c, "player");
-            c.getSource().sendSuccess(Component.translatable("specttp.tp", to.getProfile().getName()), false);
+            c.getSource().sendSuccess(() -> Component.translatable("specttp.tp", to.getProfile().getName()), false);
             ACTMod.spectatorTeleport(to);
             return 1;
         }));

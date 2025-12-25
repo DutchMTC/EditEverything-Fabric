@@ -8,6 +8,7 @@ import fr.atesab.act.utils.Tuple;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -46,7 +47,8 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                         break;
                     }
             }, null);
-            setFGColor(Objects.requireNonNull(ChatFormatting.GREEN.getColor()));
+            // setFGColor(Objects.requireNonNull(ChatFormatting.GREEN.getColor())); // TODO: Fix color
+            setMessage(text.copy().withStyle(ChatFormatting.GREEN));
         }
 
         public AddElementButton(GuiListModifier<?> parent, int x, int y, int widthIn, int heightIn, Component text,
@@ -127,11 +129,11 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             return false;
         }
 
-        public void draw(PoseStack matrixStack, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
             buttonList.forEach(
-                    b -> GuiUtils.drawRelative(matrixStack, b, offsetX, offsetY, mouseX, mouseY, partialTicks));
+                    b -> GuiUtils.drawRelative(graphics, b, offsetX, offsetY, mouseX, mouseY, partialTicks));
             fieldList.stream().filter(EditBox::isVisible).forEach(
-                    tf -> GuiUtils.drawRelative(matrixStack, tf, offsetX, offsetY, mouseX, mouseY, partialTicks));
+                    tf -> GuiUtils.drawRelative(graphics, tf, offsetX, offsetY, mouseX, mouseY, partialTicks));
         }
 
 
@@ -144,7 +146,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         }
 
         public void init() {
-            fieldList.forEach(tf -> tf.setFocus(false));
+            fieldList.forEach(tf -> tf.setFocused(false));
         }
 
         /**
@@ -176,16 +178,16 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             return true;
         }
 
-        public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
             buttonList.forEach(b -> {
-                if (GuiUtils.isHover(b, mouseX, mouseY)) {
+                if (GuiUtils.isHover(b, (int) mouseX, (int) mouseY)) {
                     if (b instanceof RunElementButton) {
                         if (((RunElementButton) b).getLeft() != null && mouseButton == 0) {
                             playClick();
                             ((RunElementButton) b).getLeft().run();
                         } else if (((RunElementButton) b).getLeft() != null && mouseButton == 1) {
                             playClick();
-                            ((RunElementButton) b).getRight().run();
+                            ((RunElementButton) b).getRightButton().run();
                         }
                     } else if (mouseButton == 0) {
                         playClick();
@@ -195,18 +197,22 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                 }
             });
             fieldList.stream().filter(EditBox::isVisible).forEach(tf -> {
-                if (mouseButton == 1 && GuiUtils.isHover(tf, mouseX, mouseY)) {
+                if (mouseButton == 1 && GuiUtils.isHover(tf, (int) mouseX, (int) mouseY)) {
                     tf.setValue("");
-                    tf.setFocus(true);
-                } else
+                    tf.setFocused(true);
+                } else {
+                    if (GuiUtils.isHover(tf, (int) mouseX, (int) mouseY)) {
+                        tf.setFocused(true);
+                    }
                     tf.mouseClicked(mouseX, mouseY, mouseButton);
+                }
             });
         }
 
         protected void otherActionPerformed(AbstractWidget button, int mouseButton) {
         }
 
-        public void drawNext(PoseStack matrixStack, int offsetX, int offsetY, int mouseX, int mouseY,
+        public void drawNext(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY,
                              float partialTicks) {
         }
 
@@ -219,7 +225,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         }
 
         public void update() {
-            fieldList.stream().filter(EditBox::isVisible).forEach(EditBox::tick);
+            // fieldList.stream().filter(EditBox::isVisible).forEach(EditBox::tick); // tick removed
         }
     }
 
@@ -233,7 +239,8 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                 parent.elements.remove(element);
                 parent.needRedefine = true;
             }, null);
-            setFGColor(Objects.requireNonNull(ChatFormatting.RED.getColor()));
+            // setFGColor(Objects.requireNonNull(ChatFormatting.RED.getColor()));
+            setMessage(Component.literal("-").withStyle(ChatFormatting.RED));
         }
 
         public RemoveElementButton(GuiListModifier<?> parent, int x, int y, ListElement element) {
@@ -271,7 +278,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         /**
          * @return the right mouse {@link Runnable}
          */
-        public Runnable getRight() {
+        public Runnable getRightButton() {
             return right;
         }
     }
@@ -337,18 +344,21 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                     flag = true;
                     break;
                 }
+        
+        boolean handled = false;
         for (List<ListElement> lel : visibleElements)
-            lel.forEach(le -> le.charTyped(key, modifiers));
+            for (ListElement le : lel)
+                if (le.charTyped(key, modifiers))
+                    handled = true;
+
         if (!flag && !justStart)
-            search.setFocus(true);
-        else
+            search.setFocused(true);
+        else {
             justStart = false;
-        if (search.isFocused()) {
-            search.charTyped(key, modifiers);
-            page = 0;
-            define();
+            if (flag)
+                search.setFocused(false);
         }
-        return super.charTyped(key, modifiers);
+        return handled || super.charTyped(key, modifiers);
 
     }
 
@@ -448,7 +458,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                     Component.literal(buttons[i].a), buttons[i].b, b -> b.getValue().a.run()));
         if (cancelButton)
             addRenderableWidget(new ACTButton(dl + 100 * (i + l), height - 21, 99, 20,
-                    Component.translatable("gui.act.cancel"), b -> getMinecraft().setScreen(parent)));
+                    Component.translatable("gui.act.cancel"), b -> onCancel()));
         addRenderableWidget(lastPage = new ACTButton(dl - 21, height - 21, 20, 20, Component.literal("<-"), b -> {
             page--;
             define();
@@ -475,6 +485,11 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         search.setY(18);
         search.setWidth(n - 18 - m);
         search.setHeight(18);
+        search.setResponder(s -> {
+            page = 0;
+            define();
+        });
+        addRenderableWidget(search);
         elements.forEach(ListElement::init);
 
         define();
@@ -495,30 +510,39 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                     flag = true;
                     break;
                 }
+        
+        boolean handled = false;
         for (List<ListElement> lel : visibleElements)
-            lel.forEach(le -> le.keyPressed(key, scanCode, modifiers));
+            for (ListElement le : lel)
+                if (le.keyPressed(key, scanCode, modifiers))
+                    handled = true;
+
         if (!flag)
-            search.setFocus(true);
-        if (search.isFocused()) {
-            search.keyPressed(key, scanCode, modifiers);
-            page = 0;
-            define();
-        }
-        return super.keyPressed(key, scanCode, modifiers);
+            search.setFocused(true);
+        return handled || super.keyPressed(key, scanCode, modifiers);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        if (super.mouseClicked(mouseX, mouseY, mouseButton))
+            return true;
+        boolean elementClicked = false;
         for (int i = 0; i < visibleElements.length; i++) {
             int currentSize = dSize;
             for (ListElement le : visibleElements[i]) {
                 int offsetX = getOffsetX() + sizeX * i - le.getSizeX() / 2;
-                le.mouseClicked((int) mouseX - offsetX, (int) mouseY - currentSize, mouseButton);
+                le.mouseClicked(mouseX - offsetX, mouseY - currentSize, mouseButton);
+                if (le.isFocused()) {
+                    elementClicked = true;
+                }
                 currentSize += le.getSizeY() + paddingTop;
             }
         }
-        search.mouseClicked(mouseX, mouseY, mouseButton);
+        if (elementClicked) {
+            search.setFocused(false);
+            this.setFocused(null);
+        }
         if (mouseButton == 1) {
             if (GuiUtils.isHover(search.getX(), search.getY(), search.getWidth(), search.getHeight(), (int) mouseX,
                     (int) mouseY)) {
@@ -535,7 +559,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             needRedefine = false;
             define();
         }
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
+        return elementClicked;
     }
 
     public void removeListElement(ListElement elem) {
@@ -544,27 +568,33 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        // do nothing
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.render(graphics, mouseX, mouseY, partialTicks);
+        GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
         for (int i = 0; i < visibleElements.length; i++) {
             int currentSize = dSize;
             for (ListElement le : visibleElements[i]) {
                 int offsetX = getOffsetX() + sizeX * i - le.getSizeX() / 2;
-                le.draw(matrixStack, offsetX, currentSize, mouseX - offsetX, mouseY - currentSize, partialTicks);
+                le.draw(graphics, offsetX, currentSize, mouseX - offsetX, mouseY - currentSize, partialTicks);
                 currentSize += le.getSizeY() + paddingTop;
             }
         }
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
-        search.render(matrixStack, mouseX, mouseY, partialTicks);
-        GuiUtils.drawCenterString(font, getStringTitle(), width / 2, 2, 0xFFFFFFFF, 10);
-        GuiUtils.drawRightString(font, I18n.get("gui.act.search") + " : ", search.getX(), search.getY(), Color.ORANGE.getRGB(),
+        // search.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
+        GuiUtils.drawCenterString(graphics, font, getStringTitle(), width / 2, 2, 0xFFFFFFFF, 10);
+        GuiUtils.drawRightString(graphics, font, I18n.get("gui.act.search") + " : ", search.getX(), search.getY(), Color.ORANGE.getRGB(),
                 search.getHeight());
         if (equals(getMinecraft().screen)) {
             for (int i = 0; i < visibleElements.length; i++) {
                 int currentSize = dSize;
                 for (ListElement le : visibleElements[i]) {
                     int offsetX = getOffsetX() + sizeX * i - le.getSizeX() / 2;
-                    le.drawNext(matrixStack, offsetX, currentSize, mouseX - offsetX, mouseY - currentSize,
+                    le.drawNext(graphics, offsetX, currentSize, mouseX - offsetX, mouseY - currentSize,
                             partialTicks);
                     currentSize += le.getSizeY() + paddingTop;
                 }
@@ -586,7 +616,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
 
     @Override
     public void tick() {
-        search.tick();
+        // search.tick(); // Removed
         for (List<ListElement> lel : visibleElements)
             lel.forEach(ListElement::update);
         super.tick();

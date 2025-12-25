@@ -7,7 +7,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.ArrayList;
 import java.util.function.Function;
@@ -36,7 +36,7 @@ public class GuiTypeListSelector extends GuiListSelector<ItemStack> {
     public GuiTypeListSelector(Screen parent, Component name, Function<ItemStack, Screen> setter) {
         super(parent, name, new ArrayList<>(), setter, false, new Tuple[0]);
         NonNullList<ItemStack> stacks = NonNullList.create();
-        ForgeRegistries.ITEMS.forEach(i -> // Item.REGISTRY
+        BuiltInRegistries.ITEM.forEach(i -> // Item.REGISTRY
                 stacks.add(new ItemStack(i)));
         stacks.forEach(stack -> addListElement(new TypeListElement(this, stack)));
     }

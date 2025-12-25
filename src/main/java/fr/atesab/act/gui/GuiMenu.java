@@ -11,6 +11,7 @@ import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.Tuple;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
@@ -34,19 +35,19 @@ public class GuiMenu extends GuiListModifier<Object> {
         }
 
         @Override
-        public void draw(PoseStack matrixStack, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-            GuiUtils.drawItemStack(mc.getItemRenderer(), parent, stack, offsetX + 1, offsetY + 1);
-            super.draw(matrixStack, offsetX, offsetY, mouseX, mouseY, partialTicks);
+        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+            GuiUtils.drawItemStack(graphics, stack, offsetX + 1, offsetY + 1);
+            super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         }
 
         @Override
-        public void drawNext(PoseStack matrixStack, int offsetX, int offsetY, int mouseX, int mouseY,
+        public void drawNext(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY,
                              float partialTicks) {
             if (GuiUtils.isHover(0, 0, 18, 18, mouseX, mouseY)) {
-                GuiUtils.drawRect(matrixStack, offsetX, offsetY, offsetX + 18, offsetY + 18, 0x55cccccc);
-                parent.renderTooltip(matrixStack, stack, mouseX + offsetX, mouseY + offsetY);
+                GuiUtils.drawRect(graphics, offsetX, offsetY, offsetX + 18, offsetY + 18, 0x55cccccc);
+                graphics.renderTooltip(parent.getMinecraft().font, stack, mouseX + offsetX, mouseY + offsetY);
             }
-            super.drawNext(matrixStack, offsetX, offsetY, mouseX, mouseY, partialTicks);
+            super.drawNext(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         }
 
         @Override
@@ -57,8 +58,8 @@ public class GuiMenu extends GuiListModifier<Object> {
         }
 
         @Override
-        public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-            if (GuiUtils.isHover(0, 0, 18, 18, mouseX, mouseY)) {
+        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+            if (GuiUtils.isHover(0, 0, 18, 18, (int) mouseX, (int) mouseY)) {
                 playClick();
                 if (mouseButton == 0) {
                     if (ACTMod.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) {

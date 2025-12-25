@@ -28,7 +28,7 @@ public class ModdedCommandFormat extends ModdedCommand {
                     ChatFormatting[] element = StringListArgumentType.getEnumList(ChatFormatting.class, c,
                             "formatname");
                     for (ChatFormatting f : element) {
-                        c.getSource().sendSuccess(
+                        c.getSource().sendSuccess(() ->
                                 createText(f.getName() + " (&" + f.toString().substring(1) + ")", ChatFormatting.YELLOW)
                                         .append(createText(": ", ChatFormatting.DARK_GRAY))
                                         .append(createText(f.getName(), f)),
@@ -59,14 +59,16 @@ public class ModdedCommandFormat extends ModdedCommand {
                         }) // applyTextStyle
                 ).append(createText(" ", ChatFormatting.RESET));
                 if (++element == ELEMENT_PER_LINE) {
-                    c.getSource().sendSuccess(text, false);
+                    Component finalText = text;
+                    c.getSource().sendSuccess(() -> finalText, false);
                     text = Component.literal("");
                     element = 0;
                     line++;
                 }
             }
             if (element != 0) {
-                c.getSource().sendSuccess(text, false);
+                Component finalText = text;
+                c.getSource().sendSuccess(() -> finalText, false);
                 line++;
             }
             return line;

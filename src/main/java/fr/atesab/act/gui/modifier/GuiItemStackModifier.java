@@ -9,9 +9,11 @@ import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.Tuple;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.*;
@@ -24,23 +26,37 @@ import java.util.function.Consumer;
 
 public class GuiItemStackModifier extends GuiModifier<ItemStack> {
     private ItemStack currentItemStack;
+    private ItemStack originalItemStack;
 
     public GuiItemStackModifier(Screen parent, ItemStack currentItemStack, Consumer<ItemStack> setter) {
         super(parent, Component.translatable("gui.act.give.editor"), setter);
         this.currentItemStack = currentItemStack != null ? currentItemStack : new ItemStack(Blocks.STONE);
-        if (this.currentItemStack.getTag() == null)
-            this.currentItemStack.setTag(new CompoundTag());
+        if (ItemUtils.getTag(this.currentItemStack) == null)
+            ItemUtils.setTag(this.currentItemStack, new CompoundTag());
+        this.originalItemStack = this.currentItemStack.copy();
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack);
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+    public boolean isModified() {
+        return !ItemStack.matches(currentItemStack, originalItemStack);
+    }
+
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        // do nothing
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.render(graphics, mouseX, mouseY, partialTicks);
+        GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
         if (currentItemStack != null) {
-            GuiUtils.drawItemStack(itemRenderer, this, currentItemStack, width / 2 - 10, height / 2 - 63);
+            GuiUtils.drawItemStack(graphics, currentItemStack, width / 2 - 10, height / 2 - 63);
             if (GuiUtils.isHover(width / 2 - 10, height / 2 - 63, 20, 20, mouseX, mouseY))
-                renderTooltip(matrixStack, currentItemStack, mouseX, mouseY);
+                graphics.renderTooltip(font, currentItemStack, mouseX, mouseY);
         }
+        reRenderWidgets(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -50,7 +66,7 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                 Component.translatable("gui.act.modifier.name"), b -> getMinecraft().setScreen(new GuiStringModifier(GuiItemStackModifier.this,
                 Component.translatable("gui.act.modifier.name"),
                 currentItemStack.getHoverName().getString().replaceAll("" + ChatUtils.MODIFIER, "&"),
-                name -> currentItemStack.setHoverName(name.isEmpty() ? null
+                name -> currentItemStack.set(DataComponents.CUSTOM_NAME, name.isEmpty() ? null
                         : Component.literal(name.replaceAll("&", String.valueOf(ChatUtils.MODIFIER))))))));
 
         addRenderableWidget(new ACTButton(width / 2 + 1, height / 2 - 42, 99, 20,
@@ -72,16 +88,15 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
         addRenderableWidget(new ACTButton(width / 2 - 100, height / 2, 100, 20,
                 Component.translatable("gui.act.modifier.type"), b -> getMinecraft().setScreen(new GuiTypeListSelector(GuiItemStackModifier.this,
                 Component.translatable("gui.act.modifier.type"), is -> {
-            CompoundTag tag = (currentItemStack.getTag() == null ? new CompoundTag()
-                    : currentItemStack.getTag());
-            tag.merge(is.getTag() == null ? new CompoundTag() : is.getTag());
-            is.setTag(tag);
-            currentItemStack = is;
-            return null;
+            currentItemStack = ItemUtils.setItem(is.getItem(), currentItemStack);
+            if (currentItemStack.getCount() == 0) {
+                currentItemStack.setCount(1);
+            }
+            return GuiItemStackModifier.this;
         }))));
         addRenderableWidget(
                 new ACTButton(width / 2 + 1, height / 2, 99, 20, Component.translatable("gui.act.modifier.meta"), b -> getMinecraft().setScreen(new GuiMetaModifier(GuiItemStackModifier.this, is -> currentItemStack = is,
-                        currentItemStack))));
+                        currentItemStack.copy()))));
         int i = 1;
         if (currentItemStack.getItem() instanceof ArmorItem
                 && ((ArmorItem) currentItemStack.getItem()).getMaterial() == ArmorMaterials.LEATHER)
@@ -114,7 +129,10 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                 getMinecraft().setScreen(new GuiTypeListSelector(GuiItemStackModifier.this,
                         Component.translatable("gui.act.modifier.meta.potionType"), is -> {
                     currentItemStack = ItemUtils.setItem(is.getItem(), currentItemStack);
-                    return null;
+                    if (currentItemStack.getCount() == 0) {
+                        currentItemStack.setCount(1);
+                    }
+                    return GuiItemStackModifier.this;
                 }, potionType));
             }));
         } else if (currentItemStack.getItem().equals(Items.PLAYER_HEAD))
@@ -130,32 +148,18 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                     is -> currentItemStack = is, currentItemStack))));
         } else if (currentItemStack.getItem() instanceof SpawnEggItem)
             addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 + 21, 200, 20,
-                    Component.translatable("gui.act.modifier.meta.setEntity"), b -> {
-                List<Tuple<String, SpawnEggItem>> eggs = new ArrayList<>();
-                SpawnEggItem.eggs()
-                        .forEach(egg -> eggs.add(new Tuple<>(egg.getDescription().getString(), egg)));
-                getMinecraft().setScreen(new GuiButtonListSelector<>(GuiItemStackModifier.this,
-                        Component.translatable("gui.act.modifier.meta.setEntity"), eggs, egg -> {
-                    currentItemStack = ItemUtils.setItem(egg, currentItemStack);
-                    return null;
-                }));
-            }));
+                    Component.translatable("gui.act.modifier.meta.setEntity"), b -> getMinecraft().setScreen(new GuiSpawnEggModifier(GuiItemStackModifier.this,
+                    is -> currentItemStack = is, currentItemStack))));
         else if (currentItemStack.getItem().equals(Items.FIREWORK_ROCKET))
             addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 + 21, 200, 20,
                     Component.translatable("gui.act.modifier.meta.fireworks"), b -> getMinecraft().setScreen(new GuiFireworksModifer(GuiItemStackModifier.this, tag -> {
-                CompoundTag compound = currentItemStack.getTag();
-                if (compound == null)
-                    currentItemStack.setTag(compound = new CompoundTag());
-                compound.put("Fireworks", tag);
-            }, currentItemStack.getOrCreateTagElement("Fireworks")))));
+                ItemUtils.setFireworksFromTag(currentItemStack, tag);
+            }, ItemUtils.getFireworksTag(currentItemStack)))));
         else if (currentItemStack.getItem().equals(Items.FIREWORK_STAR))
             addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 + 21, 200, 20,
                     Component.translatable("gui.act.modifier.meta.explosion"), b -> getMinecraft().setScreen(new GuiFireworksModifer.GuiExplosionModifier(this, exp -> {
-                CompoundTag compound = currentItemStack.getTag();
-                if (compound == null)
-                    currentItemStack.setTag(compound = new CompoundTag());
-                compound.put("Explosion", exp.getTag());
-            }, ItemUtils.getExplosionInformation(currentItemStack.getOrCreateTagElement("Explosion"))))));
+                ItemUtils.setFireworkExplosionFromTag(currentItemStack, exp.getTag());
+            }, ItemUtils.getExplosionInformation(ItemUtils.getFireworkExplosionTag(currentItemStack))))));
         else if (currentItemStack.getItem().equals(Items.LIGHT)) {
             addRenderableWidget(new AbstractSliderButton(width / 2 - 100, height / 2 + 21, 200, 20, Component.empty(), ItemUtils.getLightLevel(currentItemStack) / 15.0) {
                 {
@@ -181,7 +185,7 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
         else
             i = 0;
         addRenderableWidget(new ACTButton(width / 2 + 1, height / 2 + 25 + 21 * i, 99, 20,
-                Component.translatable("gui.act.cancel"), b -> getMinecraft().setScreen(parent)));
+                Component.translatable("gui.act.cancel"), b -> onCancel()));
         addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 + 25 + 21 * i, 100, 20,
                 Component.translatable("gui.done"), b -> {
             set(currentItemStack);

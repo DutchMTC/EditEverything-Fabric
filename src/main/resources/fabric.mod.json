@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "act",
+  "version": "${version}",
+  "name": "Advanced creative tab 2",
+  "description": "Borried about the old minecraft stuff? This mod is made for you! it add new items modifiers for your creative mode.",
+  "authors": [
+    "ATE47"
+  ],
+  "contact": {
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/advanced-extended-creative-mode",
+    "sources": "https://github.com/ate47/AdvancedCreativeTab",
+    "issues": "https://github.com/ate47/AdvancedCreativeTab/issues"
+  },
+  "license": "LGPL-3.0",
+  "icon": "logo.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "fr.atesab.act.ACTMod"
+    ],
+    "client": [
+      "fr.atesab.act.ACTModClient"
+    ]
+  },
+
+  "depends": {
+    "fabricloader": ">=0.15.11",
+    "fabric": "*",
+    "minecraft": "1.21.1",
+    "java": ">=21"
+  }
+}

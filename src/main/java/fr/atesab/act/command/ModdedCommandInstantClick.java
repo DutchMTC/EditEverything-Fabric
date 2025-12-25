@@ -20,7 +20,7 @@ public class ModdedCommandInstantClick extends ModdedCommand {
     protected Command<CommandSourceStack> onNoArgument() {
         return c -> {
             ACTMod.setInstantMineEnabled(!ACTMod.isInstantMineEnabled());
-            c.getSource().sendSuccess(
+            c.getSource().sendSuccess(() ->
                     ChatUtils.getPrefix()
                             .append(Component.translatable("cmd.act.instantclick").withStyle(ChatFormatting.WHITE))
                             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
@@ -36,7 +36,7 @@ public class ModdedCommandInstantClick extends ModdedCommand {
         return command.then(Commands.argument("instantclick", BoolArgumentType.bool()).executes(c -> {
             boolean instantclick = BoolArgumentType.getBool(c, "instantclick");
             ACTMod.setInstantMineEnabled(instantclick);
-            c.getSource().sendSuccess(
+            c.getSource().sendSuccess(() ->
                     ChatUtils.getPrefix()
                             .append(Component.translatable("cmd.act.instantclick").withStyle(ChatFormatting.WHITE))
                             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))

@@ -10,6 +10,7 @@ import fr.atesab.act.gui.modifier.GuiStringModifier;
 import fr.atesab.act.gui.modifier.nbt.GuiNBTModifier;
 import fr.atesab.act.utils.GuiUtils;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
@@ -56,16 +57,16 @@ public abstract class NBTElement extends ListElement implements Cloneable {
     public abstract NBTElement clone();
 
     @Override
-    public void draw(PoseStack matrixStack, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-        GuiUtils.drawGradientRect(matrixStack, offsetX - 2, offsetY - (6 + font.lineHeight), offsetX + getSizeX() - 1,
-                offsetY - 2, 0x88dddddd, 0x88aaaaaa, parent.getZLevel());
-        GuiUtils.drawGradientRect(matrixStack, offsetX - 2, offsetY - 2, offsetX + getSizeX() - 1,
-                offsetY + getSizeY() + 2, 0x88000000, 0x88000000, parent.getZLevel());
+    public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        GuiUtils.drawGradientRect(graphics, offsetX - 2, offsetY - (6 + font.lineHeight), offsetX + getSizeX() - 1,
+                offsetY - 2, 0x88dddddd, 0x88aaaaaa);
+        GuiUtils.drawGradientRect(graphics, offsetX - 2, offsetY - 2, offsetX + getSizeX() - 1,
+                offsetY + getSizeY() + 2, 0x88000000, 0x88000000);
         String s = getType();
         if (!isList(parent))
             s = key + " (" + s + ")";
-        GuiUtils.drawString(font, s, offsetX + 2, offsetY - font.lineHeight - 4, 0xffffffff, font.lineHeight + 2);
-        super.draw(matrixStack, offsetX, offsetY, mouseX, mouseY, partialTicks);
+        GuiUtils.drawString(graphics, font, s, offsetX + 2, offsetY - font.lineHeight - 4, 0xffffffff, font.lineHeight + 2);
+        super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
     }
 
     /**

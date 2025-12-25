@@ -19,7 +19,7 @@ import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 /**
  * A reader to read {@link ItemStack} from giveCode
@@ -32,8 +32,8 @@ public class ItemReader {
     private static final String CMD = "give";
     private final CommandDispatcher<StackReference> dispatcher = new CommandDispatcher<>();
 
-    public ItemReader() {
-        CommandBuildContext context = Commands.createValidationContext(VanillaRegistries.createLookup());
+    public ItemReader(HolderLookup.Provider registryAccess) {
+        CommandBuildContext context = Commands.createValidationContext(registryAccess);
         dispatcher.register(LiteralArgumentBuilder.<StackReference>literal(CMD)
                 .then(RequiredArgumentBuilder.<StackReference, ItemInput>argument("item", ItemArgument.item(context))
                         .then(RequiredArgumentBuilder

@@ -1,7 +1,10 @@
 package fr.atesab.act.utils;
 
 import fr.atesab.act.internalcommand.InternalCommandModule;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +49,36 @@ public class ReflectionUtils {
         } while (c != Object.class && c != end);
 
         return stack;
+    }
+
+    public static void setRightClickDelay(Minecraft mc, int delay) {
+        try {
+            Field f;
+            try {
+                f = Minecraft.class.getDeclaredField("field_1728");
+            } catch (NoSuchFieldException e) {
+                f = Minecraft.class.getDeclaredField("rightClickDelay");
+            }
+            f.setAccessible(true);
+            f.setInt(mc, delay);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void setDestroyDelay(MultiPlayerGameMode gameMode, int delay) {
+        try {
+            Field f;
+            try {
+                f = MultiPlayerGameMode.class.getDeclaredField("field_3719");
+            } catch (NoSuchFieldException e) {
+                f = MultiPlayerGameMode.class.getDeclaredField("destroyDelay");
+            }
+            f.setAccessible(true);
+            f.setInt(gameMode, delay);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private ReflectionUtils() {

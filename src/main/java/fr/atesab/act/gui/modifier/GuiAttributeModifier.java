@@ -7,16 +7,18 @@ import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.ItemUtils.AttributeData;
 import fr.atesab.act.utils.Tuple;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -42,8 +44,8 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
             int l = 5 + font.width(I18n.get("gui.act.modifier.attr.amount") + " : ");
             amount = new EditBox(font, 202 + l, 1, 154 - l, 18, Component.literal(""));
             amount.setMaxLength(8);
-            amount.setValue(String.valueOf(amountValue = data.getModifier().getAmount()));
-            operationValue = data.getModifier().getOperation().toValue();
+            amount.setValue(String.valueOf(amountValue = data.getModifier().amount()));
+            operationValue = data.getModifier().operation().id();
             buttonList.add(slotButton = new ACTButton(2, 0, 198, 20, Component.literal(""), b -> {
                 List<Tuple<String, EquipmentSlot>> slots = new ArrayList<>();
                 slots.add(new Tuple<>(I18n.get("gui.act.none"), null));
@@ -55,18 +57,18 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
                         Component.translatable("gui.act.modifier.attr.slot"), slots, s -> {
                     data.setSlot(s);
                     defineButtonText();
-                    return null;
+                    return parent;
                 }));
             }));
             buttonList.add(typeButton = new ACTButton(2, 21, 198, 20, Component.literal(""), b -> {
                 List<Tuple<String, Attribute>> attributes = new ArrayList<>();
-                ForgeRegistries.ATTRIBUTES.forEach(
+                BuiltInRegistries.ATTRIBUTE.forEach(
                         atr -> attributes.add(new Tuple<>(I18n.get(atr.getDescriptionId()), atr)));
                 mc.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.act.modifier.attr.type"), attributes, atr -> {
                     data.setAttribute(atr);
                     defineButtonText();
-                    return null;
+                    return parent;
                 }));
             }));
             buttonList.add(operationButton = new ACTButton(202, 21, 157, 20, Component.literal(""), b -> {
@@ -78,7 +80,7 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
                         Component.translatable("gui.act.modifier.attr.operation"), operations, i -> {
                     AttributeListElement.this.operationValue = i;
                     defineButtonText();
-                    return null;
+                    return parent;
                 }));
             }));
             buttonList.add(new RemoveElementButton(parent, 359, 0, 20, 20, this));
@@ -95,23 +97,23 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
             slotButton.setMessage(Component.translatable("gui.act.modifier.attr.slot").append(" - ")
                     .append((s.endsWith(":") ? s.substring(0, s.length() - 1) : s)));
             typeButton.setMessage(Component.translatable("gui.act.modifier.attr.type").append(" - ")
-                    .append(Component.translatable(data.getModifier().getName())));
+                    .append(Component.translatable(data.getAttribute().getDescriptionId())));
             operationButton.setMessage(Component.translatable("gui.act.modifier.attr.operation").append(" - ")
                     .append(Component.translatable("gui.act.modifier.attr.operation." + operationValue)).append(" (")
                     .append(String.valueOf(operationValue)).append(")"));
         }
 
         @Override
-        public void draw(PoseStack matrixStack, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-            GuiUtils.drawRelative(matrixStack, amount, offsetX, offsetY, mouseX, mouseY, partialTicks);
-            GuiUtils.drawRightString(font, I18n.get("gui.act.modifier.attr.amount") + " : ", amount,
+        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+            GuiUtils.drawRelative(graphics, amount, offsetX, offsetY, mouseX, mouseY, partialTicks);
+            GuiUtils.drawRightString(graphics, font, I18n.get("gui.act.modifier.attr.amount") + " : ", amount,
                     (errAmount ? Color.RED : Color.WHITE).getRGB(), offsetX, offsetY);
-            super.draw(matrixStack, offsetX, offsetY, mouseX, mouseY, partialTicks);
+            super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         }
 
         @Override
         public void init() {
-            amount.setFocus(false);
+            amount.setFocused(false);
         }
 
         @Override
@@ -138,10 +140,13 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
         }
 
         @Override
-        public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+            if (GuiUtils.isHover(amount, (int) mouseX, (int) mouseY)) {
+                amount.setFocused(true);
+            }
             amount.mouseClicked(mouseX, mouseY, mouseButton);
             if (mouseButton == 1) {
-                if (GuiUtils.isHover(amount, mouseX, mouseY))
+                if (GuiUtils.isHover(amount, (int) mouseX, (int) mouseY))
                     amount.setValue("");
             }
             super.mouseClicked(mouseX, mouseY, mouseButton);
@@ -149,7 +154,6 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
 
         @Override
         public void update() {
-            amount.tick();
             try {
                 amountValue = amount.getValue().isEmpty() ? 0 : Double.parseDouble(amount.getValue());
                 errAmount = false;
@@ -159,24 +163,37 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
             super.update();
         }
 
-        /**
-         * @return the data
-         */
         public AttributeData getData() {
-            data.setModifier(new AttributeModifier(data.getModifier().getId(), data.getModifier().getName(),
-                    amountValue, Operation.fromValue(operationValue)));
+            data.setModifier(new AttributeModifier(data.getModifier().id(),
+                    amountValue, Operation.BY_ID.apply(operationValue)));
             return data;
         }
     }
 
     private final Supplier<ListElement> supplier = () -> new AttributeListElement(this,
-            ItemUtils.AttributeModifierBuilder.ARMOR.buildData(EquipmentSlot.MAINHAND, 0, Operation.ADDITION));
+            ItemUtils.AttributeModifierBuilder.ARMOR.buildData(EquipmentSlot.MAINHAND, 0, Operation.ADD_VALUE));
+
+    private final List<AttributeData> originalAttributes;
 
     @SuppressWarnings("unchecked")
     public GuiAttributeModifier(Screen parent, List<AttributeData> attributes, Consumer<List<AttributeData>> setter) {
         super(parent, Component.translatable("gui.act.modifier.attr"), new ArrayList<>(), setter, new Tuple[0]);
+        this.originalAttributes = new ArrayList<>();
+        for (AttributeData data : attributes) {
+            this.originalAttributes.add(new AttributeData(data.getSlot(), data.getModifier(), data.getAttribute()));
+        }
         attributes.forEach(attribute -> addListElement(new AttributeListElement(this, attribute)));
         addListElement(new AddElementList(this, supplier));
+    }
+
+    @Override
+    public boolean isModified() {
+        List<AttributeData> current = get();
+        if (current.size() != originalAttributes.size()) return true;
+        for (int i = 0; i < current.size(); i++) {
+            if (!current.get(i).equals(originalAttributes.get(i))) return true;
+        }
+        return false;
     }
 
     @Override

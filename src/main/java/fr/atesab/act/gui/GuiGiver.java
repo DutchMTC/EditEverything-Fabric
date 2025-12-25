@@ -8,6 +8,7 @@ import fr.atesab.act.gui.modifier.GuiModifier;
 import fr.atesab.act.utils.ChatUtils;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -65,15 +66,19 @@ public class GuiGiver extends GuiModifier<String> {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack);
-        code.render(matrixStack, mouseX, mouseY, partialTicks);
-        GuiUtils.drawCenterString(font, I18n.get("gui.act.give"), width / 2, code.getY() - 21, Color.ORANGE.getRGB(), 20);
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        // do nothing
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.render(graphics, mouseX, mouseY, partialTicks);
+        GuiUtils.drawCenterString(graphics, font, I18n.get("gui.act.give"), width / 2, code.getY() - 21, Color.ORANGE.getRGB(), 20);
         if (currentItemStack != null) {
-            GuiUtils.drawItemStack(itemRenderer, this, currentItemStack, code.getX() + code.getWidth() + 5, code.getY() - 2);
+            GuiUtils.drawItemStack(graphics, currentItemStack, code.getX() + code.getWidth() + 5, code.getY() - 2);
             if (GuiUtils.isHover(code.getX() + code.getWidth() + 5, code.getY(), 20, 20, mouseX, mouseY))
-                renderTooltip(matrixStack, currentItemStack, mouseX, mouseY);
+                graphics.renderTooltip(font, currentItemStack, mouseX, mouseY);
         }
     }
 
@@ -84,6 +89,7 @@ public class GuiGiver extends GuiModifier<String> {
         code.setMaxLength(Integer.MAX_VALUE);
         if (preText != null)
             code.setValue(preText.replaceAll(String.valueOf(ChatUtils.MODIFIER), "&"));
+        addRenderableWidget(code);
         int s1 = deleteButton ? 120 : 180;
         int s2 = 120;
         addRenderableWidget(giveButton = new ACTButton(width / 2 - 180, height / 2 + 21, s1, 20,
@@ -122,21 +128,6 @@ public class GuiGiver extends GuiModifier<String> {
         tick();
     }
 
-    @Override
-    public boolean charTyped(char key, int modifiers) {
-        return code.charTyped(key, modifiers);
-    }
-
-    @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
-        return code.keyPressed(key, scanCode, modifiers) || super.keyPressed(key, scanCode, modifiers);
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        return code.mouseClicked(mouseX, mouseY, mouseButton) || super.mouseClicked(mouseX, mouseY, mouseButton);
-    }
-
     private void setCurrent(ItemStack currentItemStack) {
         preText = ItemUtils.getGiveCode(this.currentItemStack = currentItemStack);
     }
@@ -153,7 +144,7 @@ public class GuiGiver extends GuiModifier<String> {
 
     @Override
     public void tick() {
-        code.tick();
+        // code.tick();
         this.currentItemStack = ItemUtils
                 .getFromGiveCode(code.getValue().replaceAll("&", String.valueOf(ChatUtils.MODIFIER)));
         this.giveButton.active = this.currentItemStack != null && getMinecraft().player != null

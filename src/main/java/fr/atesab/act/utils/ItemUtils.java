@@ -1,5 +1,9 @@
 package fr.atesab.act.utils;
 
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import java.util.UUID;
+
 import com.google.common.collect.Multimap;
 import com.google.gson.JsonParseException;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -9,6 +13,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -22,19 +32,31 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
-import net.minecraft.world.item.FireworkRocketItem.Shape;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.item.component.FireworkExplosion;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.core.Holder;
+import net.minecraft.world.item.component.Unbreakable;
+import net.minecraft.world.item.component.DyedItemColor;
+import net.minecraft.world.item.component.ResolvableProfile;
+import net.minecraft.world.item.component.Fireworks;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.component.ItemContainerContents;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.alchemy.PotionUtils;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.IForgeRegistry;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -45,18 +67,33 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * A set of tools to help to create and modify
- *
- * @author ATE47*
- * @link ItemStack}**
- * @since 2.0
- */
+import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
+
 @InternalCommandModule(name = "item")
 public class ItemUtils {
-    /**
-     * Attribute data
-     */
+    
+    // Helper for NBT migration
+    public static CompoundTag getTag(ItemStack stack) {
+        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+    }
+
+    public static void setTag(ItemStack stack, CompoundTag tag) {
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+    }
+    
+    public static CompoundTag getOrCreateTag(ItemStack stack) {
+        return getTag(stack);
+    }
+    
+    public static CompoundTag getOrCreateTagElement(ItemStack stack, String key) {
+        CompoundTag tag = getTag(stack);
+        if (!tag.contains(key, 10)) {
+            tag.put(key, new CompoundTag());
+            setTag(stack, tag);
+        }
+        return tag.getCompound(key);
+    }
+
     public static class AttributeData {
         private EquipmentSlot slot;
         private AttributeModifier modifier;
@@ -68,68 +105,54 @@ public class ItemUtils {
             this.attribute = attribute;
         }
 
-        /**
-         * @param slot the slot to set
-         */
         public void setSlot(EquipmentSlot slot) {
             this.slot = slot;
         }
 
-        /**
-         * @param modifier the modifier to set
-         */
         public void setModifier(AttributeModifier modifier) {
             this.modifier = modifier;
         }
 
-        /**
-         * @param attribute the attribute to set
-         */
         public void setAttribute(Attribute attribute) {
             this.attribute = attribute;
         }
 
-        /**
-         * @return the attribute
-         */
         public Attribute getAttribute() {
             return attribute;
         }
 
-        /**
-         * @return the modifier
-         */
         public AttributeModifier getModifier() {
             return modifier;
         }
 
-        /**
-         * @return the slot
-         */
         public EquipmentSlot getSlot() {
             return slot;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            AttributeData that = (AttributeData) o;
+            return Objects.equals(slot, that.slot) &&
+                    Objects.equals(modifier, that.modifier) &&
+                    Objects.equals(attribute, that.attribute);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(slot, modifier, attribute);
+        }
     }
 
-    /**
-     * Information about an explosion
-     *
-     * @author ATE47
-     * @since 2.0
-     */
     public static final class ExplosionInformation implements Cloneable {
         private int[] colors;
         private int[] fadeColors;
         private boolean trail, flicker;
-        private Shape type;
+        private FireworkExplosion.Shape type;
 
-        /**
-         * Create a random legit explosion {@link ExplosionInformation}
-         *
-         * @since 2.1
-         */
         public ExplosionInformation() {
-            this(CommandUtils.getRandomElement(Shape.values()), RANDOM.nextBoolean(), RANDOM.nextBoolean(),
+            this(CommandUtils.getRandomElement(FireworkExplosion.Shape.values()), RANDOM.nextBoolean(), RANDOM.nextBoolean(),
                     new int[RANDOM.nextInt(6) + 1], new int[RANDOM.nextInt(7)]);
             colors = new int[RANDOM.nextInt(6 - ((trail ? 1 : 0) + (flicker ? 1 : 0))) + 1];
             for (int i = 0; i < colors.length; i++) {
@@ -141,31 +164,11 @@ public class ItemUtils {
 
         }
 
-        /**
-         * Create an {@link ExplosionInformation}
-         *
-         * @param type       the type of the explosion
-         * @param trail      if the explosion has a trail
-         * @param flicker    if the explosion has a flicker
-         * @param colors     the explosion colors
-         * @param fadeColors the explosion fadeColors
-         * @since 2.0
-         */
         public ExplosionInformation(int type, boolean trail, boolean flicker, int[] colors, int[] fadeColors) {
-            this(Shape.byId(type), trail, flicker, colors, fadeColors);
+            this(FireworkExplosion.Shape.byId(type), trail, flicker, colors, fadeColors);
         }
 
-        /**
-         * Create an {@link ExplosionInformation}
-         *
-         * @param type       the type of the explosion
-         * @param trail      if the explosion has a trail
-         * @param flicker    if the explosion has a flicker
-         * @param colors     the explosion colors
-         * @param fadeColors the explosion fadeColors
-         * @since 2.1
-         */
-        public ExplosionInformation(Shape type, boolean trail, boolean flicker, int[] colors, int[] fadeColors) {
+        public ExplosionInformation(FireworkExplosion.Shape type, boolean trail, boolean flicker, int[] colors, int[] fadeColors) {
             this.type = type;
             this.trail = trail;
             this.flicker = flicker;
@@ -173,11 +176,6 @@ public class ItemUtils {
             this.fadeColors = fadeColors;
         }
 
-        /**
-         * Create an {@link ExplosionInformation} with the tag of the explosion
-         *
-         * @param explosion the non null explosion tag
-         */
         public ExplosionInformation(CompoundTag explosion) {
             this(explosion.getByte("Type"), explosion.getBoolean("Trail"), explosion.getBoolean("Flicker"),
                     explosion.getIntArray("Colors"), explosion.getIntArray("FadeColors"));
@@ -186,7 +184,6 @@ public class ItemUtils {
         @Override
         public ExplosionInformation clone() {
             try {
-                // no deep copy of the arrays
                 return (ExplosionInformation) super.clone();
             } catch (CloneNotSupportedException e) {
                 return new ExplosionInformation(type, trail, flicker, colors, fadeColors);
@@ -216,12 +213,6 @@ public class ItemUtils {
             return fadeColors;
         }
 
-        /**
-         * Get Explosion tag for this explosion
-         *
-         * @return the tag
-         * @since 2.0
-         */
         public CompoundTag getTag() {
             CompoundTag tag = new CompoundTag();
             tag.putByte("Type", (byte) type.getId());
@@ -240,7 +231,7 @@ public class ItemUtils {
             return tag;
         }
 
-        public Shape getType() {
+        public FireworkExplosion.Shape getType() {
             return type;
         }
 
@@ -257,18 +248,16 @@ public class ItemUtils {
             return this;
         }
 
-        public ExplosionInformation type(Shape type) {
+        public ExplosionInformation type(FireworkExplosion.Shape type) {
             this.type = type;
             return this;
         }
+
+        public FireworkExplosion toFireworkExplosion() {
+            return new FireworkExplosion(type, new IntArrayList(colors), new IntArrayList(fadeColors), trail, flicker);
+        }
     }
 
-    /**
-     * Information about a potion
-     *
-     * @author ATE47
-     * @since 2.0
-     */
     public static final class PotionInformation {
         private OptionalInt customColor;
         private List<MobEffectInstance> customEffects;
@@ -321,31 +310,13 @@ public class ItemUtils {
         public static final AttributeModifierBuilder SWORD_ATTACK_SPEED;
 
         static {
-            ArmorItem armor = (ArmorItem) Items.NETHERITE_CHESTPLATE;
-            DiggerItem tool = (DiggerItem) Items.NETHERITE_PICKAXE;
-            SwordItem sword = (SwordItem) Items.NETHERITE_SWORD;
-
-            final Multimap<Attribute, AttributeModifier> poolArmor = armor
-                    .getDefaultAttributeModifiers(armor.getSlot());
-            final Multimap<Attribute, AttributeModifier> poolTool = tool
-                    .getDefaultAttributeModifiers(EquipmentSlot.MAINHAND);
-            final Multimap<Attribute, AttributeModifier> poolSword = sword
-                    .getDefaultAttributeModifiers(EquipmentSlot.MAINHAND);
-
-            ARMOR = new AttributeModifierBuilder(Attributes.ARMOR,
-                    poolArmor.get(Attributes.ARMOR).stream().findAny().orElseThrow());
-            ARMOR_TOUGHNESS = new AttributeModifierBuilder(Attributes.ARMOR_TOUGHNESS,
-                    poolArmor.get(Attributes.ARMOR_TOUGHNESS).stream().findAny().orElseThrow());
-            KNOCKBACK_RESISTANCE = new AttributeModifierBuilder(Attributes.KNOCKBACK_RESISTANCE,
-                    poolArmor.get(Attributes.KNOCKBACK_RESISTANCE).stream().findAny().orElseThrow());
-            TOOL_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE,
-                    poolTool.get(Attributes.ATTACK_DAMAGE).stream().findAny().orElseThrow());
-            TOOL_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED,
-                    poolTool.get(Attributes.ATTACK_SPEED).stream().findAny().orElseThrow());
-            SWORD_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE,
-                    poolSword.get(Attributes.ATTACK_DAMAGE).stream().findAny().orElseThrow());
-            SWORD_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED,
-                    poolSword.get(Attributes.ATTACK_SPEED).stream().findAny().orElseThrow());
+            ARMOR = new AttributeModifierBuilder(Attributes.ARMOR.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("armor"), 0, AttributeModifier.Operation.ADD_VALUE));
+            ARMOR_TOUGHNESS = new AttributeModifierBuilder(Attributes.ARMOR_TOUGHNESS.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("armor_toughness"), 0, AttributeModifier.Operation.ADD_VALUE));
+            KNOCKBACK_RESISTANCE = new AttributeModifierBuilder(Attributes.KNOCKBACK_RESISTANCE.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("knockback_resistance"), 0, AttributeModifier.Operation.ADD_VALUE));
+            TOOL_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
+            TOOL_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
+            SWORD_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
+            SWORD_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
         }
 
         private final AttributeModifier clone;
@@ -357,16 +328,16 @@ public class ItemUtils {
             BUILDERS_INTERNAL.add(this);
         }
 
-        public UUID getId() {
-            return clone.getId();
+        public ResourceLocation getId() {
+            return clone.id(); // getId -> id
         }
 
         public String getName() {
-            return clone.getName();
+            return clone.id().toString(); // getName -> id (ResourceLocation)
         }
 
         public AttributeModifier build(double val, AttributeModifier.Operation op) {
-            return new AttributeModifier(clone.getId(), clone.getName(), val, op);
+            return new AttributeModifier(clone.id(), val, op);
         }
 
         public String getDescriptionId() {
@@ -385,9 +356,7 @@ public class ItemUtils {
     public static final String NBT_CHILD_FIREWORKS = "Fireworks";
     public static final String NBT_CHILD_ATTRIBUTE_MODIFIER = "AttributeModifiers";
 
-    private static final ItemReader ITEM_READER = new ItemReader();
     private static final Random RANDOM = ACTMod.RANDOM;
-    // Caches are made to avoid the waiting time between requests to Mojang API
     private static final Map<String, Tuple<Long, CompoundTag>> SKIN_CACHE = new HashMap<>();
     private static final Map<String, Tuple<Long, String>> UUID_CACHE = new HashMap<>();
 
@@ -401,41 +370,16 @@ public class ItemUtils {
                 + uuid.substring(16, 20) + "-" + uuid.substring(20);
     }
 
-    /**
-     * Create a custom stack
-     *
-     * @param block        the stack block
-     * @param count        the stack count
-     * @param name         the stack display name
-     * @param lore         the lore of the stack
-     * @param enchantments Array of {@link Tuple} of {@link Enchantment} with there
-     *                     level
-     * @return your stack
-     * @see #buildStack(Item, int, String, String[], Tuple[])
-     */
     public static ItemStack buildStack(Block block, int count, @Nullable String name, @Nullable String[] lore,
                                        @Nullable Tuple<Enchantment, Integer>[] enchantments) {
         return buildStack(block.asItem(), count, name, lore, enchantments);
     }
 
-    /**
-     * Create a custom stack
-     *
-     * @param item         the stack item
-     * @param count        the stack count
-     * @param name         the stack display name
-     * @param lore         the lore of the stack
-     * @param enchantments Array of {@link Tuple} of {@link Enchantment} with there
-     *                     level
-     * @return your stack
-     * @see #buildStack(Block, int, String, String[], Tuple[])
-     * @since 2.0
-     */
     public static ItemStack buildStack(Item item, int count, @Nullable String name, @Nullable String[] lore,
                                        @Nullable Tuple<Enchantment, Integer>[] enchantments) {
         ItemStack is = new ItemStack(item, count);
         if (name != null) {
-            is.setHoverName(Component.literal(name));
+            is.set(DataComponents.CUSTOM_NAME, Component.literal(name));
         }
         if (lore != null) {
             setLore(is, lore);
@@ -446,13 +390,6 @@ public class ItemUtils {
         return is;
     }
 
-    /**
-     * Check if the player have a clear slot in his hotbar
-     *
-     * @param mc the game
-     * @return true if a slot is clear
-     * @since 2.0
-     */
     public static boolean canGive(Minecraft mc) {
         if (mc.player == null) {
             return false;
@@ -466,292 +403,174 @@ public class ItemUtils {
         return false;
     }
 
-    /**
-     * Get a list of tuples of Slot / Attribute of a stack
-     *
-     * @param stack the stack to read
-     * @return the attributes
-     * @see #setAttributes(List, ItemStack)
-     * @since 2.0
-     */
     public static List<AttributeData> getAttributes(ItemStack stack) {
         List<AttributeData> l = new ArrayList<>();
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
-            stack.getAttributeModifiers(slot)
-                    .forEach((attribute, modifier) -> l.add(new AttributeData(slot, modifier, attribute)));
+        ItemAttributeModifiers modifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        for (var entry : modifiers.modifiers()) {
+            EquipmentSlot slot = null;
+            for (EquipmentSlot s : EquipmentSlot.values()) {
+                if (EquipmentSlotGroup.bySlot(s).equals(entry.slot())) {
+                    slot = s;
+                    break;
+                }
+            }
+            l.add(new AttributeData(slot, entry.modifier(), entry.attribute().value()));
         }
-
         return l;
     }
 
-    /**
-     * Get Leather armor integer color (10511680 if no color has been found)
-     *
-     * @param stack the stack to read
-     * @return the color of the stack
-     */
     public static int getColor(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        return (tag == null || !tag.contains(NBT_CHILD_DISPLAY)
-                || !tag.getCompound(NBT_CHILD_DISPLAY).contains("color")) ? 10511680
-                : tag.getCompound(NBT_CHILD_DISPLAY).getInt("color");
-
+        DyedItemColor color = stack.get(DataComponents.DYED_COLOR);
+        return color != null ? color.rgb() : 10511680;
     }
 
-    /**
-     * Get a custom String tag at the nbt root of a stack or a default value
-     *
-     * @param stack        the custom tag
-     * @param key          the key
-     * @param defaultValue the default value
-     * @return the value
-     * @see #setCustomTag(ItemStack, String, String)
-     * @since 2.0
-     */
     public static String getCustomTag(ItemStack stack, String key, String defaultValue) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = getTag(stack);
         if (tag == null) {
             return defaultValue;
         }
         return tag.contains(key) ? tag.getString(key) : defaultValue;
     }
 
-    /**
-     * Get {@link Enchantment}s of an {@link ItemStack}
-     *
-     * @param stack the stack to read
-     * @return the enchantments
-     * @see #setEnchantments(List, ItemStack)
-     * @see #getEnchantments(ItemStack)
-     * @since 2.0
-     */
     public static List<Tuple<Enchantment, Integer>> getEnchantments(ItemStack stack) {
         return getEnchantments(stack, false);
     }
 
-    /**
-     * Get {@link Enchantment}s of an {@link ItemStack} with checking if it is a
-     * book
-     *
-     * @param stack the stack to read
-     * @param book  if this stack is a book or not
-     * @return the enchantments
-     * @see #setEnchantments(List, ItemStack, boolean)
-     * @see #getEnchantments(ItemStack)
-     * @since 2.0
-     */
     public static List<Tuple<Enchantment, Integer>> getEnchantments(ItemStack stack, boolean book) {
-        Map<Enchantment, Integer> map = new HashMap<>();
-        ForgeRegistries.ENCHANTMENTS.forEach(e -> map.put(e, 0));
-        String key = book ? NBT_CHILD_BOOK_ENCHANTMENTS : NBT_CHILD_ENCHANTMENTS;
-        ListTag list = stack.getTag() != null && stack.getTag().contains(key) ? stack.getTag().getList(key, 10)
-                : new ListTag();
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag tag = list.getCompound(i);
-            if (tag.contains("id")) {
-                Enchantment ench = ForgeRegistries.ENCHANTMENTS.getValue(ResourceLocation.tryParse(tag.getString("id")));
-                if (ench != null) {
-                    map.put(ench, tag.contains("lvl") ? tag.getInt("lvl") : 0);
-                }
-            }
-
+        List<Tuple<Enchantment, Integer>> list = new ArrayList<>();
+        ItemEnchantments enchantments = stack.getOrDefault(book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        for (var entry : enchantments.entrySet()) {
+            list.add(new Tuple<>(entry.getKey().value(), entry.getIntValue()));
         }
-        List<Tuple<Enchantment, Integer>> result = new ArrayList<>();
-        map.keySet().stream()
-                .sorted(Comparator.comparing(Enchantment::getDescriptionId))
-                .forEach(e -> result.add(new Tuple<>(e, map.get(e))));
-        return result;
+        return list;
     }
 
-    /**
-     * Get {@link ExplosionInformation} from a tag, if the tag is null a
-     * legit-random explosion will be return
-     *
-     * @param explosion get an explosion from a tag, null for a random explosion
-     * @return the explosion
-     * @since 2.1
-     */
     public static ExplosionInformation getExplosionInformation(@Nullable CompoundTag explosion) {
         return explosion == null ? new ExplosionInformation() : new ExplosionInformation(explosion);
     }
 
-    /**
-     * Get an {@link ItemStack} from a give code (like after a /give player (code))
-     *
-     * @param code the item code
-     * @return the item stack
-     * @see #getGiveCode(ItemStack)
-     * @since 2.0
-     */
     public static ItemStack getFromGiveCode(String code) {
         if (code == null || code.isEmpty()) {
             return null;
         }
-        return ITEM_READER.readItem(code);
+        net.minecraft.core.HolderLookup.Provider registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : VanillaRegistries.createLookup();
+        return new ItemReader(registryAccess).readItem(code);
     }
 
-    /**
-     * Get a give code from a {@link ItemStack} (like after a /give player (code))
-     *
-     * @param itemStack the stack
-     * @return the give code
-     * @see #getFromGiveCode(String)
-     * @since 2.0
-     */
     public static String getGiveCode(ItemStack itemStack) {
         return getGiveCode(itemStack, true);
     }
 
-    /**
-     * Get a give code from a {@link ItemStack} (like after a /give player (code))
-     *
-     * @param itemStack the stack
-     * @param showCount the count
-     * @return the give code
-     * @see #getFromGiveCode(String)
-     * @since 2.0
-     */
     public static String getGiveCode(ItemStack itemStack, boolean showCount) {
-        boolean noTag = itemStack.getTag() != null && !itemStack.getTag().isEmpty();
-        return ForgeRegistries.ITEMS.getKey(itemStack.getItem()) + (noTag ? itemStack.getTag().toString() : "")
-                + (itemStack.getCount() == 1 && showCount ? "" : " " + itemStack.getCount());
+        net.minecraft.core.HolderLookup.Provider registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : VanillaRegistries.createLookup();
+        
+        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
+        StringBuilder builder = new StringBuilder(itemId.toString());
+        
+        Tag tag = itemStack.save(registryAccess);
+        if (tag instanceof CompoundTag ct && ct.contains("components", 10)) {
+            CompoundTag components = ct.getCompound("components");
+            if (!components.isEmpty()) {
+                builder.append("[");
+                boolean first = true;
+                List<String> keys = new ArrayList<>(components.getAllKeys());
+                Collections.sort(keys);
+                
+                for (String key : keys) {
+                    if (!first) builder.append(",");
+                    first = false;
+                    builder.append(key).append("=");
+                    builder.append(components.get(key).toString());
+                }
+                builder.append("]");
+            }
+        } else {
+            // Fallback for legacy or if components are missing but custom_data exists in old format (unlikely)
+            boolean noTag = getTag(itemStack) != null && !getTag(itemStack).isEmpty();
+            if (noTag) {
+                builder.append(getTag(itemStack).toString());
+            }
+        }
+        
+        if (showCount && itemStack.getCount() != 1) {
+            builder.append(" ").append(itemStack.getCount());
+        }
+        
+        return builder.toString();
     }
 
-    /**
-     * Change a head with new skin information given by name
-     *
-     * @param is   the stack to fill
-     * @param name the head name
-     * @return the item stack
-     * @throws IOException            if an error occured while asking the profile
-     * @throws CommandSyntaxException if an error occured while parsing the profile
-     * @throws NoSuchElementException if the profile can't be read with the answer
-     * @see #getHead(String)
-     * @see #getHead(String, String, String)
-     * @see #getHead(ItemStack, String, String, String)
-     * @see #getHeads(String...)
-     * @since 2.0
-     */
     public static ItemStack getHead(ItemStack is, String name)
             throws IOException, CommandSyntaxException, NoSuchElementException {
-        CompoundTag skullOwner = is.getOrCreateTagElement("SkullOwner");
-        String uuid = getUUIDByNames(name).stream().findFirst().orElseThrow().b;
-        skullOwner.merge(getSkinInformationFromUUID(uuid));
-        skullOwner.putString("Name", name);
-        skullOwner.putString("Id", addHyphen(uuid));
-        return is;
-    }
-
-    /**
-     * Change a head with new skin information given by uuid, url and name
-     *
-     * @param is   the stack to fill
-     * @param uuid the head uuid
-     * @param url  the head url
-     * @param name the head name
-     * @return the item stack
-     * @see #getHead(String)
-     * @see #getHead(ItemStack, String)
-     * @see #getHead(ItemStack, String, String, String)
-     * @see #getHeads(String...)
-     * @since 2.0
-     */
-    public static ItemStack getHead(ItemStack is, String uuid, String url, String name) {
-        CompoundTag skullOwner = is.getOrCreateTagElement("SkullOwner");
-        skullOwner.putString("Id", addHyphen(uuid.replaceAll("-", "")));
-        ListTag textures = new ListTag();
-        CompoundTag texture = new CompoundTag();
-        texture.putString("Value",
-                Base64.getEncoder().encodeToString(("{\"textures\":{\"SKIN\":{\"url\":\"" + url + "\"}}}").getBytes()));
-        textures.add(texture);
-        getOrCreateSubCompound(skullOwner, "Properties").put("textures", textures);
-        if (name != null) {
-            skullOwner.putString("Name", name);
-        } else if (skullOwner.contains("Name")) {
-            skullOwner.remove("Name");
+        String uuidStr = getUUIDByNames(name).stream().findFirst().orElseThrow().b;
+        CompoundTag skinTag = getSkinInformationFromUUID(uuidStr);
+        
+        UUID uuid = UUID.fromString(addHyphen(uuidStr));
+        GameProfile profile = new GameProfile(uuid, name);
+        
+        if (skinTag.contains("Properties", 10)) {
+            CompoundTag props = skinTag.getCompound("Properties");
+            if (props.contains("textures", 9)) {
+                ListTag textures = props.getList("textures", 10);
+                for (int i = 0; i < textures.size(); i++) {
+                    CompoundTag tex = textures.getCompound(i);
+                    String value = tex.getString("Value");
+                    String signature = tex.contains("Signature") ? tex.getString("Signature") : null;
+                    profile.getProperties().put("textures", new Property("textures", value, signature));
+                }
+            }
         }
+        
+        is.set(DataComponents.PROFILE, new ResolvableProfile(profile));
         return is;
     }
 
-    /**
-     * Create a head with skin information given by name
-     *
-     * @param name the head name
-     * @return the item stack
-     * @throws IOException            if an error occured while asking the profile
-     * @throws CommandSyntaxException if an error occured while parsing the profile
-     * @throws NoSuchElementException if the profile can't be read with the answer
-     * @see #getHead(ItemStack, String)
-     * @see #getHead(String, String, String)
-     * @see #getHead(ItemStack, String, String, String)
-     * @see #getHeads(String...)
-     * @since 2.0
-     */
+    public static ItemStack getHead(ItemStack is, String uuid, String url, String name) {
+        UUID id = UUID.fromString(addHyphen(uuid));
+        GameProfile profile = new GameProfile(id, name);
+        String value = Base64.getEncoder().encodeToString(("{\"textures\":{\"SKIN\":{\"url\":\"" + url + "\"}}}").getBytes());
+        profile.getProperties().put("textures", new Property("textures", value));
+        is.set(DataComponents.PROFILE, new ResolvableProfile(profile));
+        return is;
+    }
+
     public static ItemStack getHead(String name) throws IOException, CommandSyntaxException, NoSuchElementException {
         return getHead(new ItemStack(Items.PLAYER_HEAD, 1), name);
     }
 
-    /**
-     * Create a head with skin information given by uuid, url and name
-     *
-     * @param uuid the head uuid
-     * @param url  the head url
-     * @param name the head name
-     * @return the item stack
-     * @see #getHead(String)
-     * @see #getHead(ItemStack, String)
-     * @see #getHead(ItemStack, String, String, String)
-     * @see #getHeads(String...)
-     * @since 2.0
-     */
     public static ItemStack getHead(String uuid, String url, String name) {
         return getHead(new ItemStack(Items.PLAYER_HEAD, 1), uuid, url, name);
     }
 
-    /**
-     * Create a heads with skin information given by names
-     *
-     * @param players the player to get the head
-     * @return the item heads
-     * @throws IOException            if an error occured while asking the profile
-     * @throws CommandSyntaxException if an error occured while parsing the profile
-     * @throws NoSuchElementException if the profile can't be read with the answer
-     * @see #getHead(String)
-     * @see #getHead(ItemStack, String)
-     * @see #getHead(String, String, String)
-     * @see #getHead(ItemStack, String, String, String)
-     * @since 2.0
-     */
     public static List<ItemStack> getHeads(Collection<Player> players)
             throws IOException, CommandSyntaxException, NoSuchElementException {
         return getHeads(players.stream().map(Player::getScoreboardName).toArray(String[]::new));
     }
 
-    /**
-     * Create a heads with skin information given by names
-     *
-     * @param names the name of the players
-     * @return the item heads
-     * @throws IOException            if an error occured while asking the profile
-     * @throws CommandSyntaxException if an error occured while parsing the profile
-     * @throws NoSuchElementException if the profile can't be read with the answer
-     * @see #getHead(String)
-     * @see #getHead(ItemStack, String)
-     * @see #getHead(String, String, String)
-     * @see #getHead(ItemStack, String, String, String)
-     * @since 2.0
-     */
     public static List<ItemStack> getHeads(String... names)
             throws IOException, CommandSyntaxException, NoSuchElementException {
         List<ItemStack> stacks = new ArrayList<>();
         getUUIDByNames(names).forEach(tuple -> {
             try {
                 ItemStack stack = new ItemStack(Items.PLAYER_HEAD, 1);
-                CompoundTag skullOwner = stack.getOrCreateTagElement("SkullOwner");
-                String uuid = tuple.b;
-                skullOwner.merge(getSkinInformationFromUUID(uuid));
-                skullOwner.putString("Name", tuple.a);
-                skullOwner.putString("Id", addHyphen(uuid));
+                String uuidStr = tuple.b;
+                CompoundTag skinTag = getSkinInformationFromUUID(uuidStr);
+                
+                UUID uuid = UUID.fromString(addHyphen(uuidStr));
+                GameProfile profile = new GameProfile(uuid, tuple.a);
+                
+                if (skinTag.contains("Properties", 10)) {
+                    CompoundTag props = skinTag.getCompound("Properties");
+                    if (props.contains("textures", 9)) {
+                        ListTag textures = props.getList("textures", 10);
+                        for (int i = 0; i < textures.size(); i++) {
+                            CompoundTag tex = textures.getCompound(i);
+                            String value = tex.getString("Value");
+                            String signature = tex.contains("Signature") ? tex.getString("Signature") : null;
+                            profile.getProperties().put("textures", new Property("textures", value, signature));
+                        }
+                    }
+                }
+                stack.set(DataComponents.PROFILE, new ResolvableProfile(profile));
                 stacks.add(stack);
             } catch (Exception ignore) {
             }
@@ -759,39 +578,16 @@ public class ItemUtils {
         return stacks;
     }
 
-    /**
-     * Get lore(description) of an {@link ItemStack}
-     *
-     * @param stack the stack to read
-     * @return the lore
-     * @see #setLore(ItemStack, String[])
-     * @since 2.0
-     */
     public static String[] getLore(ItemStack stack) {
-        CompoundTag display = stack.getOrCreateTagElement(NBT_CHILD_DISPLAY);
-        ListTag nbtTagList = display.getList("Lore", 8);
-        String[] array = new String[nbtTagList.size()];
-        for (int j = 0; j < nbtTagList.size(); ++j) {
-            String s = nbtTagList.getString(j);
-            array[j] = "";
-            try {
-                MutableComponent MutableComponent1 = Component.Serializer.fromJson(s);
-                if (MutableComponent1 != null) {
-                    array[j] = MutableComponent1.getString();
-                }
-            } catch (JsonParseException ignore) {
-            }
+        ItemLore lore = stack.get(DataComponents.LORE);
+        if (lore == null) {
+            return new String[0];
         }
-        return array;
+        return lore.lines().stream()
+                .map(Component::getString)
+                .toArray(String[]::new);
     }
 
-    /**
-     * create or get a sub compound for a tag
-     *
-     * @param compound the tag
-     * @param key      the key for the sub compound
-     * @return tag
-     */
     public static CompoundTag getOrCreateSubCompound(CompoundTag compound, String key) {
         if (compound.contains(key, 10)) {
             return compound.getCompound(key);
@@ -801,65 +597,74 @@ public class ItemUtils {
         return nbttagcompound;
     }
 
-    /**
-     * Get {@link PotionInformation} of stack
-     *
-     * @param stack your potion
-     * @return potion information
-     * @see #setPotionInformation(ItemStack, PotionInformation)
-     * @since 2.0
-     */
     public static PotionInformation getPotionInformation(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        List<MobEffectInstance> customEffects = PotionUtils.getCustomEffects(tag);
-        return new PotionInformation(
-                (tag != null && tag.contains("CustomPotionColor") ? OptionalInt.of(tag.getInt("CustomPotionColor"))
-                        : OptionalInt.empty()),
-                PotionUtils.getPotion(tag), customEffects);
+        PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+        if (contents == null) return new PotionInformation(OptionalInt.empty(), Potions.WATER.value(), new ArrayList<>());
+        
+        OptionalInt color = contents.customColor().map(OptionalInt::of).orElse(OptionalInt.empty());
+        Potion potion = contents.potion().map(Holder::value).orElse(Potions.WATER.value());
+        List<MobEffectInstance> effects = new ArrayList<>(contents.customEffects());
+        
+        return new PotionInformation(color, potion, effects);
     }
 
-    /**
-     * Get a random legitimate fireworks
-     *
-     * @return your fireworks
-     * @since 2.1
-     */
+    public static CompoundTag getFireworkExplosionTag(ItemStack stack) {
+        FireworkExplosion exp = stack.get(DataComponents.FIREWORK_EXPLOSION);
+        if (exp != null) {
+            return new ExplosionInformation(exp.shape(), exp.hasTrail(), exp.hasTwinkle(), exp.colors().toIntArray(), exp.fadeColors().toIntArray()).getTag();
+        }
+        return new CompoundTag();
+    }
+
+    public static void setFireworkExplosionFromTag(ItemStack stack, CompoundTag tag) {
+        stack.set(DataComponents.FIREWORK_EXPLOSION, new ExplosionInformation(tag).toFireworkExplosion());
+    }
+
+    public static CompoundTag getFireworksTag(ItemStack stack) {
+        Fireworks fireworks = stack.get(DataComponents.FIREWORKS);
+        CompoundTag tag = new CompoundTag();
+        if (fireworks != null) {
+            tag.putByte("Flight", (byte) fireworks.flightDuration());
+            ListTag explosions = new ListTag();
+            for (FireworkExplosion exp : fireworks.explosions()) {
+                explosions.add(new ExplosionInformation(exp.shape(), exp.hasTrail(), exp.hasTwinkle(), exp.colors().toIntArray(), exp.fadeColors().toIntArray()).getTag());
+            }
+            tag.put("Explosions", explosions);
+        }
+        return tag;
+    }
+
+    public static void setFireworksFromTag(ItemStack stack, CompoundTag tag) {
+        int flight = tag.getByte("Flight");
+        ListTag explosionsTag = tag.getList("Explosions", 10);
+        List<FireworkExplosion> explosions = new ArrayList<>();
+        for (int i = 0; i < explosionsTag.size(); i++) {
+            explosions.add(new ExplosionInformation(explosionsTag.getCompound(i)).toFireworkExplosion());
+        }
+        stack.set(DataComponents.FIREWORKS, new Fireworks(flight, explosions));
+    }
+
     public static ItemStack getRandomFireworks() {
         CompoundTag fwt = new CompoundTag();
-        int flight = RANDOM.nextInt(3); // a number between 0 and 2 (number of additional gunpowder)
+        int flight = RANDOM.nextInt(3);
         fwt.putInt("Flight", flight + 1);
         ListTag explosions = new ListTag();
-        int exp = RANDOM.nextInt(7 - flight) + 1; // a number between 1 and 7 - flight (number of additional
-        // gunpowder) -> (number of explosion)
+        int exp = RANDOM.nextInt(7 - flight) + 1;
         for (int i = 0; i < exp; i++) {
             explosions.add(getExplosionInformation(null).getTag());
         }
         fwt.put(NBT_CHILD_EXPLOSIONS, explosions);
         ItemStack fw = new ItemStack(Items.FIREWORK_ROCKET);
-        CompoundTag tag = new CompoundTag();
-        tag.put(NBT_CHILD_FIREWORKS, fwt);
-        fw.setTag(tag);
-        // create a random name and description because "why not ?"
-        List<EntityType<?>> list = ForgeRegistries.ENTITY_TYPES.getValues().stream().filter(EntityType::canSummon).toList();
-        fw.setHoverName(Component.translatable(list.get(RANDOM.nextInt(list.size())).getDescriptionId())
+        setFireworksFromTag(fw, fwt);
+        List<EntityType<?>> list = BuiltInRegistries.ENTITY_TYPE.stream().filter(EntityType::canSummon).toList();
+        fw.set(DataComponents.CUSTOM_NAME, Component.translatable(list.get(RANDOM.nextInt(list.size())).getDescriptionId())
                 .withStyle(ChatFormatting.values()[RANDOM.nextInt(16)])
                 .append(" " + CommandUtils.getRandomElement(RANDOM_CHAR) + RANDOM.nextInt(1000)));
         setLore(fw, new String[]{ChatFormatting.YELLOW + "" + ChatFormatting.ITALIC + I18n.get("cmd.act.rfw")});
         return fw;
     }
 
-    /**
-     * Request {@link CompoundTag} of Skin Information with the Mojang API
-     *
-     * @param uuid Player's UUID
-     * @return skin information
-     * @throws IOException            if an error occured while asking the profile
-     * @throws CommandSyntaxException if an error occured while parsing the profile
-     * @since 2.0
-     */
     public static CompoundTag getSkinInformationFromUUID(String uuid) throws IOException, CommandSyntaxException {
-        // check if a skin is find in the cache (1min : the minimum time between
-        // request)
         if (SKIN_CACHE.containsKey(uuid) && SKIN_CACHE.get(uuid).a + 60000 > System.currentTimeMillis()) {
             return SKIN_CACHE.get(uuid).b.copy();
         }
@@ -886,32 +691,18 @@ public class ItemUtils {
         return newTag;
     }
 
-    /**
-     * Request {@link Tuple} of name / UUID of users by there name with the Mojang
-     * API
-     *
-     * @param names Players' names
-     * @return List of name find
-     * @throws IOException            if an error occured while downloading the uuid
-     * @throws CommandSyntaxException if an error occured while parsing the uuid
-     * @since 2.0
-     */
     public static List<Tuple<String, String>> getUUIDByNames(String... names)
             throws IOException, CommandSyntaxException {
         List<Tuple<String, String>> list = new ArrayList<>();
         String query = Arrays.stream(names).map(n -> {
-                    // Check in cache for UUID (1min : the minimum time between request)
                     if (UUID_CACHE.containsKey(n) && UUID_CACHE.get(n).a + 60000 > System.currentTimeMillis()) {
                         list.add(new Tuple<>(n, UUID_CACHE.get(n).b));
                         return null;
                     }
                     return '"' + n + '"';
                 })
-                // remove find elements
                 .filter(Objects::nonNull)
-                // create the query
                 .collect(Collectors.joining(","));
-        // request only if names aren't in cache
         if (!query.isEmpty()) {
             CompoundTag tag = TagParser.parseTag("{data:" + sendRequest("https://api.mojang.com/profiles/minecraft",
                     "POST", "application/json", "[" + query + "]") + "}");
@@ -930,49 +721,18 @@ public class ItemUtils {
         return list;
     }
 
-    /**
-     * Try to give an item in the hotbar
-     *
-     * @param stack the stack
-     * @see #give(ItemStack, int)
-     * @since 2.0
-     */
     public static void give(ItemStack stack) {
         give(Minecraft.getInstance(), stack);
     }
 
-    /**
-     * Try to give an item in a slot
-     *
-     * @param stack the stack
-     * @param slot  the slot to fill
-     * @see #give(ItemStack)
-     * @since 2.1
-     */
     public static void give(ItemStack stack, int slot) {
         give(Minecraft.getInstance(), stack, slot);
     }
 
-    /**
-     * Try to give an item in the hotbar
-     *
-     * @param stacks the stacks to give
-     * @see #give(ItemStack, int)
-     * @since 2.0
-     */
     public static void give(List<ItemStack> stacks) {
         give(Minecraft.getInstance(), stacks);
     }
 
-    /**
-     * Try to give an item in the hotbar
-     *
-     * @param mc    the game
-     * @param stack the stack to give
-     * @see #give(ItemStack)
-     * @since 2.0
-     * @deprecated use {@link #give(ItemStack)} instead
-     */
     @Deprecated
     public static void give(Minecraft mc, ItemStack stack) {
         if (mc.player != null && mc.player.isCreative()) {
@@ -991,37 +751,19 @@ public class ItemUtils {
         }
     }
 
-    /**
-     * Try to give an item in a slot
-     *
-     * @param mc    the game
-     * @param stack the stack to give
-     * @param slot  the slot to fill
-     * @see #give(ItemStack, int)
-     * @since 2.0
-     * @deprecated use {@link #give(ItemStack, int)} instead
-     */
     @Deprecated
     public static void give(Minecraft mc, ItemStack stack, int slot) {
         if (mc.player == null || mc.gameMode == null) {
             return;
         }
         if (mc.player.isCreative()) {
-            mc.gameMode.handleCreativeModeItemAdd(stack, slot);
+            mc.player.connection.send(new ServerboundSetCreativeModeSlotPacket(slot, stack));
+            mc.player.inventoryMenu.getSlot(slot).set(stack);
         } else {
             ChatUtils.error(I18n.get("gui.act.nocreative"));
         }
     }
 
-    /**
-     * Try to give an item in the hotbar
-     *
-     * @param mc     the game
-     * @param stacks the stacks to give
-     * @see #give(ItemStack)
-     * @since 2.0
-     * @deprecated use {@link #give(List)} instead
-     */
     @Deprecated
     public static void give(Minecraft mc, List<ItemStack> stacks) {
         if (mc.player != null && mc.player.isCreative()) {
@@ -1046,17 +788,8 @@ public class ItemUtils {
         }
     }
 
-    /**
-     * Check if a {@link ItemStack} is unbreakable
-     *
-     * @param stack your stack
-     * @return if the stack is unbreakable
-     * @see #setUnbreakable(ItemStack, boolean)
-     * @since 2.0
-     */
     public static boolean isUnbreakable(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        return tag != null && tag.getBoolean("Unbreakable");
+        return stack.has(DataComponents.UNBREAKABLE);
     }
 
     private static String sendRequest(String url, String method, String contentType, String content)
@@ -1090,101 +823,57 @@ public class ItemUtils {
         }
     }
 
-    /**
-     * Set a list of tuples of Slot / Attribute to a stack
-     *
-     * @param attributes the attributes to set
-     * @param stack      the stack to update
-     * @return the stack
-     * @see #getAttributes(ItemStack)
-     * @since 2.0
-     */
     public static ItemStack setAttributes(List<AttributeData> attributes, ItemStack stack) {
-        attributes.forEach(data -> stack.addAttributeModifier(data.attribute, data.modifier, data.slot));
+        ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
+        for (AttributeData data : attributes) {
+            EquipmentSlotGroup group = data.getSlot() == null ? EquipmentSlotGroup.ANY : EquipmentSlotGroup.bySlot(data.getSlot());
+            var holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(data.getAttribute());
+            builder.add(holder, data.getModifier(), group);
+        }
+        stack.set(DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
         return stack;
     }
 
-    /**
-     * base color of the leather armor
-     */
     public static final int LEATHER_ARMOR_BASE_COLOR = 10511680;
 
-    /**
-     * Change the color of a leather armor
-     *
-     * @param stack leather armor
-     * @param color integer color
-     * @return your stack
-     * @since 2.0
-     */
     public static ItemStack setColor(ItemStack stack, int color) {
-        if (stack.getTag() == null) {
-            stack.setTag(new CompoundTag());
-        }
-        CompoundTag display = stack.getOrCreateTagElement(NBT_CHILD_DISPLAY);
-        if (color != LEATHER_ARMOR_BASE_COLOR) {
-            display.putInt("color", color);
-        } else if (display.contains("color")) {
-            display.remove("color");
+        if (color == LEATHER_ARMOR_BASE_COLOR) {
+            stack.remove(DataComponents.DYED_COLOR);
+        } else {
+            stack.set(DataComponents.DYED_COLOR, new DyedItemColor(color, true));
         }
         return stack;
     }
 
-    /**
-     * @param stack the stack
-     * @return if the stack is a potion item
-     */
     public static boolean isPotionItem(ItemStack stack) {
         return stack.getItem().equals(Items.POTION) || stack.getItem().equals(Items.SPLASH_POTION)
                 || stack.getItem().equals(Items.LINGERING_POTION) || stack.getItem().equals(Items.TIPPED_ARROW);
     }
 
-    /**
-     * @param stack the stack
-     * @return if the stack is a leather armor
-     */
     public static boolean isLeatherArmor(ItemStack stack) {
         return stack.getItem() instanceof ArmorItem ai && ai.getMaterial() == ArmorMaterials.LEATHER;
     }
 
-    /**
-     * @param stack the stack
-     * @return if you can change the color of the stack
-     */
     public static boolean canGlobalColorIt(ItemStack stack) {
         return isPotionItem(stack) || isLeatherArmor(stack);
     }
 
-    /**
-     * remove the color (if any) of the stack
-     *
-     * @param stack the stack
-     * @return the stack
-     */
     public static ItemStack removeColor(ItemStack stack) {
         if (isPotionItem(stack)) {
-            CompoundTag tag = stack.getTag();
-            if (tag != null && tag.contains("CustomPotionColor")) {
-                tag.remove("CustomPotionColor");
-                stack.setTag(tag);
+            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+            if (contents != null && contents.customColor().isPresent()) {
+                 stack.set(DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(), Optional.empty(), contents.customEffects()));
             }
         } else if (isLeatherArmor(stack)) {
-            setColor(stack, LEATHER_ARMOR_BASE_COLOR);
+            stack.remove(DataComponents.DYED_COLOR);
         }
         return stack;
     }
 
-    /**
-     * set the color (if possible) of the stack
-     *
-     * @param stack the stack
-     * @param color the color to set
-     * @return the stack
-     */
     public static ItemStack setGlobalColor(ItemStack stack, int color) {
         if (isPotionItem(stack)) {
-            CompoundTag tag = stack.getOrCreateTag();
-            tag.putInt("CustomPotionColor", color);
+            PotionContents contents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+            stack.set(DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(), Optional.of(color), contents.customEffects()));
         } else if (isLeatherArmor(stack)) {
             setColor(stack, color);
         }
@@ -1192,10 +881,6 @@ public class ItemUtils {
         return stack;
     }
 
-    /**
-     * @param stack the stack
-     * @return the default color of the stack
-     */
     public static OptionalInt getDefaultGlobalColor(ItemStack stack) {
         if (isLeatherArmor(stack)) {
             return OptionalInt.of(LEATHER_ARMOR_BASE_COLOR);
@@ -1203,98 +888,54 @@ public class ItemUtils {
         return OptionalInt.empty();
     }
 
-    /**
-     * @param stack the stack
-     * @return the color of the stack
-     */
     public static OptionalInt getGlobalColor(ItemStack stack) {
         if (isPotionItem(stack)) {
-            CompoundTag tag = stack.getTag();
-            if (tag != null && tag.contains("CustomPotionColor")) {
-                return OptionalInt.of(tag.getInt("CustomPotionColor"));
+            PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+            if (contents != null && contents.customColor().isPresent()) {
+                return OptionalInt.of(contents.customColor().get());
             }
         } else if (isLeatherArmor(stack)) {
-            CompoundTag tag = stack.getTag();
-            if (tag != null && tag.contains(NBT_CHILD_DISPLAY)) {
-                CompoundTag display = tag.getCompound(NBT_CHILD_DISPLAY);
-                if (display.contains("color")) {
-                    return OptionalInt.of(display.getInt("color"));
-                }
+            DyedItemColor color = stack.get(DataComponents.DYED_COLOR);
+            if (color != null) {
+                return OptionalInt.of(color.rgb());
             }
         }
 
         return OptionalInt.empty();
     }
 
-    /**
-     * Set or create a custom String tag at the nbt root of a stack
-     *
-     * @param stack the stack to set
-     * @param key   the key
-     * @param value the value to set
-     * @return the stack
-     * @see #getCustomTag(ItemStack, String, String)
-     * @since 2.0
-     */
     public static ItemStack setCustomTag(ItemStack stack, String key, String value) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = getTag(stack);
         if (tag == null) {
-            stack.setTag(tag = new CompoundTag());
+            tag = new CompoundTag();
         }
         tag.putString(key, value);
+        setTag(stack, tag);
         return stack;
     }
 
-    /**
-     * Set {@link Enchantment}s of an {@link ItemStack}
-     *
-     * @param enchantments the enchantments to set
-     * @param stack        the stack to fill
-     * @return the stack
-     * @see #setEnchantments(List, ItemStack, boolean)
-     * @see #getEnchantments(ItemStack)
-     * @since 2.0
-     */
     public static ItemStack setEnchantments(List<Tuple<Enchantment, Integer>> enchantments, ItemStack stack) {
         return setEnchantments(enchantments, stack, false);
     }
 
-    /**
-     * Set {@link Enchantment}s of an {@link ItemStack} with checking if it is a
-     * book
-     *
-     * @param enchantments the enchantments to set
-     * @param stack        the stack to fill
-     * @param book         if this stack is a book or not
-     * @return the stack
-     * @see #setEnchantments(List, ItemStack)
-     * @see #getEnchantments(ItemStack, boolean)
-     * @since 2.0
-     */
     public static ItemStack setEnchantments(List<Tuple<Enchantment, Integer>> enchantments, ItemStack stack,
                                             boolean book) {
-        ListTag nbttaglist = new ListTag();
-        enchantments.forEach(tuple -> {
-            if (tuple.b == 0) {
-                return;
-            }
-            CompoundTag nbttagcompound = new CompoundTag();
-            nbttagcompound.putString("id", getRegistry(ForgeRegistries.ENCHANTMENTS, tuple.a).toString());
-            nbttagcompound.putInt("lvl", tuple.b);
-            nbttaglist.add(nbttagcompound);
-        });
-        stack.getOrCreateTag().put(book ? NBT_CHILD_BOOK_ENCHANTMENTS : NBT_CHILD_ENCHANTMENTS, nbttaglist);
+        ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+        RegistryAccess registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : null;
+        if (registryAccess == null) return stack;
+
+        Registry<Enchantment> registry = registryAccess.registryOrThrow(Registries.ENCHANTMENT);
+
+        for (Tuple<Enchantment, Integer> t : enchantments) {
+            var holder = registry.wrapAsHolder(t.a);
+            mutable.set(holder, t.b);
+        }
+        stack.set(book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS, mutable.toImmutable());
         return stack;
     }
 
-    /**
-     * get the light level of a light
-     *
-     * @param stack light stack
-     * @return light level 0-15
-     */
     public static int getLightLevel(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = getTag(stack);
         if (tag == null) {
             return 15;
         }
@@ -1308,93 +949,45 @@ public class ItemUtils {
         return blockStateTag.getInt("level");
     }
 
-    /**
-     * set the light level of a light
-     *
-     * @param stack light stack
-     * @param level level
-     */
     public static void setLightLevel(ItemStack stack, int level) {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = getOrCreateTag(stack);
         CompoundTag blockStateTag = tag.getCompound("BlockStateTag");
         blockStateTag.putInt("level", level);
         tag.put("BlockStateTag", blockStateTag);
+        setTag(stack, tag);
     }
 
-    /**
-     * Create a new {@link ItemStack} with the same count, metadata and
-     * {@link CompoundTag} than the given stack but with a new {@link Item} type
-     *
-     * @param item  New {@link Item} type
-     * @param stack Your stack to copy
-     * @return Your new stack
-     * @since 2.0
-     */
     public static ItemStack setItem(Item item, ItemStack stack) {
         ItemStack is = new ItemStack(item, stack.getCount());
-        is.setTag(stack.getTag());
+        is.applyComponents(stack.getComponentsPatch());
         return is;
     }
 
-    /**
-     * Set lore(description) of a {@link ItemStack}
-     *
-     * @param stack Set stack to set
-     * @param lore  the lore to set
-     * @return Your new stack
-     * @see #getLore(ItemStack)
-     * @since 2.0
-     */
     public static ItemStack setLore(ItemStack stack, String[] lore) {
-        ListTag nbtTagList = new ListTag();
-        for (String l : lore) {
-            nbtTagList.add(StringTag.valueOf(Component.Serializer.toJson(Component.literal(l))));
+        if (lore == null || lore.length == 0) {
+            stack.remove(DataComponents.LORE);
+            return stack;
         }
-        CompoundTag display = stack.getOrCreateTagElement(NBT_CHILD_DISPLAY);
-        display.put("Lore", nbtTagList);
+        List<Component> components = Arrays.stream(lore)
+                .map(Component::literal)
+                .collect(Collectors.toList());
+        stack.set(DataComponents.LORE, new ItemLore(components));
         return stack;
     }
 
-    /**
-     * Set {@link PotionInformation} to a {@link ItemStack}
-     *
-     * @param stack your stack to change
-     * @param info  {@link PotionInformation} to set
-     * @return your stack
-     * @see #getPotionInformation(ItemStack)
-     * @since 2.0
-     */
     public static ItemStack setPotionInformation(ItemStack stack, PotionInformation info) {
-        ListTag nbttaglist = new ListTag();
-        info.getCustomEffects().forEach(effect -> nbttaglist.add(effect.save(new CompoundTag())));
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putString("Potion", getRegistry(ForgeRegistries.POTIONS, info.getMain()).toString());
-        if (info.customColor.isPresent()) {
-            tag.putInt("CustomPotionColor", info.customColor.getAsInt());
-        } else if (tag.contains("CustomPotionColor")) {
-            tag.remove("CustomPotionColor");
-        }
-        tag.put("CustomPotionEffects", nbttaglist);
+        Optional<Holder<Potion>> potion = Optional.of(BuiltInRegistries.POTION.wrapAsHolder(info.getMain()));
+        Optional<Integer> color = info.getCustomColor().isPresent() ? Optional.of(info.getCustomColor().getAsInt()) : Optional.empty();
+        PotionContents contents = new PotionContents(potion, color, info.getCustomEffects());
+        stack.set(DataComponents.POTION_CONTENTS, contents);
         return stack;
     }
 
-    /**
-     * Set a {@link ItemStack} Unbreakable
-     *
-     * @param stack Your stack
-     * @param value Unbreakable or not
-     * @return Your stack
-     * @see #isUnbreakable(ItemStack)
-     * @since 2.0
-     */
     public static ItemStack setUnbreakable(ItemStack stack, boolean value) {
         if (value) {
-            stack.getOrCreateTag().putBoolean("Unbreakable", true);
+            stack.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
         } else {
-            CompoundTag tag = stack.getTag();
-            if (tag != null) {
-                tag.remove("Unbreakable");
-            }
+            stack.remove(DataComponents.UNBREAKABLE);
         }
         return stack;
     }
@@ -1419,18 +1012,10 @@ public class ItemUtils {
         }
     }
 
-    /**
-     * @param stack the stack
-     * @return if the stack contains a container
-     */
     public static boolean isContainer(ItemStack stack) {
         return getContainerSize(stack) != null;
     }
 
-    /**
-     * @param stack the stack
-     * @return the size of the container or null if the stack isn't a container
-     */
     public static ContainerSize getContainerSize(ItemStack stack) {
         if (!(stack.getItem() instanceof BlockItem bi)) {
             return null;
@@ -1455,14 +1040,8 @@ public class ItemUtils {
         return null;
     }
 
-    /**
-     * load items from a container
-     *
-     * @param stack the stack
-     * @param data  the data to load
-     */
     public static void loadTagItems(ItemStack stack, ContainerData data) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = getTag(stack);
         if (tag == null) {
             return;
         }
@@ -1478,6 +1057,7 @@ public class ItemUtils {
         }
 
         ListTag items = blockTag.getList("Items", Tag.TAG_COMPOUND);
+        RegistryAccess registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : RegistryAccess.EMPTY;
 
         for (int i = 0; i < items.size(); i++) {
             CompoundTag item = items.getCompound(i);
@@ -1486,25 +1066,16 @@ public class ItemUtils {
                 continue;
             }
 
-            data.stacks.set(slot, ItemStack.of(item));
+            data.stacks.set(slot, ItemStack.parse(registryAccess, item).orElse(ItemStack.EMPTY));
         }
     }
 
-    /**
-     * @return an air itemstack
-     */
     public static ItemStack air() {
         return new ItemStack(Items.AIR);
     }
 
-    /**
-     * load the cd of a jukebox
-     *
-     * @param jukebox the jukebox
-     * @return the cd or null if no cd is present
-     */
     public static ItemStack loadCD(ItemStack jukebox) {
-        CompoundTag tag = jukebox.getTag();
+        CompoundTag tag = getTag(jukebox);
         if (tag == null) {
             return air();
         }
@@ -1519,15 +1090,10 @@ public class ItemUtils {
             return air();
         }
 
-        return ItemStack.of(blockTag.getCompound("RecordItem"));
+        RegistryAccess registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : RegistryAccess.EMPTY;
+        return ItemStack.parse(registryAccess, blockTag.getCompound("RecordItem")).orElse(ItemStack.EMPTY);
     }
 
-    /**
-     * fetch the data of a container
-     *
-     * @param stack the stack
-     * @return the ContainerData or null if the stack isn't a container
-     */
     public static ContainerData fetchContainerData(ItemStack stack) {
         ContainerSize size = getContainerSize(stack);
 
@@ -1542,7 +1108,10 @@ public class ItemUtils {
         if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b == Blocks.TRAPPED_CHEST || b == Blocks.CHEST
                 || b == Blocks.DISPENSER || b == Blocks.DROPPER || b instanceof AbstractFurnaceBlock
                 || b == Blocks.HOPPER) {
-            loadTagItems(stack, data);
+            ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
+            if (contents != null) {
+                contents.copyInto(stacks);
+            }
         } else if (b == Blocks.JUKEBOX) {
             data.stacks.set(0, loadCD(stack));
         } else {
@@ -1552,79 +1121,49 @@ public class ItemUtils {
         return data;
     }
 
-    /**
-     * set the container data of a stack if possible and return it
-     *
-     * @param stack the stack
-     * @param data  the data to set
-     * @return the stack
-     */
     public static ItemStack setContainerData(ItemStack stack, ContainerData data) {
         return setContainerData(stack, data.stacks());
     }
 
-    /**
-     * set the stacks of a stack if possible and return it
-     *
-     * @param stack  the stack
-     * @param stacks the stacks to set
-     * @return the stack
-     */
     public static ItemStack setContainerData(ItemStack stack, NonNullList<ItemStack> stacks) {
         if (!(stack.getItem() instanceof BlockItem bi)) {
             return stack;
         }
 
         Block b = bi.getBlock();
-        CompoundTag blockTag = stack.getOrCreateTagElement("BlockEntityTag");
         if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b == Blocks.TRAPPED_CHEST || b == Blocks.CHEST
                 || b == Blocks.DISPENSER || b == Blocks.DROPPER || b == Blocks.HOPPER
                 || b instanceof AbstractFurnaceBlock) {
-            ListTag items = new ListTag();
-            for (int slot = 0; slot < stacks.size(); slot++) {
-                ItemStack item = stacks.get(slot);
-                if (item.getItem() == Items.AIR) {
-                    continue;
-                }
-                CompoundTag itemTag = new CompoundTag();
-                itemTag.putByte("Slot", (byte) slot);
-                itemTag.putByte("Count", (byte) item.getCount());
-                itemTag.putString("id", getRegistry(item.getItem()).toString());
-                CompoundTag it = item.getTag();
-                if (it != null) {
-                    itemTag.put("tag", it);
-                }
-                items.add(itemTag);
-            }
-            blockTag.put("Items", items);
+            stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(stacks));
         } else if (b == Blocks.JUKEBOX) {
             ItemStack cd = stacks.get(0);
             if (cd.getItem() == Items.AIR) {
                 return stack;
             }
+            CompoundTag blockTag = getOrCreateTagElement(stack, "BlockEntityTag");
             CompoundTag itemTag = new CompoundTag();
             itemTag.putString("id", getRegistry(cd.getItem()).toString());
             itemTag.putByte("Count", (byte) cd.getCount());
-            CompoundTag it = cd.getTag();
+            CompoundTag it = getTag(cd);
             if (it != null) {
                 itemTag.put("tag", it);
             }
 
             blockTag.put("RecordItem", itemTag);
+            setTag(stack, getTag(stack));
         }
-
         return stack;
     }
 
-    public static <T> ResourceLocation getRegistry(IForgeRegistry<T> registry, T obj) {
-        return registry.getResourceKey(obj).map(ResourceKey::location).orElseThrow();
+    public static <T> ResourceLocation getRegistry(Registry<T> registry, T obj) {
+        return registry.getKey(obj);
     }
 
     public static ResourceLocation getRegistry(ItemLike obj) {
         if (obj instanceof Item item) {
-            return getRegistry(ForgeRegistries.ITEMS, item);
+            return getRegistry(BuiltInRegistries.ITEM, item);
         } else if (obj instanceof Block block) {
-            return getRegistry(ForgeRegistries.BLOCKS, block);
+            return getRegistry(BuiltInRegistries.BLOCK, block);
         }
         throw new IllegalArgumentException("bad itemlike type: " + obj.getClass());
     }

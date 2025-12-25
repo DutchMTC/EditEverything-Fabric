@@ -5,6 +5,7 @@ import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -41,8 +42,14 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        // do nothing
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.render(graphics, mouseX, mouseY, partialTicks);
         List<String> err = new ArrayList<>();
         boolean flagLink = !((!link.getValue().isEmpty()
                 && link.getValue().matches("http://textures.minecraft.net/texture/[a-zA-Z\\d]+"))
@@ -68,23 +75,22 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
             err.add(this.errType.get() + ": ");
         }
         for (int i = 0; i < err.size(); i++)
-            GuiUtils.drawCenterString(font, err.get(i), width / 2, name.getY() - 2 - (font.lineHeight + 1) * (i + 1),
+            GuiUtils.drawCenterString(graphics, font, err.get(i), width / 2, name.getY() - 2 - (font.lineHeight + 1) * (i + 1),
                     Color.RED.getRGB());
-        font.draw(matrixStack, I18n.get("gui.act.config.name") + " : ", width / 2f - 178,
-                name.getY() + 10 - font.lineHeight / 2f, (flagName ? Color.RED : Color.WHITE).getRGB());
-        font.draw(matrixStack, I18n.get("gui.act.uuid") + " : ", width / 2f - 178, uuid.getY() + 10 - font.lineHeight / 2f,
+        graphics.drawString(font, I18n.get("gui.act.config.name") + " : ", width / 2 - 178,
+                name.getY() + 10 - font.lineHeight / 2, (flagName ? Color.RED : Color.WHITE).getRGB());
+        graphics.drawString(font, I18n.get("gui.act.uuid") + " : ", width / 2 - 178, uuid.getY() + 10 - font.lineHeight / 2,
                 (flagUuid ? Color.RED : Color.WHITE).getRGB());
-        font.draw(matrixStack, I18n.get("gui.act.link") + " : ", width / 2f - 178, link.getY() + 10 - font.lineHeight / 2f,
+        graphics.drawString(font, I18n.get("gui.act.link") + " : ", width / 2 - 178, link.getY() + 10 - font.lineHeight / 2,
                 (flagLink ? Color.RED : Color.WHITE).getRGB());
-        name.render(matrixStack, mouseX, mouseY, partialTicks);
-        uuid.render(matrixStack, mouseX, mouseY, partialTicks);
-        link.render(matrixStack, mouseX, mouseY, partialTicks);
-        GuiUtils.drawItemStack(itemRenderer, this, stack, uuid.getX() + uuid.getWidth() + 10,
+        // name.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
+        // uuid.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
+        // link.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
+        GuiUtils.drawItemStack(graphics, stack, uuid.getX() + uuid.getWidth() + 10,
                 uuid.getY() + uuid.getHeight() / 2 - 8);
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
         if (GuiUtils.isHover(uuid.getX() + uuid.getWidth() + 10, uuid.getY() + uuid.getHeight() / 2 - 16 / 2, 16, 16, mouseX,
                 mouseY))
-            renderTooltip(matrixStack, stack, mouseX, mouseY);
+            graphics.renderTooltip(font, stack, mouseX, mouseY);
     }
 
     @Override
@@ -99,6 +105,9 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
         name.setMaxLength(16);
         link.setMaxLength(Integer.MAX_VALUE);
         uuid.setMaxLength(Integer.MAX_VALUE);
+        addRenderableWidget(name);
+        addRenderableWidget(link);
+        addRenderableWidget(uuid);
         addRenderableWidget(new ACTButton(width / 2 - 180, height / 2, 180, 20,
                 Component.translatable("gui.act.modifier.head.me"), b -> name.setValue(getMinecraft().getUser().getName())));
         addRenderableWidget(save = new ACTButton(width / 2 + 1, height / 2, 179, 20,
@@ -170,18 +179,16 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
 
     @Override
     public boolean charTyped(char key, int modifiers) {
-        return link.charTyped(key, modifiers) || name.charTyped(key, modifiers) || uuid.charTyped(key, modifiers)
-                || super.charTyped(key, modifiers);
+        return super.charTyped(key, modifiers);
     }
 
     @Override
     public boolean keyPressed(int key, int scanCode, int modifiers) {
-        return link.keyPressed(key, scanCode, modifiers) || name.keyPressed(key, scanCode, modifiers)
-                || uuid.keyPressed(key, scanCode, modifiers) || super.keyPressed(key, scanCode, modifiers);
+        return super.keyPressed(key, scanCode, modifiers);
     }
 
     private void loadHead() {
-        CompoundTag tag = stack.getOrCreateTagElement("SkullOwner");
+        CompoundTag tag = ItemUtils.getOrCreateTagElement(stack, "SkullOwner");
         if (tag.contains("Name", 8)) {
             name.setValue(tag.getString("Name"));
         }
@@ -214,9 +221,6 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        link.mouseClicked(mouseX, mouseY, mouseButton);
-        uuid.mouseClicked(mouseX, mouseY, mouseButton);
-        name.mouseClicked(mouseX, mouseY, mouseButton);
         if (GuiUtils.isHover(link, (int) mouseX, (int) mouseY) && mouseButton == 1)
             link.setValue("");
         if (GuiUtils.isHover(uuid, (int) mouseX, (int) mouseY) && mouseButton == 1)
@@ -228,9 +232,9 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
 
     @Override
     public void tick() {
-        name.tick();
-        uuid.tick();
-        name.tick();
+        // name.tick();
+        // uuid.tick();
+        // name.tick();
         loadName.active = !name.getValue().isEmpty();
         loadLink.active = !uuid.getValue().isEmpty() && !link.getValue().isEmpty();
         save.active = !link.getValue().isEmpty();

@@ -5,6 +5,7 @@ import fr.atesab.act.utils.FileUtils;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.Tuple;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -36,11 +37,11 @@ public class GuiFileSelector extends GuiListSelector<File> {
         }
 
         @Override
-        public void draw(PoseStack matrixStack, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-            GuiUtils.drawRect(matrixStack, offsetX, offsetY, offsetX + getSizeX(), offsetY + getSizeY(), 0x66000000);
-            GuiUtils.drawString(font, f.getName(), offsetX + 20, offsetY + 20 / 2 - font.lineHeight - 1, 0xffffffff);
-            GuiUtils.drawString(font, desc, offsetX + 20, offsetY + 20 / 2 + 1, 0xffffffff);
-            super.draw(matrixStack, offsetX, offsetY, mouseX, mouseY, partialTicks);
+        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+            GuiUtils.drawRect(graphics, offsetX, offsetY, offsetX + getSizeX(), offsetY + getSizeY(), 0x66000000);
+            GuiUtils.drawString(graphics, font, f.getName(), offsetX + 20, offsetY + 20 / 2 - font.lineHeight - 1, 0xffffffff);
+            GuiUtils.drawString(graphics, font, desc, offsetX + 20, offsetY + 20 / 2 + 1, 0xffffffff);
+            super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         }
 
         @Override

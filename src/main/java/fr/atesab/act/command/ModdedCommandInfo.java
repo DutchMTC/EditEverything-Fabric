@@ -20,16 +20,16 @@ public class ModdedCommandInfo extends ModdedCommand {
     protected Command<CommandSourceStack> onNoArgument() {
         return c -> {
             CommandSourceStack src = c.getSource();
-            src.sendSuccess(Component.translatable("cmd.act.info.title").withStyle(ChatFormatting.GOLD)
+            src.sendSuccess(() -> Component.translatable("cmd.act.info.title").withStyle(ChatFormatting.GOLD)
                     .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
                     .append(Component.literal(ACTMod.getModName()).withStyle(ChatFormatting.WHITE)), false);
-            src.sendSuccess(Component.translatable("cmd.act.info.version").withStyle(ChatFormatting.GOLD)
+            src.sendSuccess(() -> Component.translatable("cmd.act.info.version").withStyle(ChatFormatting.GOLD)
                     .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
                     .append(Component.literal(ACTMod.getModVersion()).withStyle(ChatFormatting.WHITE)), false);
-            src.sendSuccess(Component.translatable("cmd.act.info.authors").withStyle(ChatFormatting.GOLD)
+            src.sendSuccess(() -> Component.translatable("cmd.act.info.authors").withStyle(ChatFormatting.GOLD)
                     .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
                     .append(Component.literal(ACTMod.getModAuthors()).withStyle(ChatFormatting.WHITE)), false);
-            src.sendSuccess(Component.translatable("cmd.act.info.licence").withStyle(ChatFormatting.GOLD)
+            src.sendSuccess(() -> Component.translatable("cmd.act.info.licence").withStyle(ChatFormatting.GOLD)
                             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
                             .append(Component.literal(ACTMod.getModLicense()).withStyle(s -> s
                                     .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
@@ -38,7 +38,7 @@ public class ModdedCommandInfo extends ModdedCommand {
                                     .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, ACTMod.getModLicenseLink()))
                                     .withColor(ChatFormatting.WHITE))),
                     false);
-            src.sendSuccess(Component.translatable("cmd.act.info.link").withStyle(ChatFormatting.GOLD)
+            src.sendSuccess(() -> Component.translatable("cmd.act.info.link").withStyle(ChatFormatting.GOLD)
                             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
                             .append(Component.literal("curseforge.com").withStyle(s -> s
                                     .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,

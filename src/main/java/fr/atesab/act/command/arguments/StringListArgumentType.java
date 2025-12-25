@@ -8,7 +8,6 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import fr.atesab.act.command.ModdedCommand;
 import net.minecraft.ChatFormatting;
-import net.minecraft.commands.CommandRuntimeException;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -43,8 +42,8 @@ public class StringListArgumentType implements ArgumentType<String[]> {
                     return e;
                 }
             }
-            throw new CommandRuntimeException(
-                    ModdedCommand.createTranslatedText("cmd.act.enumlistargument.invalid", ChatFormatting.RED, s));
+            throw new IllegalArgumentException(
+                    ModdedCommand.createTranslatedText("cmd.act.enumlistargument.invalid", ChatFormatting.RED, s).getString());
         });
     }
 

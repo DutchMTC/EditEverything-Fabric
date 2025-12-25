@@ -20,7 +20,7 @@ public class ModdedCommandInstantPlace extends ModdedCommand {
     protected Command<CommandSourceStack> onNoArgument() {
         return c -> {
             ACTMod.setInstantPlaceEnabled(!ACTMod.isInstantPlaceEnabled());
-            c.getSource().sendSuccess(
+            c.getSource().sendSuccess(() ->
                     ChatUtils.getPrefix()
                             .append(Component.translatable("cmd.act.instantplace").withStyle(ChatFormatting.WHITE))
                             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
@@ -35,7 +35,7 @@ public class ModdedCommandInstantPlace extends ModdedCommand {
     protected LiteralArgumentBuilder<CommandSourceStack> onArgument(LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
         return command.then(Commands.argument("instantplace", BoolArgumentType.bool()).executes(c -> {
             ACTMod.setInstantPlaceEnabled(BoolArgumentType.getBool(c, "instantplace"));
-            c.getSource().sendSuccess(
+            c.getSource().sendSuccess(() ->
                     ChatUtils.getPrefix()
                             .append(Component.translatable("cmd.act.instantplace").withStyle(ChatFormatting.WHITE))
                             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))

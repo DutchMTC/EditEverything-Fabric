@@ -46,7 +46,7 @@ public class ModdedCommandColor extends ModdedCommand {
                     var actCmd = ACTMod.getModCommand();
                     if (color.isEmpty()) {
                         c.getSource()
-                                .sendSuccess(Component.translatable("cmd.act.color.color")
+                                .sendSuccess(() -> Component.translatable("cmd.act.color.color")
                                                 .withStyle(ChatFormatting.YELLOW)
                                                 .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY))
                                                 .append(Component.translatable("cmd.act.color.error.nocolor")
@@ -54,7 +54,7 @@ public class ModdedCommandColor extends ModdedCommand {
                                         false);
                     } else {
                         c.getSource()
-                                .sendSuccess(
+                                .sendSuccess(() ->
                                         Component.translatable("cmd.act.color.color")
                                                 .withStyle(ChatFormatting.YELLOW)
                                                 .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY))
@@ -79,7 +79,7 @@ public class ModdedCommandColor extends ModdedCommand {
                     }
 
                     c.getSource()
-                            .sendSuccess(
+                            .sendSuccess(() ->
                                     Component.literal(
                                                     "[").withStyle(ChatFormatting.WHITE)
                                             .withStyle(s -> s

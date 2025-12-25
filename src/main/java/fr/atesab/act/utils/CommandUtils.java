@@ -7,7 +7,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.client.ClientCommandHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,10 +82,11 @@ public class CommandUtils {
     public static void sendMessage(String message) {
         LocalPlayer p;
         if ((p = Minecraft.getInstance().player) != null) {
-            if (ClientCommandHandler.runCommand(message)) {
-                return;
+            if (message.startsWith("/")) {
+                p.connection.sendCommand(message.substring(1));
+            } else {
+                p.connection.sendChat(message);
             }
-            p.connection.sendCommand(message.substring(1));
         }
     }
 

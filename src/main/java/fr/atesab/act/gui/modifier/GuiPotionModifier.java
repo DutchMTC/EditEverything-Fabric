@@ -7,17 +7,18 @@ import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.ItemUtils.PotionInformation;
 import fr.atesab.act.utils.Tuple;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.alchemy.Potion;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
             super(400, 50);
             int l = 5 + Math.max(font.width(I18n.get("gui.act.modifier.meta.potion.duration") + " : "),
                     font.width(I18n.get("gui.act.modifier.meta.potion.amplifier") + " : "));
-            potion = potionEffect.getEffect();
+            potion = potionEffect.getEffect().value(); // Holder -> value
             durationTime = potionEffect.getDuration();
             amplifierValue = potionEffect.getAmplifier();
             ambient = potionEffect.isAmbient();
@@ -56,8 +57,7 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
             buttonList.add(type = new ACTButton(153, 0, 200, 20,
                     Component.translatable("gui.act.modifier.meta.potion.type"), b -> {
                 List<Tuple<String, MobEffect>> pots = new ArrayList<>();
-                // Potion.REGISTRY
-                ForgeRegistries.MOB_EFFECTS
+                BuiltInRegistries.MOB_EFFECT
                         .forEach(pot -> pots.add(new Tuple<>(I18n.get(pot.getDescriptionId()), pot)));
                 mc.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.act.modifier.meta.potion.type"), pots, pot -> {
@@ -80,24 +80,25 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
         }
 
         @Override
-        public void draw(PoseStack stack, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-            GuiUtils.drawRelative(stack, amplifier, offsetX, offsetY, mouseX, mouseY, partialTicks);
-            GuiUtils.drawRelative(stack, duration, offsetX, offsetY, mouseX, mouseY, partialTicks);
-            GuiUtils.drawRightString(font, I18n.get("gui.act.modifier.meta.potion.duration") + " : ", duration,
+        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+            GuiUtils.drawRelative(graphics, amplifier, offsetX, offsetY, mouseX, mouseY, partialTicks);
+            GuiUtils.drawRelative(graphics, duration, offsetX, offsetY, mouseX, mouseY, partialTicks);
+            GuiUtils.drawRightString(graphics, font, I18n.get("gui.act.modifier.meta.potion.duration") + " : ", duration,
                     (errDur ? Color.RED : Color.WHITE).getRGB(), offsetX, offsetY);
-            GuiUtils.drawRightString(font, I18n.get("gui.act.modifier.meta.potion.amplifier") + " : ", amplifier,
+            GuiUtils.drawRightString(graphics, font, I18n.get("gui.act.modifier.meta.potion.amplifier") + " : ", amplifier,
                     (errAmp ? Color.RED : Color.WHITE).getRGB(), offsetX, offsetY);
-            super.draw(stack, offsetX, offsetY, mouseX, mouseY, partialTicks);
+            super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         }
 
         public MobEffectInstance getEffect() {
-            return new MobEffectInstance(potion, durationTime, amplifierValue, ambient, showParticles, showIcon);
+            // MobEffectInstance constructor takes Holder<MobEffect>
+            return new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(potion), durationTime, amplifierValue, ambient, showParticles, showIcon);
         }
 
         @Override
         public void init() {
-            amplifier.setFocus(false);
-            duration.setFocus(false);
+            amplifier.setFocused(false);
+            duration.setFocused(false);
             super.init();
         }
 
@@ -125,7 +126,13 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
         }
 
         @Override
-        public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+            if (GuiUtils.isHover(amplifier, (int) mouseX, (int) mouseY)) {
+                amplifier.setFocused(true);
+            }
+            if (GuiUtils.isHover(duration, (int) mouseX, (int) mouseY)) {
+                duration.setFocused(true);
+            }
             amplifier.mouseClicked(mouseX, mouseY, mouseButton);
             duration.mouseClicked(mouseX, mouseY, mouseButton);
             super.mouseClicked(mouseX, mouseY, mouseButton);
@@ -139,8 +146,8 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
 
         @Override
         public void update() {
-            amplifier.tick();
-            duration.tick();
+            // amplifier.tick();
+            // duration.tick();
             try {
                 durationTime = Integer.parseInt(duration.getValue());
                 errDur = false;
@@ -161,8 +168,8 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
 
     private static class MainPotionListElement extends ListElement {
         private static String getPotionName(Potion pot) {
-            String name = pot.getName("");
-            String registry = ItemUtils.getRegistry(ForgeRegistries.POTIONS, pot).toString();
+            String name = BuiltInRegistries.POTION.getKey(pot).getPath();
+            String registry = ItemUtils.getRegistry(BuiltInRegistries.POTION, pot).toString();
             return name + (registry.contains("long_")
                     ? " (" + I18n.get("gui.act.modifier.meta.potion.long") + ")"
                     : registry.contains("strong_") ? " II" : "");
@@ -180,8 +187,7 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
                             new GuiColorModifier(parent, i -> parent.customColor = i, parent.customColor, true))));
             buttonList.add(type = new ACTButton(201, 0, 199, 20, Component.literal(""), b -> {
                 List<Tuple<String, Potion>> pots = new ArrayList<>();
-                // PotionType.REGISTRY
-                ForgeRegistries.POTIONS.forEach(type -> pots.add(new Tuple<>(getPotionName(type), type)));
+                BuiltInRegistries.POTION.forEach(type -> pots.add(new Tuple<>(getPotionName(type), type)));
                 mc.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.act.modifier.meta.potion.type"), pots, pot -> {
                     parent.main = pot;

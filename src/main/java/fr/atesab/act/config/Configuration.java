@@ -1,31 +1,41 @@
 package fr.atesab.act.config;
 
-import com.electronwill.nightconfig.core.file.CommentedFileConfig;
-import com.electronwill.nightconfig.core.io.WritingMode;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import fr.atesab.act.ACTMod;
 import fr.atesab.act.utils.SyncList;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 public class Configuration {
-    private CommentedFileConfig config;
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private ConfigData data = new ConfigData();
+    private Path configPath;
+
     private Consumer<List<String>> customItemsCallback = (s) -> {
     };
 
-    private final SyncList<String> customItems = new SyncList<>(new ArrayList<>()) {
+    private final SyncList<String> customItems = new SyncList<String>(new ArrayList<>()) {
         @Override
         protected void onUpdate(List<String> data) {
             customItemsCallback.accept(data);
         }
     };
-    private boolean disableToolTip = false;
+
+    public static class ConfigData {
+        public List<String> items = new ArrayList<>();
+        public boolean disableToolTip = false;
+    }
 
     public boolean doesDisableToolTip() {
-        return disableToolTip;
+        return data.disableToolTip;
     }
 
     public SyncList<String> getCustomitems() {
@@ -37,13 +47,16 @@ public class Configuration {
     }
 
     public void save() {
-        config.set("general.items", customItems);
-        config.set("general.disableToolTip", disableToolTip);
-        config.save();
+        data.items = new ArrayList<>(customItems);
+        try (FileWriter writer = new FileWriter(configPath.toFile())) {
+            GSON.toJson(data, writer);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void setDoesDisableToolTip(boolean doesDisableToolTip) {
-        this.disableToolTip = doesDisableToolTip;
+        data.disableToolTip = doesDisableToolTip;
     }
 
     public void sync(File path) {
@@ -51,17 +64,29 @@ public class Configuration {
     }
 
     public void sync(Path path) {
-        // load config
-        config = CommentedFileConfig.builder(path).sync().writingMode(WritingMode.REPLACE).build();
-        // load file
-        config.load();
-        // bypassing the non mutable (or please help me because I can't find how) ForgeSpec
-        config.setComment("general.items", "the custom items");
-        customItems.applyUpdate(lst -> lst.addAll(config.getOrElse("general.items", List.of(ACTMod.DEFAULT_CUSTOM_ITEMS))));
-
-        config.setComment("general.disableToolTip", "Disable the tool tip without F3+H");
-        disableToolTip = config.getOrElse("general.disableToolTip", disableToolTip);
-
-        config.save();
+        this.configPath = path;
+        File file = path.toFile();
+        
+        if (file.exists()) {
+            try (FileReader reader = new FileReader(file)) {
+                data = GSON.fromJson(reader, ConfigData.class);
+                if (data == null) data = new ConfigData();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            // Defaults
+            data.items = new ArrayList<>(List.of(ACTMod.DEFAULT_CUSTOM_ITEMS));
+        }
+        
+        // Sync to internal list
+        customItems.applyUpdate(lst -> {
+            lst.clear();
+            if (data.items != null) {
+                lst.addAll(data.items);
+            }
+        });
+        
+        save();
     }
 }

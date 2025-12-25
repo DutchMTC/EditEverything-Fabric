@@ -1,10 +1,10 @@
 package fr.atesab.act.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ReflectionUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -59,14 +59,13 @@ public class GuiACT extends Screen {
     }
 
     public float getZLevel() {
-        return getBlitOffset();
+        return 0; // getBlitOffset() is gone, usually 0 or handled by pose stack
     }
 
     public void setZLever(float zLevel) {
-        super.setBlitOffset((int) zLevel);
+        // super.setBlitOffset((int) zLevel); // Gone
     }
 
-    @Override
     public Minecraft getMinecraft() {
         return mc;
     }
@@ -80,7 +79,7 @@ public class GuiACT extends Screen {
     }
 
     @Override
-    public void render(PoseStack stack, int mouseX, int mouseY, float delta) {
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         if (devMode) {
             var entries = new ArrayList<ACTDevInfo>();
             entries.add(devInfo(ChatFormatting.BOLD + "ACT Dev")); // header
@@ -96,18 +95,18 @@ public class GuiACT extends Screen {
                     Arrays.stream(dev.elements()).mapToInt(font::width).max().orElse(0))).max().getAsInt();
             var x = width - w - 4;
             var y = 4;
-            GuiUtils.drawGradientRect(stack, x - 4, 0, width, y + lines * (font.lineHeight + 2) + 4, 0x44000000,
-                    0x44000000, getZLevel());
+            GuiUtils.drawGradientRect(graphics, x - 4, 0, width, y + lines * (font.lineHeight + 2) + 4, 0x44000000,
+                    0x44000000);
             for (var dev : entries) {
-                GuiUtils.drawCenterString(font, dev.title(), x + w / 2, y, Objects.requireNonNull(ChatFormatting.RED.getColor()));
+                GuiUtils.drawCenterString(graphics, font, dev.title(), x + w / 2, y, Objects.requireNonNull(ChatFormatting.RED.getColor()));
                 y += font.lineHeight + 2;
                 for (var element : dev.elements()) {
-                    GuiUtils.drawString(font, element, x, y, 0xFFFFFFFF, font.lineHeight);
+                    GuiUtils.drawString(graphics, font, element, x, y, 0xFFFFFFFF, font.lineHeight);
                     y += font.lineHeight + 2;
                 }
             }
         }
-        super.render(stack, mouseX, mouseY, delta);
+        super.render(graphics, mouseX, mouseY, delta);
     }
 
     /**

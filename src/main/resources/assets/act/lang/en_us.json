@@ -34,6 +34,8 @@
   "gui.act.leftArrow": "Left arrow",
   "gui.act.rightArrow": "Right arrow",
   "gui.act.new": "New",
+  "gui.act.discard_changes_question": "Discard changes?",
+  "gui.act.discard": "Discard",
 
   "gui.act.config": "Config",
   "gui.act.disableToolTip": "Disable tool tip without F3+H",

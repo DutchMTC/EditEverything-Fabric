@@ -6,6 +6,7 @@ import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.utils.ChatUtils;
 import fr.atesab.act.utils.GuiUtils;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -13,6 +14,7 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -20,6 +22,7 @@ import java.util.function.Consumer;
 
 public class GuiStringArrayModifier extends GuiModifier<String[]> {
     private final List<String> values;
+    private final List<String> originalValues;
     private EditBox[] tfs;
     private Button next, last;
     private GuiValueButton<Integer>[] btsDel, btsAdd;
@@ -29,8 +32,17 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
     public GuiStringArrayModifier(Screen parent, Component name, String[] values, Consumer<String[]> setter) {
         super(parent, name, setter);
         this.values = new ArrayList<>();
-        for (String v : values)
-            this.values.add(v.replaceAll(String.valueOf(ChatUtils.MODIFIER), "&"));
+        this.originalValues = new ArrayList<>();
+        for (String v : values) {
+            String s = v.replaceAll(String.valueOf(ChatUtils.MODIFIER), "&");
+            this.values.add(s);
+            this.originalValues.add(s);
+        }
+    }
+
+    @Override
+    public boolean isModified() {
+        return !values.equals(originalValues);
     }
 
     @SuppressWarnings("unchecked")
@@ -45,7 +57,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
                     mc.setScreen(parent);
                 }));
         addRenderableWidget(new ACTButton(width / 2 + 1, height - 21, 99, 20, Component.translatable("gui.act.cancel"),
-                b -> mc.setScreen(parent)));
+                b -> onCancel()));
         addRenderableWidget(last = new ACTButton(width / 2 - 121, height - 21, 20, 20, Component.literal("<-"), b -> {
             page--;
             b.active = page != 0;
@@ -93,7 +105,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
                             return Component.translatable("gui.narrate.button", I18n.get("gui.act.delete"));
                         }
                     });
-            btsDel[i].setFGColor(Objects.requireNonNull(ChatFormatting.RED.getColor()));
+            btsDel[i].setMessage(Component.literal("-").withStyle(ChatFormatting.RED));
             btsAdd[i] = addRenderableWidget(new GuiValueButton<Integer>(width / 2 + 187, 21 + 21 * i % (elms * 21), 20,
                     20, Component.literal("+"), i, b -> {
                 values.add(Objects.requireNonNull(b.getValue()), "");
@@ -106,8 +118,8 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
                 }
 
             });
-            btsAdd[i].setFGColor(Objects.requireNonNull(ChatFormatting.GREEN.getColor()));
-            addWidget(tfs[i]);
+            btsAdd[i].setMessage(Component.literal("+").withStyle(ChatFormatting.GREEN));
+            addRenderableWidget(tfs[i]);
         }
         btsAdd[i] = addRenderableWidget(new GuiValueButton<Integer>(width / 2 - 100, 21 + 21 * i % (elms * 21), 200, 20,
                 Component.literal("+"), i, b -> {
@@ -121,18 +133,23 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
             }
 
         });
-        btsAdd[i].setFGColor(Objects.requireNonNull(ChatFormatting.GREEN.getColor()));
+        btsAdd[i].setMessage(Component.literal("+").withStyle(ChatFormatting.GREEN));
 
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(matrixStack);
-        super.render(matrixStack, mouseX, mouseY, partialTicks);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        // do nothing
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.render(graphics, mouseX, mouseY, partialTicks);
         for (int i = page * elms; i < (page + 1) * elms && i < tfs.length; i++) {
             EditBox tf = tfs[i];
-            GuiUtils.drawRightString(font, i + " : ", tf.getX(), tf.getY(), Objects.requireNonNull(ChatFormatting.WHITE.getColor()), tf.getHeight());
-            tf.render(matrixStack, mouseX, mouseY, partialTicks);
+            GuiUtils.drawRightString(graphics, font, i + " : ", tf.getX(), tf.getY(), Objects.requireNonNull(ChatFormatting.WHITE.getColor()), tf.getHeight());
+            // tf.render(graphics, mouseX, mouseY, partialTicks);
         }
     }
 
@@ -146,7 +163,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
         for (int i = page * elms; i < (page + 1) * elms && i < values.size(); i++) {
-            tfs[i].setFocus(false);
+            tfs[i].setFocused(false);
             if (mouseButton == 1 && GuiUtils.isHover(tfs[i], (int) mouseX, (int) mouseY)) {
                 tfs[i].setValue("");
                 return true;

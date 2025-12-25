@@ -6,6 +6,7 @@ import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.ItemUtils.ContainerData;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -17,11 +18,17 @@ import java.util.function.Consumer;
 public class GuiContainerModifier extends GuiModifier<ContainerData> {
     private final ContainerData data;
     private final Component title;
+    private final List<Component> slotNames;
 
     public GuiContainerModifier(Screen parent, Component title, Consumer<ContainerData> setter, ContainerData data) {
+        this(parent, title, setter, data, null);
+    }
+
+    public GuiContainerModifier(Screen parent, Component title, Consumer<ContainerData> setter, ContainerData data, List<Component> slotNames) {
         super(parent, Component.translatable("gui.act.modifier.inventory"), setter);
         this.data = data.copy();
         this.title = title;
+        this.slotNames = slotNames;
     }
 
     @Override
@@ -37,44 +44,56 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
     }
 
     @Override
-    public void render(PoseStack stack, int mouseX, int mouseY, float delta) {
-        renderBackground(stack);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        // do nothing
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        super.renderBackground(graphics, mouseX, mouseY, delta);
+        super.render(graphics, mouseX, mouseY, delta);
         var size = data.size();
         var stacks = data.stacks();
         var cy = height / 2 - size.sizeY() * 18 / 2;
         var cx = width / 2 - size.sizeX() * 18 / 2;
 
-        GuiUtils.drawRect(stack, width / 2 - 104, height / 2 - 80, width / 2 + 104, height / 2 + 84,
+        GuiUtils.drawRect(graphics, width / 2 - 104, height / 2 - 80, width / 2 + 104, height / 2 + 84,
                 GuiUtils.COLOR_CONTAINER_BORDER | 0xFF000000);
 
-        GuiUtils.drawCenterString(font, title.getString(), width / 2, height / 2 - 76, 0xFF7F7F7F);
+        GuiUtils.drawCenterString(graphics, font, title.getString(), width / 2, height / 2 - 76, 0xFF7F7F7F);
 
         ItemStack hoverStack = null;
+        int hoverSlot = -1;
 
         assert minecraft != null;
-        var ir = minecraft.getItemRenderer();
+        // var ir = minecraft.getItemRenderer(); // Use GuiGraphics
         for (var j = 0; j < size.sizeY(); j++) {
             for (var i = 0; i < size.sizeX(); i++) {
                 var slot = size.indexOf(i, j);
                 var item = stacks.get(slot);
                 var sx = cx + 18 * i + 1;
-                GuiUtils.drawRect(stack, sx, cy + 1, sx + 16, cy + 1 + 16, GuiUtils.COLOR_CONTAINER_SLOT | 0xFF000000);
-                ir.renderGuiItem(item, sx, cy + 1);
-                ir.renderGuiItemDecorations(font, item, sx, cy + 1);
+                GuiUtils.drawRect(graphics, sx, cy + 1, sx + 16, cy + 1 + 16, GuiUtils.COLOR_CONTAINER_SLOT | 0xFF000000);
+                graphics.renderItem(item, sx, cy + 1);
+                graphics.renderItemDecorations(font, item, sx, cy + 1);
                 if (GuiUtils.isHover(sx, cy + 1, 16, 16, mouseX, mouseY)) {
-                    GuiUtils.drawRect(stack, sx, cy, sx + 18, cy + 18, GuiUtils.COLOR_CONTAINER_SLOT | 0x66000000);
+                    GuiUtils.drawRect(graphics, sx, cy, sx + 18, cy + 18, GuiUtils.COLOR_CONTAINER_SLOT | 0x66000000);
                     hoverStack = item;
+                    hoverSlot = slot;
                 }
             }
             cy += 18;
         }
-        super.render(stack, mouseX, mouseY, delta);
-        if (hoverStack != null && hoverStack.getItem() != Items.AIR) {
-            stack.pushPose();
-            stack.translate(0.0D, 0.0D, 400.0D);
-            renderTooltip(stack, hoverStack, mouseX, mouseY);
-            stack.popPose();
+        if (hoverStack != null) {
+            if (hoverStack.getItem() != Items.AIR) {
+                graphics.pose().pushPose();
+                graphics.pose().translate(0.0D, 0.0D, 400.0D);
+                graphics.renderTooltip(font, hoverStack, mouseX, mouseY);
+                graphics.pose().popPose();
+            } else if (slotNames != null && hoverSlot >= 0 && hoverSlot < slotNames.size()) {
+                graphics.renderTooltip(font, slotNames.get(hoverSlot), mouseX, mouseY);
+            }
         }
+        reRenderWidgets(graphics, mouseX, mouseY, delta);
     }
 
     @Override
@@ -91,10 +110,9 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
                 var sx = cx + 18 * i + 1;
                 if (GuiUtils.isHover(sx, cy + 1, 16, 16, (int) mouseX, (int) mouseY)) {
                     playClick();
-                    mc.setScreen(new GuiGiver(this, item, code -> {
-                        var codeStack = ItemUtils.getFromGiveCode(code);
-                        stacks.set(slot, codeStack == null ? ItemUtils.air() : codeStack);
-                    }, true));
+                    mc.setScreen(new GuiItemStackModifier(this, item, newItem -> {
+                        stacks.set(slot, newItem);
+                    }));
                     return true;
                 }
             }

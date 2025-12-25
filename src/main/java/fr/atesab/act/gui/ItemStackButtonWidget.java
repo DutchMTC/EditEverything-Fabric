@@ -3,6 +3,7 @@ package fr.atesab.act.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import fr.atesab.act.utils.GuiUtils;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
@@ -34,10 +35,10 @@ public class ItemStackButtonWidget extends AbstractButton {
     }
 
     @Override
-    public void renderButton(PoseStack matrixStack, int mouseX, int mouseY, float partialTick) {
-        GuiUtils.drawItemStack(Minecraft.getInstance().getItemRenderer(), stack, getX() + 1, getY() + 1);
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        GuiUtils.drawItemStack(graphics, stack, getX() + 1, getY() + 1);
         if (isHoveredOrFocused())
-            GuiUtils.drawRect(matrixStack, getX(), getY(), getX() + 18, getY() + 18, 0x55cccccc);
+            GuiUtils.drawRect(graphics, getX(), getY(), getX() + 18, getY() + 18, 0x55cccccc);
     }
 
     @Override

@@ -64,11 +64,11 @@ public class ModdedCommandHelp extends ModdedCommand {
                                 String parentName = mainCommand.getGlobalName();
                                 if (cmd != null) {
                                     count += 3;
-                                    src.sendSuccess(createText("-- " + I18n.get("cmd.act.help", cmd.getName()) + " --",
+                                    src.sendSuccess(() -> createText("-- " + I18n.get("cmd.act.help", cmd.getName()) + " --",
                                             titleColor), false);
-                                    src.sendSuccess(createTranslatedText(cmd.getDescriptionTranslationKey(), textColor),
+                                    src.sendSuccess(() -> createTranslatedText(cmd.getDescriptionTranslationKey(), textColor),
                                             false);
-                                    src.sendSuccess(
+                                    src.sendSuccess(() ->
                                             createTranslatedText("cmd.act.aliases",
                                                     titleColor)
                                                     .append(createText(": ",
@@ -107,7 +107,7 @@ public class ModdedCommandHelp extends ModdedCommand {
         return c -> {
             CommandSourceStack src = c.getSource();
             int count = 1;
-            src.sendSuccess(createText("-- " + I18n.get("cmd.act.help", title) + " --", titleColor), false);
+            src.sendSuccess(() -> createText("-- " + I18n.get("cmd.act.help", title) + " --", titleColor), false);
             Map<CommandNode<CommandSourceStack>, String> usages;
             String parentName = mainCommand.getGlobalName();
             for (ModdedCommand command : mainCommand.getSubCommands()) {
@@ -144,11 +144,12 @@ public class ModdedCommandHelp extends ModdedCommand {
             component = component.withStyle(s -> s.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, // SHOW_TEXT
                             createTranslatedText("cmd.act.help.click", titleColor)))
                     .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, name + " ")));
+        MutableComponent finalComponent = component;
         if (showDescription)
-            src.sendSuccess(component.append(createText(": ", ChatFormatting.DARK_GRAY))
+            src.sendSuccess(() -> finalComponent.append(createText(": ", ChatFormatting.DARK_GRAY))
                     .append(createTranslatedText(command.getDescriptionTranslationKey(), textColor)), false);
         else
-            src.sendSuccess(component, false);
+            src.sendSuccess(() -> finalComponent, false);
     }
 
 }

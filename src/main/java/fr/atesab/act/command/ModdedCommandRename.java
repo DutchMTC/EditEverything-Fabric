@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
@@ -29,7 +30,7 @@ public class ModdedCommandRename extends ModdedCommand {
                 return 0;
             }
             ItemStack is = player.getMainHandItem();
-            is.setHoverName(Component.literal(StringArgumentType.getString(c, "itemname")
+            is.set(DataComponents.CUSTOM_NAME, Component.literal(StringArgumentType.getString(c, "itemname")
                     .replaceAll("&([0-9a-fA-FrRk-oK-O])", ChatUtils.MODIFIER + "$1")
                     .replaceAll("&" + ChatUtils.MODIFIER, "&")));
             ItemUtils.give(is, 36 + player.getInventory().selected);
@@ -46,7 +47,7 @@ public class ModdedCommandRename extends ModdedCommand {
             }
             ItemStack is = player.getMainHandItem();
             is = is.copy();
-            is.resetHoverName();
+            is.remove(DataComponents.CUSTOM_NAME);
             ItemUtils.give(is, 36 + player.getInventory().selected);
             return 0;
         };

@@ -8,6 +8,7 @@ import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.ItemUtils.ContainerData;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -84,20 +85,21 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
             cy += 18;
         }
         if (hoverStack != null) {
-            if (hoverStack.getItem() != Items.AIR) {
-                graphics.pose().pushPose();
-                graphics.pose().translate(0.0D, 0.0D, 400.0D);
-                graphics.renderTooltip(font, hoverStack, mouseX, mouseY);
-                graphics.pose().popPose();
-            } else if (slotNames != null && hoverSlot >= 0 && hoverSlot < slotNames.size()) {
-                graphics.renderTooltip(font, slotNames.get(hoverSlot), mouseX, mouseY);
-            }
+                if (hoverStack.getItem() != Items.AIR) {
+                    graphics.pose().pushMatrix();
+                    GuiUtils.renderTooltip(graphics, font, hoverStack, mouseX, mouseY);
+                    graphics.pose().popMatrix();
+                } else if (slotNames != null && hoverSlot >= 0 && hoverSlot < slotNames.size()) {
+                    GuiUtils.renderTooltip(graphics, font, List.of(slotNames.get(hoverSlot)), java.util.Optional.empty(), mouseX, mouseY);
+                }
         }
         reRenderWidgets(graphics, mouseX, mouseY, delta);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int delta) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
         var size = data.size();
         var stacks = data.stacks();
         var cy = height / 2 - size.sizeY() * 18 / 2;
@@ -119,7 +121,7 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
             cy += 18;
         }
 
-        return super.mouseClicked(mouseX, mouseY, delta);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override

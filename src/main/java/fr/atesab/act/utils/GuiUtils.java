@@ -1,6 +1,5 @@
 package fr.atesab.act.utils;
 
-import com.mojang.blaze3d.pipeline.RenderCall;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import fr.atesab.act.ACTMod;
@@ -15,7 +14,10 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
+import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.opengl.GL11;
 
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 @InternalCommandModule(name = "gui")
 public class GuiUtils {
@@ -74,8 +77,29 @@ public class GuiUtils {
     public static final Button.OnPress EMPTY_PRESS = b -> {
     };
 
-    public static void runOnGameThread(RenderCall call) {
-        RenderSystem.recordRenderCall(call);
+    public static void runOnGameThread(Runnable call) {
+        Minecraft.getInstance().execute(call);
+    }
+
+    public static void renderTooltip(GuiGraphics graphics, Font font, ItemStack stack, int mouseX, int mouseY) {
+        List<ClientTooltipComponent> components = new ArrayList<>();
+        var mc = Minecraft.getInstance();
+        var ctx = mc.level != null ? net.minecraft.world.item.Item.TooltipContext.of(mc.level) : net.minecraft.world.item.Item.TooltipContext.EMPTY;
+        for (var line : stack.getTooltipLines(ctx, mc.player, net.minecraft.world.item.TooltipFlag.NORMAL)) {
+            components.add(ClientTooltipComponent.create(line.getVisualOrderText()));
+        }
+        stack.getTooltipImage().ifPresent(img -> components.add(ClientTooltipComponent.create(img)));
+        graphics.renderTooltip(font, components, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
+    }
+
+    public static void renderTooltip(GuiGraphics graphics, Font font, List<net.minecraft.network.chat.Component> lines,
+                                     Optional<TooltipComponent> tooltipImage, int mouseX, int mouseY) {
+        List<ClientTooltipComponent> components = new ArrayList<>(lines.size() + 1);
+        for (var line : lines) {
+            components.add(ClientTooltipComponent.create(line.getVisualOrderText()));
+        }
+        tooltipImage.ifPresent(img -> components.add(ClientTooltipComponent.create(img)));
+        graphics.renderTooltip(font, components, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
     }
 
     public static int blueToRed(int color) {
@@ -191,8 +215,7 @@ public class GuiUtils {
     }
 
     public static void drawBox(GuiGraphics graphics, int x, int y, int width, int height, float z) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(0, 0, z);
+        graphics.pose().pushMatrix();
         
         drawGradientRect(graphics, x - 3, y - 4, x + width + 3, y - 3, 0xF0100010, 0xF0100010);
         drawGradientRect(graphics, x - 3, y + height + 3, x + width + 3, y + height + 4, 0xF0100010, 0xF0100010);
@@ -204,7 +227,7 @@ public class GuiUtils {
         drawGradientRect(graphics, x - 3, y - 3, x + width + 3, y - 3 + 1, 0x505000FF, 0x505000FF);
         drawGradientRect(graphics, x - 3, y + height + 2, x + width + 3, y + height + 3, 0x5028007F, 0x5028007F);
         
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 
     @Deprecated
@@ -373,13 +396,13 @@ public class GuiUtils {
         return v < min ? min : Math.min(v, max);
     }
 
-    public static void loadAndRegisterModImage(String modId, ResourceLocation resource, String jarPath)
+    public static void loadAndRegisterModImage(String modId, Identifier resource, String jarPath)
             throws IOException {
         var img = com.mojang.blaze3d.platform.NativeImage.read(FileUtils.fetchFromModJar(modId, jarPath));
 
         var tm = Minecraft.getInstance().getTextureManager();
 
-        tm.register(resource, new DynamicTexture(img));
+        tm.register(resource, new DynamicTexture(() -> modId + ":" + resource, img));
     }
 
     public static void renderInventory(GuiGraphics graphics, Font font, int x, int y, ItemStack stack, int screenWidth, int screenHeight) {
@@ -396,15 +419,13 @@ public class GuiUtils {
         var rx = box.a;
         var ry = box.b;
 
-        RenderSystem.disableDepthTest();
-
         var cx = rx + 8;
         var cy = ry + 6;
 
         var itemX = cx + 18 * (9 - size.sizeX()) / 2;
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(0D, 0D, 400D);
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(0.0F, 0.0F);
 
         drawBox(graphics, rx + 4, ry + 3, width, height, 1);
 
@@ -428,8 +449,7 @@ public class GuiUtils {
 
         cy += 4;
 
-        graphics.pose().popPose();
-        RenderSystem.enableDepthTest();
+        graphics.pose().popMatrix();
     }
 
 }

@@ -7,6 +7,9 @@ import fr.atesab.act.utils.Tuple;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -69,13 +72,13 @@ public class GuiEnchModifier extends GuiListModifier<List<Tuple<Enchantment, Int
         }
 
         @Override
-        public boolean charTyped(char key, int modifiers) {
-            return textField.charTyped(key, modifiers) || super.charTyped(key, modifiers);
+        public boolean charTyped(CharacterEvent event) {
+            return textField.charTyped(event) || super.charTyped(event);
         }
 
         @Override
-        public boolean keyPressed(int key, int scanCode, int modifiers) {
-            return textField.keyPressed(key, scanCode, modifiers) || super.keyPressed(key, scanCode, modifiers);
+        public boolean keyPressed(KeyEvent event) {
+            return textField.keyPressed(event) || super.keyPressed(event);
         }
 
         @Override
@@ -84,14 +87,17 @@ public class GuiEnchModifier extends GuiListModifier<List<Tuple<Enchantment, Int
         }
 
         @Override
-        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+            int mouseButton = event.button();
             if (GuiUtils.isHover(textField, (int) mouseX, (int) mouseY)) {
                 textField.setFocused(true);
             }
-            textField.mouseClicked(mouseX, mouseY, mouseButton);
+            textField.mouseClicked(event, doubleClick);
             if (mouseButton == 1 && GuiUtils.isHover(textField, (int) mouseX, (int) mouseY))
                 textField.setValue("");
-            super.mouseClicked(mouseX, mouseY, mouseButton);
+            super.mouseClicked(event, doubleClick);
         }
 
         @Override
@@ -148,7 +154,7 @@ public class GuiEnchModifier extends GuiListModifier<List<Tuple<Enchantment, Int
     }
 
     private void openEnchantmentSelector() {
-        Registry<Enchantment> registry = Minecraft.getInstance().level.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
+        Registry<Enchantment> registry = Minecraft.getInstance().level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
         List<Tuple<String, Enchantment>> list = new ArrayList<>();
         registry.entrySet().forEach(entry -> {
             Enchantment e = entry.getValue();

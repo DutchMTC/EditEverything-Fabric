@@ -106,13 +106,13 @@ public abstract class NBTElement extends ListElement implements Cloneable {
     public static NBTElement getElementByBase(GuiListModifier<?> parent, String key, Tag base) {
         return switch (base.getId()) {
             case Tag.TAG_END -> new NBTTagElement(parent, key, new CompoundTag());
-            case Tag.TAG_BYTE -> new NBTByteElement(parent, key, ((ByteTag) base).getAsByte());
-            case Tag.TAG_SHORT -> new NBTShortElement(parent, key, ((ShortTag) base).getAsShort());
-            case Tag.TAG_INT -> new NBTIntegerElement(parent, key, ((IntTag) base).getAsInt());
-            case Tag.TAG_LONG -> new NBTLongElement(parent, key, ((LongTag) base).getAsLong());
-            case Tag.TAG_FLOAT -> new NBTFloatElement(parent, key, ((FloatTag) base).getAsFloat());
-            case Tag.TAG_DOUBLE -> new NBTDoubleElement(parent, key, ((DoubleTag) base).getAsDouble());
-            case Tag.TAG_STRING -> new NBTStringElement(parent, key, base.getAsString());
+            case Tag.TAG_BYTE -> new NBTByteElement(parent, key, ((ByteTag) base).value());
+            case Tag.TAG_SHORT -> new NBTShortElement(parent, key, ((ShortTag) base).value());
+            case Tag.TAG_INT -> new NBTIntegerElement(parent, key, ((IntTag) base).value());
+            case Tag.TAG_LONG -> new NBTLongElement(parent, key, ((LongTag) base).value());
+            case Tag.TAG_FLOAT -> new NBTFloatElement(parent, key, ((FloatTag) base).value());
+            case Tag.TAG_DOUBLE -> new NBTDoubleElement(parent, key, ((DoubleTag) base).value());
+            case Tag.TAG_STRING -> new NBTStringElement(parent, key, ((StringTag) base).value());
             case Tag.TAG_LIST -> new NBTListElement(parent, key, ((ListTag) base));
             case Tag.TAG_COMPOUND -> new NBTTagElement(parent, key, (CompoundTag) base);
             case Tag.TAG_INT_ARRAY -> new NBTIntArrayElement(parent, key, (IntArrayTag) base);

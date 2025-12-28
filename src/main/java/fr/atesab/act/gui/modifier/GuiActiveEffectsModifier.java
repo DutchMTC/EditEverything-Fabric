@@ -3,16 +3,21 @@ package fr.atesab.act.gui.modifier;
 import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.gui.selector.GuiButtonListSelector;
 import fr.atesab.act.utils.GuiUtils;
+import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.Tuple;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -40,21 +45,22 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
             super(400, 50);
             
             // Parse Tag
-            if (tag.contains("id", 8)) { // String
-                 this.potion = BuiltInRegistries.MOB_EFFECT.get(ResourceLocation.tryParse(tag.getString("id")));
-            } else if (tag.contains("Id", 3)) { // Int (Legacy)
-                 this.potion = BuiltInRegistries.MOB_EFFECT.byId(tag.getInt("Id"));
+            if (ItemUtils.hasTag(tag, "id", 8)) { // String
+                 var id = Identifier.tryParse(ItemUtils.getString(tag, "id"));
+                 this.potion = id != null ? BuiltInRegistries.MOB_EFFECT.get(id).map(Holder.Reference::value).orElse(null) : null;
+            } else if (ItemUtils.hasTag(tag, "Id", 3)) { // Int (Legacy)
+                 this.potion = BuiltInRegistries.MOB_EFFECT.byId(ItemUtils.getInt(tag, "Id"));
             }
             
             if (this.potion == null) {
-                this.potion = MobEffects.MOVEMENT_SPEED.value();
+                this.potion = MobEffects.SPEED.value();
             }
 
-            this.amplifierValue = tag.getByte("Amplifier");
-            this.durationTime = tag.getInt("Duration");
-            this.ambient = tag.getBoolean("Ambient");
-            this.showParticles = tag.contains("ShowParticles") ? tag.getBoolean("ShowParticles") : true;
-            this.showIcon = tag.contains("ShowIcon") ? tag.getBoolean("ShowIcon") : true;
+            this.amplifierValue = ItemUtils.getByte(tag, "Amplifier");
+            this.durationTime = ItemUtils.getInt(tag, "Duration");
+            this.ambient = ItemUtils.getBoolean(tag, "Ambient");
+            this.showParticles = ItemUtils.hasTag(tag, "ShowParticles", 1) ? ItemUtils.getBoolean(tag, "ShowParticles") : true;
+            this.showIcon = ItemUtils.hasTag(tag, "ShowIcon", 1) ? ItemUtils.getBoolean(tag, "ShowIcon") : true;
 
             int l = 5 + Math.max(font.width(I18n.get("gui.act.modifier.meta.potion.duration") + " : "),
                     font.width(I18n.get("gui.act.modifier.meta.potion.amplifier") + " : "));
@@ -67,8 +73,11 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
             buttonList.add(type = new ACTButton(153, 0, 200, 20,
                     Component.translatable("gui.act.modifier.meta.potion.type"), b -> {
                 List<Tuple<String, MobEffect>> pots = new ArrayList<>();
-                BuiltInRegistries.MOB_EFFECT
-                        .forEach(pot -> pots.add(new Tuple<>(I18n.get(pot.getDescriptionId()), pot)));
+                BuiltInRegistries.MOB_EFFECT.forEach(pot -> {
+                    Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(pot);
+                    String desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+                    pots.add(new Tuple<>(I18n.get(desc), pot));
+                });
                 mc.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.act.modifier.meta.potion.type"), pots, pot -> {
                     potion = pot;
@@ -93,8 +102,13 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
         }
 
         private void setButtonText() {
+            String desc = "null";
+            if (potion != null) {
+                Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
+                desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+            }
             type.setMessage(Component.translatable("gui.act.modifier.meta.potion.type").append(" (").append(
-                            potion == null ? Component.literal("null") : Component.translatable(potion.getDescriptionId()))
+                            potion == null ? Component.literal("null") : Component.translatable(desc))
                     .append(")"));
         }
 
@@ -122,34 +136,38 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
         }
 
         @Override
-        public boolean charTyped(char key, int modifiers) {
-            return amplifier.charTyped(key, modifiers) || duration.charTyped(key, modifiers)
-                    || super.charTyped(key, modifiers);
+        public boolean charTyped(CharacterEvent event) {
+            return amplifier.charTyped(event) || duration.charTyped(event)
+                    || super.charTyped(event);
         }
 
         @Override
-        public boolean keyPressed(int key, int scanCode, int modifiers) {
-            return amplifier.keyPressed(key, scanCode, modifiers) || duration.keyPressed(key, scanCode, modifiers)
-                    || super.keyPressed(key, scanCode, modifiers);
+        public boolean keyPressed(KeyEvent event) {
+            return amplifier.keyPressed(event) || duration.keyPressed(event)
+                    || super.keyPressed(event);
         }
 
         @Override
         public boolean match(String search) {
-            return (potion == null ? "" : I18n.get(potion.getDescriptionId()).toLowerCase())
-                    .contains(search.toLowerCase());
+            if (potion == null) return "".contains(search.toLowerCase());
+            Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
+            String desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+            return I18n.get(desc).toLowerCase().contains(search.toLowerCase());
         }
 
         @Override
-        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
             if (GuiUtils.isHover(amplifier, (int) mouseX, (int) mouseY)) {
                 amplifier.setFocused(true);
             }
             if (GuiUtils.isHover(duration, (int) mouseX, (int) mouseY)) {
                 duration.setFocused(true);
             }
-            amplifier.mouseClicked(mouseX, mouseY, mouseButton);
-            duration.mouseClicked(mouseX, mouseY, mouseButton);
-            super.mouseClicked(mouseX, mouseY, mouseButton);
+            amplifier.mouseClicked(event, doubleClick);
+            duration.mouseClicked(event, doubleClick);
+            super.mouseClicked(event, doubleClick);
         }
 
         @Override
@@ -171,14 +189,28 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
         }
 
         public CompoundTag getData() {
-            MobEffectInstance instance = new MobEffectInstance(BuiltInRegistries.MOB_EFFECT.wrapAsHolder(potion), durationTime, amplifierValue, ambient, showParticles, showIcon);
-            return (CompoundTag) instance.save();
+            CompoundTag tag = new CompoundTag();
+            Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
+            if (id != null) {
+                tag.putString("id", id.toString());
+            }
+            tag.putByte("Amplifier", (byte) amplifierValue);
+            tag.putInt("Duration", durationTime);
+            tag.putBoolean("Ambient", ambient);
+            tag.putBoolean("ShowParticles", showParticles);
+            tag.putBoolean("ShowIcon", showIcon);
+            return tag;
         }
     }
 
     private final Supplier<ListElement> supplier = () -> {
-        MobEffectInstance instance = new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200, 0);
-        CompoundTag tag = (CompoundTag) instance.save();
+        CompoundTag tag = new CompoundTag();
+        tag.putString("id", BuiltInRegistries.MOB_EFFECT.getKey(MobEffects.SPEED.value()).toString());
+        tag.putByte("Amplifier", (byte) 0);
+        tag.putInt("Duration", 200);
+        tag.putBoolean("Ambient", false);
+        tag.putBoolean("ShowParticles", true);
+        tag.putBoolean("ShowIcon", true);
         return new ActiveEffectListElement(this, tag);
     };
 

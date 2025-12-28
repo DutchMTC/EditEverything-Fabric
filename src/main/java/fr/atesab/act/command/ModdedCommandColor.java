@@ -65,14 +65,11 @@ public class ModdedCommandColor extends ModdedCommand {
                                                 // remove color button
                                                 .append(Component.literal("[").withStyle(ChatFormatting.RED)
                                                         .withStyle(s -> s
-                                                                .withHoverEvent(new HoverEvent(
-                                                                        HoverEvent.Action.SHOW_TEXT,
-                                                                        Component.translatable(
-                                                                                "cmd.act.color.remove.hover").withStyle(
-                                                                                ChatFormatting.YELLOW)))
+                                                                .withHoverEvent(new HoverEvent.ShowText(
+                                                                        Component.translatable("cmd.act.color.remove.hover")
+                                                                                .withStyle(ChatFormatting.YELLOW)))
                                                                 .withClickEvent(
-                                                                        new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                                                                                "/" + actCmd.getName() + " " + actCmd.SC_COLOR.getName() + " remove")))
+                                                                        new ClickEvent.RunCommand("/" + actCmd.getName() + " " + actCmd.SC_COLOR.getName() + " remove")))
                                                         .append(Component.translatable("cmd.act.color.remove"))
                                                         .append("]")),
                                         false);
@@ -83,12 +80,11 @@ public class ModdedCommandColor extends ModdedCommand {
                                     Component.literal(
                                                     "[").withStyle(ChatFormatting.WHITE)
                                             .withStyle(s -> s
-                                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                                            Component.translatable(
-                                                                            "cmd.act.color.picker.hover")
+                                                    .withHoverEvent(new HoverEvent.ShowText(
+                                                            Component.translatable("cmd.act.color.picker.hover")
                                                                     .withStyle(ChatFormatting.YELLOW)))
                                                     .withClickEvent(
-                                                            new ClickEvent(ClickEvent.Action.RUN_COMMAND,
+                                                            new ClickEvent.RunCommand(
                                                                     "/" + actCmd.getName() + " " + actCmd.SC_COLOR.getName() + " picker")))
                                             .append(Component.translatable("cmd.act.color.picker"))
                                             .append("]"),
@@ -121,10 +117,10 @@ public class ModdedCommandColor extends ModdedCommand {
 
                     GuiUtils.displayScreen(new GuiColorModifier(null, newColor -> {
                         if (newColor.isEmpty()) {
-                            ItemUtils.give(ItemUtils.removeColor(is), 36 + mc.player.getInventory().selected);
+                            ItemUtils.give(ItemUtils.removeColor(is), 36 + mc.player.getInventory().getSelectedSlot());
                         } else {
                             ItemUtils.give(ItemUtils.setGlobalColor(is, newColor.getAsInt()),
-                                    36 + mc.player.getInventory().selected);
+                                    36 + mc.player.getInventory().getSelectedSlot());
                         }
                     }, color, defaultColor.orElse(0), defaultColor.isEmpty()));
 
@@ -148,7 +144,7 @@ public class ModdedCommandColor extends ModdedCommand {
                         return 1;
                     }
 
-                    ItemUtils.give(ItemUtils.removeColor(is), 36 + mc.player.getInventory().selected);
+                    ItemUtils.give(ItemUtils.removeColor(is), 36 + mc.player.getInventory().getSelectedSlot());
                     return 0;
                 };
             }
@@ -177,7 +173,7 @@ public class ModdedCommandColor extends ModdedCommand {
                                                     }
                                                     var is = mc.player.getMainHandItem();
                                                     ItemUtils.give(ItemUtils.setGlobalColor(is, rgb),
-                                                            36 + mc.player.getInventory().selected);
+                                                            36 + mc.player.getInventory().getSelectedSlot());
                                                     return 1;
                                                 }))));
                             }
@@ -203,7 +199,7 @@ public class ModdedCommandColor extends ModdedCommand {
                                                             }
                                                             var is = mc.player.getMainHandItem();
                                                             ItemUtils.give(ItemUtils.setGlobalColor(is, rgb),
-                                                                    36 + mc.player.getInventory().selected);
+                                                                    36 + mc.player.getInventory().getSelectedSlot());
                                                             return 1;
                                                         }))));
                             }
@@ -232,7 +228,7 @@ public class ModdedCommandColor extends ModdedCommand {
                                             }
                                             var is = mc.player.getMainHandItem();
                                             ItemUtils.give(ItemUtils.setGlobalColor(is, rgb),
-                                                    36 + mc.player.getInventory().selected);
+                                                    36 + mc.player.getInventory().getSelectedSlot());
                                             return 1;
                                         }));
                             }
@@ -248,7 +244,7 @@ public class ModdedCommandColor extends ModdedCommand {
                             }
                             var is = mc.player.getMainHandItem();
                             ItemUtils.give(ItemUtils.setGlobalColor(is, GuiUtils.getRandomColor()),
-                                    36 + mc.player.getInventory().selected);
+                                    36 + mc.player.getInventory().getSelectedSlot());
                             return 0;
                         };
                     }
@@ -268,7 +264,7 @@ public class ModdedCommandColor extends ModdedCommand {
                                 }
                                 var is = mc.player.getMainHandItem();
                                 ItemUtils.give(ItemUtils.setGlobalColor(is, rgb),
-                                        36 + mc.player.getInventory().selected);
+                                          36 + mc.player.getInventory().getSelectedSlot());
                                 return 1;
                             };
                         }

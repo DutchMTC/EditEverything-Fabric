@@ -5,6 +5,7 @@ import fr.atesab.act.utils.ReflectionUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -71,11 +72,11 @@ public class GuiACT extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int key, int mouseX, int mouseY) {
-        if (key == GLFW.GLFW_KEY_K && hasControlDown() && hasShiftDown()) {
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == GLFW.GLFW_KEY_K && event.hasControlDown() && event.hasShiftDown()) {
             devMode ^= true; // toggle dev mode
         }
-        return super.keyPressed(key, mouseX, mouseY);
+        return super.keyPressed(event);
     }
 
     @Override

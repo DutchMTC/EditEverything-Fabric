@@ -34,7 +34,7 @@ public class GuiNBTIntArrayModifier extends GuiListModifier<IntArrayTag> {
 
     @Override
     protected IntArrayTag get() {
-        return new IntArrayTag(list);
+        return new IntArrayTag(list.stream().mapToInt(Integer::intValue).toArray());
     }
 
 }

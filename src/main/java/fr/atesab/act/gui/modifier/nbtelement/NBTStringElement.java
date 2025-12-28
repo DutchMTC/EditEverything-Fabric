@@ -9,6 +9,8 @@ import fr.atesab.act.utils.ChatUtils;
 import fr.atesab.act.utils.Tuple;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
@@ -94,8 +96,8 @@ public class NBTStringElement extends NBTElement {
     }
 
     @Override
-    public boolean charTyped(char key, int modifiers) {
-        if (super.charTyped(key, modifiers)) {
+    public boolean charTyped(CharacterEvent event) {
+        if (super.charTyped(event)) {
             value = field.getValue();
             return true;
         }
@@ -103,8 +105,8 @@ public class NBTStringElement extends NBTElement {
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
-        if (super.keyPressed(key, scanCode, modifiers)) {
+    public boolean keyPressed(KeyEvent event) {
+        if (super.keyPressed(event)) {
             value = field.getValue();
             return true;
         }

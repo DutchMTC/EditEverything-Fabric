@@ -3,17 +3,22 @@ package fr.atesab.act.gui.modifier;
 import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.gui.selector.GuiButtonListSelector;
 import fr.atesab.act.utils.GuiUtils;
+import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.Tuple;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
@@ -38,20 +43,21 @@ public class GuiEntityAttributeModifier extends GuiListModifier<List<CompoundTag
             this.data = data.copy(); // Work on a copy
             
             // Load attribute from NBT
-            String name = this.data.getString("id");
+            String name = ItemUtils.getString(this.data, "id");
             if (name.isEmpty()) {
-                name = this.data.getString("Name");
+                name = ItemUtils.getString(this.data, "Name");
             }
-            this.attribute = BuiltInRegistries.ATTRIBUTE.get(ResourceLocation.tryParse(name));
+            var id = Identifier.tryParse(name);
+            this.attribute = id != null ? BuiltInRegistries.ATTRIBUTE.get(id).map(Holder.Reference::value).orElse(null) : null;
             if (this.attribute == null) {
                 this.attribute = Attributes.MAX_HEALTH.value(); // Default
             }
             
             // Load Base value
-            if (this.data.contains("base", 99)) { // 99 = Any Number
-                this.baseValue = this.data.getDouble("base");
-            } else if (this.data.contains("Base", 99)) {
-                this.baseValue = this.data.getDouble("Base");
+            if (ItemUtils.hasTag(this.data, "base", 99)) { // 99 = Any Number
+                this.baseValue = ItemUtils.getDouble(this.data, "base");
+            } else if (ItemUtils.hasTag(this.data, "Base", 99)) {
+                this.baseValue = ItemUtils.getDouble(this.data, "Base");
             } else {
                 this.baseValue = this.attribute.getDefaultValue();
             }
@@ -63,8 +69,10 @@ public class GuiEntityAttributeModifier extends GuiListModifier<List<CompoundTag
 
             buttonList.add(nameButton = new ACTButton(2, 0, 198, 20, Component.literal(""), b -> {
                 List<Tuple<String, Attribute>> attributes = new ArrayList<>();
-                BuiltInRegistries.ATTRIBUTE.forEach(
-                        atr -> attributes.add(new Tuple<>(I18n.get(atr.getDescriptionId()), atr)));
+                BuiltInRegistries.ATTRIBUTE.forEach(atr -> {
+                    String desc = atr.getDescriptionId();
+                    attributes.add(new Tuple<>(I18n.get(desc), atr));
+                });
                 mc.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.act.modifier.attr.type"), attributes, atr -> {
                     this.attribute = atr;
@@ -108,14 +116,14 @@ public class GuiEntityAttributeModifier extends GuiListModifier<List<CompoundTag
         }
 
         @Override
-        public boolean charTyped(char key, int modifiers) {
-            return base.charTyped(key, modifiers);
+        public boolean charTyped(CharacterEvent event) {
+            return base.charTyped(event);
         }
 
         @Override
-        public boolean keyPressed(int key, int scanCode, int modifiers) {
-            base.keyPressed(key, scanCode, modifiers);
-            return super.keyPressed(key, scanCode, modifiers);
+        public boolean keyPressed(KeyEvent event) {
+            base.keyPressed(event);
+            return super.keyPressed(event);
         }
 
         @Override
@@ -124,16 +132,19 @@ public class GuiEntityAttributeModifier extends GuiListModifier<List<CompoundTag
         }
 
         @Override
-        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+            int mouseButton = event.button();
             if (GuiUtils.isHover(base, (int) mouseX, (int) mouseY)) {
                 base.setFocused(true);
             }
-            base.mouseClicked(mouseX, mouseY, mouseButton);
+            base.mouseClicked(event, doubleClick);
             if (mouseButton == 1) {
                 if (GuiUtils.isHover(base, (int) mouseX, (int) mouseY))
                     base.setValue("");
             }
-            super.mouseClicked(mouseX, mouseY, mouseButton);
+            super.mouseClicked(event, doubleClick);
         }
 
         @Override
@@ -148,21 +159,21 @@ public class GuiEntityAttributeModifier extends GuiListModifier<List<CompoundTag
         }
 
         public CompoundTag getData() {
-            data.remove("Name");
-            data.remove("Base");
+            ItemUtils.remove(data, "Name");
+            ItemUtils.remove(data, "Base");
             
-            data.putString("id", BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString());
-            data.putDouble("base", baseValue);
+            ItemUtils.putString(data, "id", BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString());
+            ItemUtils.putDouble(data, "base", baseValue);
             
             // Migrate Modifiers if needed
-            if (data.contains("Modifiers", 9)) {
-                ListTag mods = data.getList("Modifiers", 10);
-                data.remove("Modifiers");
+            if (ItemUtils.hasTag(data, "Modifiers", 9)) {
+                ListTag mods = ItemUtils.getList(data, "Modifiers", 10);
+                ItemUtils.remove(data, "Modifiers");
                 data.put("modifiers", mods);
             }
             
             // Preserve Modifiers list if it exists, otherwise we don't touch it
-            if (!data.contains("modifiers", 9)) {
+            if (!ItemUtils.hasTag(data, "modifiers", 9)) {
                 data.put("modifiers", new ListTag());
             }
             return data;
@@ -171,8 +182,8 @@ public class GuiEntityAttributeModifier extends GuiListModifier<List<CompoundTag
 
     private final Supplier<ListElement> supplier = () -> {
         CompoundTag tag = new CompoundTag();
-        tag.putString("id", BuiltInRegistries.ATTRIBUTE.getKey(Attributes.MAX_HEALTH.value()).toString());
-        tag.putDouble("base", 20.0);
+        ItemUtils.putString(tag, "id", BuiltInRegistries.ATTRIBUTE.getKey(Attributes.MAX_HEALTH.value()).toString());
+        ItemUtils.putDouble(tag, "base", 20.0);
         return new EntityAttributeListElement(this, tag);
     };
 

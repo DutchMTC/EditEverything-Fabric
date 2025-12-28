@@ -137,13 +137,13 @@ public class ModdedCommandHelp extends ModdedCommand {
             component = createText(name + " " + usage, commandColor);
 
         if (command.getClickOption() == CommandClickOption.doCommand)
-            component = component.withStyle(s -> s.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, // SHOW_TEXT
+            component = component.withStyle(s -> s.withHoverEvent(new HoverEvent.ShowText(
                             createTranslatedText("cmd.act.help.do", titleColor)))
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, name)));
+                    .withClickEvent(new ClickEvent.RunCommand(name)));
         else
-            component = component.withStyle(s -> s.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, // SHOW_TEXT
+            component = component.withStyle(s -> s.withHoverEvent(new HoverEvent.ShowText(
                             createTranslatedText("cmd.act.help.click", titleColor)))
-                    .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, name + " ")));
+                    .withClickEvent(new ClickEvent.SuggestCommand(name + " ")));
         MutableComponent finalComponent = component;
         if (showDescription)
             src.sendSuccess(() -> finalComponent.append(createText(": ", ChatFormatting.DARK_GRAY))

@@ -13,6 +13,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -65,14 +68,17 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
         }
 
         @Override
-        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+            int mouseButton = event.button();
             if (GuiUtils.isHover(flight, (int) mouseX, (int) mouseY)) {
                 flight.setFocused(true);
             }
-            flight.mouseClicked(mouseX, mouseY, mouseButton);
+            flight.mouseClicked(event, doubleClick);
             if (GuiUtils.isHover(flight, (int) mouseX, (int) mouseY) && mouseButton == 1)
                 flight.setValue("");
-            super.mouseClicked(mouseX, mouseY, mouseButton);
+            super.mouseClicked(event, doubleClick);
         }
 
         @Override
@@ -88,13 +94,13 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
         }
 
         @Override
-        public boolean charTyped(char key, int modifiers) {
-            return flight.charTyped(key, modifiers) || super.charTyped(key, modifiers);
+        public boolean charTyped(CharacterEvent event) {
+            return flight.charTyped(event) || super.charTyped(event);
         }
 
         @Override
-        public boolean keyPressed(int key, int scanCode, int modifiers) {
-            return flight.keyPressed(key, scanCode, modifiers) || super.keyPressed(key, scanCode, modifiers);
+        public boolean keyPressed(KeyEvent event) {
+            return flight.keyPressed(event) || super.keyPressed(event);
         }
     }
 
@@ -262,10 +268,10 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-            colors.mouseClick((int) mouseX, (int) mouseY, mouseButton);
-            fadeColors.mouseClick((int) mouseX, (int) mouseY, mouseButton);
-            return super.mouseClicked(mouseX, mouseY, mouseButton);
+        public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            colors.mouseClick((int) event.x(), (int) event.y(), event.button());
+            fadeColors.mouseClick((int) event.x(), (int) event.y(), event.button());
+            return super.mouseClicked(event, doubleClick);
         }
     }
 
@@ -276,9 +282,13 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
     public GuiFireworksModifer(Screen parent, Consumer<CompoundTag> setter, CompoundTag tag) {
         super(parent, Component.translatable("gui.act.modifier.meta.fireworks"), new ArrayList<>(), setter,
                 new Tuple[0]);
-        addListElement(main = new FireworkMainListElement(tag.contains("Flight") ? tag.getInt("Flight") : 1));
-        tag.getList("Explosions", 10)
-                .forEach(base -> addListElement(new ExplosionListElement(this, (CompoundTag) base)));
+        addListElement(main = new FireworkMainListElement(tag.getInt("Flight").orElse(1)));
+        tag.getList("Explosions").orElse(new ListTag())
+                .forEach(base -> {
+                    if (base instanceof CompoundTag ct) {
+                        addListElement(new ExplosionListElement(this, ct));
+                    }
+                });
         addListElement(new AddElementList(this, builder));
     }
 

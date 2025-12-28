@@ -11,6 +11,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
@@ -36,20 +39,20 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
 
     private void setData() {
         CompoundTag tag = ItemUtils.getOrCreateTagElement(stack, "BlockEntityTag");
-        stack.set(DataComponents.CUSTOM_NAME, Component.literal(name.getValue().isEmpty() ? "@"
+        ItemUtils.setComponent(stack, DataComponents.CUSTOM_NAME, Component.literal(name.getValue().isEmpty() ? "@"
                 : name.getValue().replaceAll("&", "" + ChatUtils.MODIFIER) + ChatFormatting.RESET));
-        tag.putString("Command", command.getValue().replaceAll("&", "" + ChatUtils.MODIFIER));
-        tag.putByte("auto", (byte) (autoValue ? 1 : 0));
+        ItemUtils.putString(tag, "Command", command.getValue().replaceAll("&", "" + ChatUtils.MODIFIER));
+        ItemUtils.putByte(tag, "auto", (byte) (autoValue ? 1 : 0));
         ItemUtils.setTag(stack, ItemUtils.getTag(stack)); // Save back
     }
 
     private void loadData() {
         CompoundTag tag = ItemUtils.getOrCreateTagElement(stack, "BlockEntityTag");
-        name.setValue((stack.has(DataComponents.CUSTOM_NAME) ? stack.getHoverName().getString() : "@")
+        name.setValue((ItemUtils.getComponent(stack, DataComponents.CUSTOM_NAME) != null ? stack.getHoverName().getString() : "@")
                 .replaceAll("" + ChatUtils.MODIFIER, "&"));
         command.setValue(
-                (tag.contains("Command", 8) ? tag.getString("Command") : "").replaceAll("" + ChatUtils.MODIFIER, "&"));
-        autoValue = tag.contains("auto", 99) && tag.getByte("auto") == (byte) 1;
+                (ItemUtils.hasTag(tag, "Command", 8) ? ItemUtils.getString(tag, "Command") : "").replaceAll("" + ChatUtils.MODIFIER, "&"));
+        autoValue = ItemUtils.hasTag(tag, "auto", 99) && ItemUtils.getByte(tag, "auto") == (byte) 1;
     }
 
     @Override
@@ -107,7 +110,7 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
         // name.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
         GuiUtils.drawItemStack(graphics, stack, width / 2 - 10, name.getY() - 20);
         if (GuiUtils.isHover(width / 2 - 10, name.getY() - 20, 20, 20, mouseX, mouseY))
-            graphics.renderTooltip(font, stack, mouseX, mouseY);
+            GuiUtils.renderTooltip(graphics, font, stack, mouseX, mouseY);
     }
 
     @Override
@@ -123,24 +126,27 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
     }
 
     @Override
-    public boolean charTyped(char key, int modifiers) {
-        return super.charTyped(key, modifiers);
+    public boolean charTyped(CharacterEvent event) {
+        return super.charTyped(event);
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
-        return super.keyPressed(key, scanCode, modifiers);
+    public boolean keyPressed(KeyEvent event) {
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int mouseButton = event.button();
         if (mouseButton == 1) {
             if (GuiUtils.isHover(command, (int) mouseX, (int) mouseY))
                 command.setValue("");
             else if (GuiUtils.isHover(name, (int) mouseX, (int) mouseY))
                 name.setValue("");
         }
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
+        return super.mouseClicked(event, doubleClick);
     }
 
 }

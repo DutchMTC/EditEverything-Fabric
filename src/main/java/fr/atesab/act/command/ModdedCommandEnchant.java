@@ -41,7 +41,7 @@ public class ModdedCommandEnchant extends ModdedCommand {
             ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(enchantments);
             mutable.set(e, e.value().getMaxLevel());
             EnchantmentHelper.setEnchantments(is, mutable.toImmutable());
-            ItemUtils.give(is, 36 + mc.player.getInventory().selected);
+            ItemUtils.give(is, 36 + mc.player.getInventory().getSelectedSlot());
             return 0;
         }).then(Commands.argument("enchantlevel", IntegerArgumentType.integer()).executes(c -> {
             Holder<Enchantment> e = ResourceArgument.getEnchantment(c, "enchantname");
@@ -55,7 +55,7 @@ public class ModdedCommandEnchant extends ModdedCommand {
             ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(enchantments);
             mutable.set(e, lvl);
             EnchantmentHelper.setEnchantments(is, mutable.toImmutable());
-            ItemUtils.give(is, 36 + mc.player.getInventory().selected);
+            ItemUtils.give(is, 36 + mc.player.getInventory().getSelectedSlot());
             return 0;
         })));
     }
@@ -72,10 +72,10 @@ public class ModdedCommandEnchant extends ModdedCommand {
             ItemEnchantments enchantments = EnchantmentHelper.getEnchantmentsForCrafting(is);
             ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(enchantments);
             for (EnchantmentInstance data : EnchantmentHelper.selectEnchantment(ACTMod.RANDOM_SOURCE, is, 30, mc.level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT).listElements().map(e -> (Holder<Enchantment>) e))) {
-                mutable.set(data.enchantment, data.level);
+                mutable.set(data.enchantment(), data.level());
             }
             EnchantmentHelper.setEnchantments(is, mutable.toImmutable());
-            ItemUtils.give(is, 36 + mc.player.getInventory().selected);
+            ItemUtils.give(is, 36 + mc.player.getInventory().getSelectedSlot());
             return 0;
         };
     }

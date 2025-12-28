@@ -87,7 +87,7 @@ public class ConnectionPlayerArgument implements ArgumentType<PlayerInfo[]> {
         var conn = Minecraft.getInstance().getConnection();
         if (conn != null) {
             for (var info : conn.getOnlinePlayers()) {
-                builder.suggest(info.getProfile().getName());
+                builder.suggest(info.getProfile().name());
             }
         }
         return builder.buildFuture();

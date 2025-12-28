@@ -78,7 +78,7 @@ public class GuiGiver extends GuiModifier<String> {
         if (currentItemStack != null) {
             GuiUtils.drawItemStack(graphics, currentItemStack, code.getX() + code.getWidth() + 5, code.getY() - 2);
             if (GuiUtils.isHover(code.getX() + code.getWidth() + 5, code.getY(), 20, 20, mouseX, mouseY))
-                graphics.renderTooltip(font, currentItemStack, mouseX, mouseY);
+                GuiUtils.renderTooltip(graphics, font, currentItemStack, mouseX, mouseY);
         }
     }
 

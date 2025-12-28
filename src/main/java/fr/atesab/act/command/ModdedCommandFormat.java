@@ -46,7 +46,7 @@ public class ModdedCommandFormat extends ModdedCommand {
             int element = 0;
             int line = 0;
             for (ChatFormatting format : ChatFormatting.values()) {
-                HoverEvent he = new HoverEvent(HoverEvent.Action.SHOW_TEXT, createText(
+                HoverEvent he = new HoverEvent.ShowText(createText(
                         format.getName() + " (&" + format.toString().substring(1) + ")", ChatFormatting.YELLOW));
                 text = text.append(
                         createText("&" + format.toString().substring(1) + " ", ChatFormatting.RESET).withStyle(s -> {

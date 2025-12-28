@@ -3,6 +3,7 @@ package fr.atesab.act.gui.modifier;
 import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.utils.GuiUtils;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
 
 import java.util.function.Consumer;
@@ -48,7 +49,7 @@ public class GuiBooleanButton extends ACTButton {
     }
 
     @Override
-    public void onPress() {
+    public void onPress(InputWithModifiers event) {
         boolean newValue = !getter.get();
         setter.accept(newValue);
         updateDisplay();

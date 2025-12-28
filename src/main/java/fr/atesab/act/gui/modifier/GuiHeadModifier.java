@@ -1,6 +1,8 @@
 package fr.atesab.act.gui.modifier;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
@@ -9,17 +11,23 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ResolvableProfile;
 import org.apache.commons.io.IOUtils;
 
 import java.awt.*;
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -90,7 +98,7 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
                 uuid.getY() + uuid.getHeight() / 2 - 8);
         if (GuiUtils.isHover(uuid.getX() + uuid.getWidth() + 10, uuid.getY() + uuid.getHeight() / 2 - 16 / 2, 16, 16, mouseX,
                 mouseY))
-            graphics.renderTooltip(font, stack, mouseX, mouseY);
+            GuiUtils.renderTooltip(graphics, font, stack, mouseX, mouseY);
     }
 
     @Override
@@ -178,38 +186,73 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
     }
 
     @Override
-    public boolean charTyped(char key, int modifiers) {
-        return super.charTyped(key, modifiers);
+    public boolean charTyped(CharacterEvent event) {
+        return super.charTyped(event);
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
-        return super.keyPressed(key, scanCode, modifiers);
+    public boolean keyPressed(KeyEvent event) {
+        return super.keyPressed(event);
     }
 
     private void loadHead() {
-        CompoundTag tag = ItemUtils.getOrCreateTagElement(stack, "SkullOwner");
-        if (tag.contains("Name", 8)) {
-            name.setValue(tag.getString("Name"));
-        }
-        if (tag.contains("Id", 8)) {
-            uuid.setValue(tag.getString("Id"));
-            if (tag.contains("Properties", 10) && tag.getCompound("Properties").contains("textures", 9)) {
-                ListTag list = tag.getCompound("Properties").getList("textures", 10);
-                for (int i = 0; i < list.size(); i++) {
-                    CompoundTag text = list.getCompound(i);
-                    if (text.contains("Value", 8)) {
-                        try {
-                            String s = new String(Base64.getDecoder().decode(text.getString("Value")));
-                            CompoundTag texCompound = TagParser.parseTag(s);
-                            if (texCompound.contains("profileName", 8))
-                                name.setValue(texCompound.getString("profileName"));
-                            if (texCompound.contains("textures", 10)
-                                    && texCompound.getCompound("textures").contains("SKIN", 10)
-                                    && texCompound.getCompound("textures").getCompound("SKIN").contains("url", 8))
-                                link.setValue(texCompound.getCompound("textures").getCompound("SKIN").getString("url"));
-                        } catch (Exception e) {
-                            // ignore
+        ResolvableProfile profile = ItemUtils.getComponent(stack, DataComponents.PROFILE);
+        if (profile != null) {
+            GameProfile gameProfile = profile.partialProfile();
+            if (gameProfile.name() != null) {
+                name.setValue(gameProfile.name());
+            }
+            if (gameProfile.id() != null) {
+                uuid.setValue(gameProfile.id().toString());
+            }
+            for (Property property : gameProfile.properties().get("textures")) {
+                String value = property.value();
+                if (value == null || value.isEmpty()) {
+                    continue;
+                }
+                try {
+                    String s = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
+                    CompoundTag texCompound = TagParser.parseCompoundFully(s);
+                    texCompound.getString("profileName").ifPresent(name::setValue);
+                    if (texCompound.getCompound("textures").isPresent()) {
+                        CompoundTag textures = texCompound.getCompound("textures").orElseThrow();
+                        if (textures.getCompound("SKIN").isPresent()) {
+                            CompoundTag skin = textures.getCompound("SKIN").orElseThrow();
+                            skin.getString("url").ifPresent(link::setValue);
+                        }
+                    }
+                } catch (Exception ignore) {
+                }
+            }
+        } else {
+            // Legacy fallback (pre-data-components heads)
+            CompoundTag root = ItemUtils.getTag(stack);
+            if (root.contains("SkullOwner") && root.getCompound("SkullOwner").isPresent()) {
+                CompoundTag tag = root.getCompound("SkullOwner").orElseThrow();
+                tag.getString("Name").ifPresent(name::setValue);
+                tag.getString("Id").ifPresent(uuid::setValue);
+                if (tag.contains("Properties") && tag.getCompound("Properties").isPresent()) {
+                    CompoundTag properties = tag.getCompound("Properties").orElseThrow();
+                    if (properties.contains("textures") && properties.getList("textures").isPresent()) {
+                        ListTag list = properties.getList("textures").orElseThrow();
+                        for (int i = 0; i < list.size(); i++) {
+                            CompoundTag text = list.getCompoundOrEmpty(i);
+                            String value = text.getString("Value").orElse("");
+                            if (!value.isEmpty()) {
+                                try {
+                                    String s = new String(Base64.getDecoder().decode(value), StandardCharsets.UTF_8);
+                                    CompoundTag texCompound = TagParser.parseCompoundFully(s);
+                                    texCompound.getString("profileName").ifPresent(name::setValue);
+                                    if (texCompound.getCompound("textures").isPresent()) {
+                                        CompoundTag textures = texCompound.getCompound("textures").orElseThrow();
+                                        if (textures.getCompound("SKIN").isPresent()) {
+                                            CompoundTag skin = textures.getCompound("SKIN").orElseThrow();
+                                            skin.getString("url").ifPresent(link::setValue);
+                                        }
+                                    }
+                                } catch (Exception ignore) {
+                                }
+                            }
                         }
                     }
                 }
@@ -220,14 +263,17 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int mouseButton = event.button();
         if (GuiUtils.isHover(link, (int) mouseX, (int) mouseY) && mouseButton == 1)
             link.setValue("");
         if (GuiUtils.isHover(uuid, (int) mouseX, (int) mouseY) && mouseButton == 1)
             uuid.setValue("");
         if (GuiUtils.isHover(name, (int) mouseX, (int) mouseY) && mouseButton == 1)
             name.setValue("");
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override

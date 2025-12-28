@@ -11,10 +11,14 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -57,8 +61,11 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
             buttonList.add(type = new ACTButton(153, 0, 200, 20,
                     Component.translatable("gui.act.modifier.meta.potion.type"), b -> {
                 List<Tuple<String, MobEffect>> pots = new ArrayList<>();
-                BuiltInRegistries.MOB_EFFECT
-                        .forEach(pot -> pots.add(new Tuple<>(I18n.get(pot.getDescriptionId()), pot)));
+                BuiltInRegistries.MOB_EFFECT.forEach(pot -> {
+                    Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(pot);
+                    String desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+                    pots.add(new Tuple<>(I18n.get(desc), pot));
+                });
                 mc.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.act.modifier.meta.potion.type"), pots, pot -> {
                     potion = pot;
@@ -108,39 +115,48 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
         }
 
         @Override
-        public boolean charTyped(char key, int modifiers) {
-            return amplifier.charTyped(key, modifiers) || duration.charTyped(key, modifiers)
-                    || super.charTyped(key, modifiers);
+        public boolean charTyped(CharacterEvent event) {
+            return amplifier.charTyped(event) || duration.charTyped(event)
+                    || super.charTyped(event);
         }
 
         @Override
-        public boolean keyPressed(int key, int scanCode, int modifiers) {
-            return amplifier.keyPressed(key, scanCode, modifiers) || duration.keyPressed(key, scanCode, modifiers)
-                    || super.keyPressed(key, scanCode, modifiers);
+        public boolean keyPressed(KeyEvent event) {
+            return amplifier.keyPressed(event) || duration.keyPressed(event)
+                    || super.keyPressed(event);
         }
 
         @Override
         public boolean match(String search) {
-            return (potion == null ? "" : I18n.get(potion.getDescriptionId()).toLowerCase())
-                    .contains(search.toLowerCase());
+            if (potion == null) return "".contains(search.toLowerCase());
+            Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
+            String desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+            return I18n.get(desc).toLowerCase().contains(search.toLowerCase());
         }
 
         @Override
-        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
             if (GuiUtils.isHover(amplifier, (int) mouseX, (int) mouseY)) {
                 amplifier.setFocused(true);
             }
             if (GuiUtils.isHover(duration, (int) mouseX, (int) mouseY)) {
                 duration.setFocused(true);
             }
-            amplifier.mouseClicked(mouseX, mouseY, mouseButton);
-            duration.mouseClicked(mouseX, mouseY, mouseButton);
-            super.mouseClicked(mouseX, mouseY, mouseButton);
+            amplifier.mouseClicked(event, doubleClick);
+            duration.mouseClicked(event, doubleClick);
+            super.mouseClicked(event, doubleClick);
         }
 
         private void setButtonText() {
+            String desc = "null";
+            if (potion != null) {
+                Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
+                desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+            }
             type.setMessage(Component.translatable("gui.act.modifier.meta.potion.type").append(" (").append(
-                            potion == null ? Component.literal("null") : Component.translatable(potion.getDescriptionId()))
+                            potion == null ? Component.literal("null") : Component.translatable(desc))
                     .append(")"));
         }
 
@@ -210,7 +226,7 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
     private Potion main;
 
     private final Supplier<ListElement> supplier = () -> new CustomPotionListElement(this,
-            new MobEffectInstance(MobEffects.MOVEMENT_SPEED));
+            new MobEffectInstance(MobEffects.SPEED));
 
     @SuppressWarnings("unchecked")
     public GuiPotionModifier(Screen parent, Consumer<PotionInformation> setter, PotionInformation info) {

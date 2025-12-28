@@ -16,7 +16,7 @@ public class PlayerListArgumentType extends StringListArgumentType {
             var l = new ArrayList<String>();
             ClientPacketListener co = Minecraft.getInstance().getConnection();
             if (co != null) {
-                co.getOnlinePlayers().forEach(p -> l.add(p.getProfile().getName()));
+                co.getOnlinePlayers().forEach(p -> l.add(p.getProfile().name()));
             }
             var n = Minecraft.getInstance().getUser().getName();
             if (!l.contains(n)) {

@@ -5,16 +5,21 @@ import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.gui.selector.GuiButtonListSelector;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
+import fr.atesab.act.utils.GuiUtils;
+import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.ItemUtils.AttributeData;
 import fr.atesab.act.utils.Tuple;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -62,8 +67,10 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
             }));
             buttonList.add(typeButton = new ACTButton(2, 21, 198, 20, Component.literal(""), b -> {
                 List<Tuple<String, Attribute>> attributes = new ArrayList<>();
-                BuiltInRegistries.ATTRIBUTE.forEach(
-                        atr -> attributes.add(new Tuple<>(I18n.get(atr.getDescriptionId()), atr)));
+                BuiltInRegistries.ATTRIBUTE.forEach(atr -> {
+                    String desc = atr.getDescriptionId();
+                    attributes.add(new Tuple<>(I18n.get(desc), atr));
+                });
                 mc.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.act.modifier.attr.type"), attributes, atr -> {
                     data.setAttribute(atr);
@@ -91,13 +98,14 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
         }
 
         private void defineButtonText() {
-
             String s = (data.getSlot() == null ? I18n.get("gui.act.none")
                     : I18n.get("item.modifiers." + data.getSlot().getName()));
             slotButton.setMessage(Component.translatable("gui.act.modifier.attr.slot").append(" - ")
                     .append((s.endsWith(":") ? s.substring(0, s.length() - 1) : s)));
+            
             typeButton.setMessage(Component.translatable("gui.act.modifier.attr.type").append(" - ")
                     .append(Component.translatable(data.getAttribute().getDescriptionId())));
+            
             operationButton.setMessage(Component.translatable("gui.act.modifier.attr.operation").append(" - ")
                     .append(Component.translatable("gui.act.modifier.attr.operation." + operationValue)).append(" (")
                     .append(String.valueOf(operationValue)).append(")"));
@@ -122,14 +130,14 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
         }
 
         @Override
-        public boolean charTyped(char key, int modifiers) {
-            return amount.charTyped(key, modifiers);
+        public boolean charTyped(CharacterEvent event) {
+            return amount.charTyped(event);
         }
 
         @Override
-        public boolean keyPressed(int key, int scanCode, int modifiers) {
-            amount.keyPressed(key, scanCode, modifiers);
-            return super.keyPressed(key, scanCode, modifiers);
+        public boolean keyPressed(KeyEvent event) {
+            amount.keyPressed(event);
+            return super.keyPressed(event);
         }
 
         @Override
@@ -140,16 +148,19 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
         }
 
         @Override
-        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+            int mouseButton = event.button();
             if (GuiUtils.isHover(amount, (int) mouseX, (int) mouseY)) {
                 amount.setFocused(true);
             }
-            amount.mouseClicked(mouseX, mouseY, mouseButton);
+            amount.mouseClicked(event, doubleClick);
             if (mouseButton == 1) {
                 if (GuiUtils.isHover(amount, (int) mouseX, (int) mouseY))
                     amount.setValue("");
             }
-            super.mouseClicked(mouseX, mouseY, mouseButton);
+            super.mouseClicked(event, doubleClick);
         }
 
         @Override

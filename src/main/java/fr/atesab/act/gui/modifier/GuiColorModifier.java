@@ -7,20 +7,24 @@ import fr.atesab.act.ACTMod;
 import fr.atesab.act.gui.components.ACTButton;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.DyeItem;
 import net.minecraft.world.item.ItemStack;
@@ -40,8 +44,8 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     private static final int PICKER_SIZE_Y = 200;
     private static final int PICKER_S_SIZE_X = 20;
     private static final int PICKER_HL_SIZE_X = 200;
-    private static final ResourceLocation PICKER_S_RESOURCE = ResourceLocation.fromNamespaceAndPath(ACTMod.MOD_ID, "picker_hl");
-    private static final ResourceLocation PICKER_HL_RESOURCE = ResourceLocation.fromNamespaceAndPath(ACTMod.MOD_ID, "picker_s");
+    private static final Identifier PICKER_S_RESOURCE = Identifier.fromNamespaceAndPath(ACTMod.MOD_ID, "picker_hl");
+    private static final Identifier PICKER_HL_RESOURCE = Identifier.fromNamespaceAndPath(ACTMod.MOD_ID, "picker_s");
     
     private DynamicTexture pickerImageS;
     private DynamicTexture pickerImageHL;
@@ -51,7 +55,7 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
 
     private static ItemStack updatePicker() {
         CompoundTag tag = ItemUtils.getOrCreateTag(RANDOM_PICKER);
-        tag.putInt("CustomPotionColor", GuiUtils.getTimeColor(RANDOM_PICKER_FREQUENCY, 100, 50));
+        ItemUtils.putInt(tag, "CustomPotionColor", GuiUtils.getTimeColor(RANDOM_PICKER_FREQUENCY, 100, 50));
         ItemUtils.setTag(RANDOM_PICKER, tag);
         return RANDOM_PICKER;
     }
@@ -80,7 +84,7 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
             for (var y = 0; y < pixels.getHeight(); y++) { // saturation
                 var color = GuiUtils.fromHSL(hue, y * 100 / pixels.getHeight(), lightness);
                 for (var x = 0; x < pixels.getWidth(); x++)
-                    pixels.setPixelRGBA(x, y, GuiUtils.blueToRed(color));
+                    pixels.setPixelABGR(x, y, GuiUtils.blueToRed(color));
             }
 
             pickerImageS.upload();
@@ -94,7 +98,7 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
 
             for (var x = 0; x < pixels.getWidth(); x++) // hue
                 for (var y = 0; y < pixels.getHeight(); y++) // lightness
-                    pixels.setPixelRGBA(x, y, GuiUtils.blueToRed(
+                    pixels.setPixelABGR(x, y, GuiUtils.blueToRed(
                             GuiUtils.fromHSL(x * 360 / pixels.getWidth(), saturation, y * 100 / pixels.getHeight())));
 
             pickerImageHL.upload();
@@ -106,9 +110,9 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         if (pickerImageS != null) pickerImageS.close();
         if (pickerImageHL != null) pickerImageHL.close();
 
-        pickerImageS = new DynamicTexture(
+        pickerImageS = new DynamicTexture(() -> ACTMod.MOD_ID + "_picker_s",
                 new NativeImage(NativeImage.Format.RGBA, PICKER_S_SIZE_X, PICKER_SIZE_Y, false));
-        pickerImageHL = new DynamicTexture(
+        pickerImageHL = new DynamicTexture(() -> ACTMod.MOD_ID + "_picker_hl",
                 new NativeImage(NativeImage.Format.RGBA, PICKER_HL_SIZE_X, PICKER_SIZE_Y, false));
 
         TextureManager tm = Minecraft.getInstance().getTextureManager();
@@ -201,11 +205,11 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
 
         if (!advanced) {
             // S PICKER
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            RenderSystem.setShaderTexture(0, PICKER_S_RESOURCE);
-            
-            graphics.blit(PICKER_S_RESOURCE, width / 2 + 180, height / 2 - 76, PICKER_S_SIZE_X, PICKER_SIZE_Y, 0, 0, PICKER_S_SIZE_X, PICKER_SIZE_Y, PICKER_S_SIZE_X, PICKER_SIZE_Y);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, PICKER_S_RESOURCE,
+                    width / 2 + 180, height / 2 - 76,
+                    0.0F, 0.0F,
+                    PICKER_S_SIZE_X, PICKER_SIZE_Y,
+                    PICKER_S_SIZE_X, PICKER_SIZE_Y);
 
 
             // - S Index
@@ -216,10 +220,11 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
                     height / 2 - 76 + saturationDelta + 1, 0xff999999);
 
             // HL Picker
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            RenderSystem.setShaderTexture(0, PICKER_HL_RESOURCE);
-            graphics.blit(PICKER_HL_RESOURCE, width / 2 - 158, height / 2 - 76, 158 + 176, 76 * 2, 0, 0, PICKER_HL_SIZE_X, PICKER_SIZE_Y, PICKER_HL_SIZE_X, PICKER_SIZE_Y);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, PICKER_HL_RESOURCE,
+                    width / 2 - 158, height / 2 - 76,
+                    0.0F, 0.0F,
+                    158 + 176, 76 * 2,
+                    PICKER_HL_SIZE_X, PICKER_SIZE_Y);
 
             // - HL Index
             var hueDelta = texHue * (158 + 176) / 360;
@@ -405,17 +410,20 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     }
 
     @Override
-    public boolean charTyped(char key, int modifiers) {
-        return super.charTyped(key, modifiers);
+    public boolean charTyped(CharacterEvent event) {
+        return super.charTyped(event);
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
-        return super.keyPressed(key, scanCode, modifiers);
+    public boolean keyPressed(KeyEvent event) {
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int mouseButton = event.button();
         if (advanced) {
             if (mouseButton == 1) {
                 if (GuiUtils.isHover(tfr, (int) mouseX, (int) mouseY)) {
@@ -475,13 +483,13 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
                         return true;
                     }
         }
-        return super.mouseClicked(mouseX, mouseY, mouseButton);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int clickedMouseButton, double dx, double dy) {
-        setColor((int) mouseX, (int) mouseY, drag);
-        return super.mouseDragged(mouseX, mouseY, clickedMouseButton, dx, dy);
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        setColor((int) event.x(), (int) event.y(), drag);
+        return super.mouseDragged(event, dx, dy);
     }
 
     private void updateColor(int h, int s, int l) {

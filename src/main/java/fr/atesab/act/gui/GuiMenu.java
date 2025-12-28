@@ -13,6 +13,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -45,7 +46,10 @@ public class GuiMenu extends GuiListModifier<Object> {
                              float partialTicks) {
             if (GuiUtils.isHover(0, 0, 18, 18, mouseX, mouseY)) {
                 GuiUtils.drawRect(graphics, offsetX, offsetY, offsetX + 18, offsetY + 18, 0x55cccccc);
-                graphics.renderTooltip(parent.getMinecraft().font, stack, mouseX + offsetX, mouseY + offsetY);
+                GuiUtils.renderTooltip(graphics, parent.getMinecraft().font,
+                        stack.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(parent.getMinecraft().level), parent.getMinecraft().player, net.minecraft.world.item.TooltipFlag.NORMAL),
+                        stack.getTooltipImage(),
+                        mouseX + offsetX, mouseY + offsetY);
             }
             super.drawNext(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         }
@@ -58,7 +62,10 @@ public class GuiMenu extends GuiListModifier<Object> {
         }
 
         @Override
-        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+            int mouseButton = event.button();
             if (GuiUtils.isHover(0, 0, 18, 18, (int) mouseX, (int) mouseY)) {
                 playClick();
                 if (mouseButton == 0) {
@@ -79,7 +86,7 @@ public class GuiMenu extends GuiListModifier<Object> {
                     else
                         ItemUtils.give(stack);
             }
-            super.mouseClicked(mouseX, mouseY, mouseButton);
+            super.mouseClicked(event, doubleClick);
         }
     }
 
@@ -98,7 +105,7 @@ public class GuiMenu extends GuiListModifier<Object> {
         LocalPlayer player = getMinecraft().player;
         Tuple<?, ?> btn1 = new Tuple<String, Tuple<Runnable, Runnable>>(I18n.get("cmd.act.edit"), new Tuple<>(() -> {
             assert player != null;
-            final int slot = player.getInventory().selected;
+            final int slot = player.getInventory().getSelectedSlot();
             getMinecraft().setScreen(new GuiItemStackModifier(this, player.getMainHandItem().copy(),
                     is -> ItemUtils.give(is, 36 + slot)));
         }, () -> {

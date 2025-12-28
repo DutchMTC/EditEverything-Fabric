@@ -39,7 +39,7 @@ public class GuiMetaModifier extends GuiModifier<ItemStack> {
         super.render(graphics, mouseX, mouseY, partialTicks);
         GuiUtils.drawItemStack(graphics, stack, width / 2 - 10, height / 2 - 21);
         if (GuiUtils.isHover(width / 2 - 10, height / 2 - 21, 20, 20, mouseX, mouseY))
-            graphics.renderTooltip(font, stack, mouseX, mouseY);
+            GuiUtils.renderTooltip(graphics, font, stack, mouseX, mouseY);
         reRenderWidgets(graphics, mouseX, mouseY, partialTicks);
     }
 

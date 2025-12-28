@@ -74,7 +74,7 @@ public class GuiNBTModifier extends GuiListModifier<CompoundTag> {
         super(parent, title, new ArrayList<>(), setter, true, true, new Tuple[0]);
         addListElement(new ButtonElementList(200, 21, 200, 20, Component.literal("+").withStyle(ChatFormatting.GREEN),
                 () -> ADD_ELEMENT.accept(null, this), null));
-        tag.getAllKeys().forEach(key -> addElement(key, tag.get(key)));
+        tag.forEach(this::addElement);
         setPaddingLeft(5);
         setPaddingTop(13 + Minecraft.getInstance().font.lineHeight);
         setNoAdaptativeSize(true);

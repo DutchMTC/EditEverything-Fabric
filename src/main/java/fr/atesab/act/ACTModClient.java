@@ -1,9 +1,6 @@
 package fr.atesab.act;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.tree.CommandNode;
-import com.mojang.brigadier.tree.RootCommandNode;
 import fr.atesab.act.command.ModdedCommand;
 import fr.atesab.act.gui.GuiACT;
 import fr.atesab.act.gui.GuiGiver;
@@ -31,13 +28,12 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -51,13 +47,16 @@ import java.util.*;
 public class ACTModClient implements ClientModInitializer {
 
     private static KeyMapping giver, menu, edit;
+    private static final KeyMapping.Category ACT_CATEGORY = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(ACTMod.MOD_ID, "key.act"));
 
     @Override
     public void onInitializeClient() {
         // Register KeyMappings
-        giver = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.act.giver", GLFW.GLFW_KEY_Y, "key.act"));
-        menu = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.act.menu", GLFW.GLFW_KEY_N, "key.act"));
-        edit = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.act.edit", GLFW.GLFW_KEY_H, "key.act"));
+        giver = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.act.giver", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, ACT_CATEGORY));
+        menu = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.act.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, ACT_CATEGORY));
+        edit = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.act.edit", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, ACT_CATEGORY));
+
+        ACTMod.registerInternalModule(GuiUtils.class);
 
         // Client Tick
         ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
@@ -85,7 +84,7 @@ public class ACTModClient implements ClientModInitializer {
         ACTMod.registerStringModifier("gui.act.modifier.string.nbt", "", sm -> {
             try {
                 sm.setNextScreen(new GuiNBTModifier(sm.getNextScreen(), nbt -> sm.setString(nbt.toString()),
-                        TagParser.parseTag(sm.getString())));
+                        TagParser.parseCompoundFully(sm.getString())));
             } catch (Exception ignore) {
             }
         });
@@ -158,14 +157,9 @@ public class ACTModClient implements ClientModInitializer {
     private void injectSuggestions() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null) {
-            CommandDispatcher<SharedSuggestionProvider> current = mc.player.connection.getCommands();
+            var current = mc.player.connection.getCommands();
             if (current != ACTMod.getSharedSuggestionProvider()) {
                 ACTMod.setSharedSuggestionProvider(current);
-
-                Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = new HashMap<>();
-                RootCommandNode<SharedSuggestionProvider> root = ACTMod.getSharedSuggestionProvider().getRoot();
-                map.put(ACTMod.getDispatcher().getRoot(), root);
-                ACTMod.createSuggestion(ACTMod.getDispatcher().getRoot(), root, mc.player.createCommandSourceStack(), map);
             }
         }
     }
@@ -197,7 +191,7 @@ public class ACTModClient implements ClientModInitializer {
         }
 
         var containerData = ItemUtils.getContainerSize(stack);
-        if (containerData != null && Screen.hasControlDown() && Screen.hasShiftDown()) {
+        if (containerData != null && isControlDown() && isShiftDown()) {
             if (isKeyDown(KeyBindingHelper.getBoundKeyOf(giver).getValue())) {
                 mc.setScreen(new GuiGiver(mc.screen, stack));
             }
@@ -249,13 +243,21 @@ public class ACTModClient implements ClientModInitializer {
     }
 
     public static boolean isKeyDown(int key) {
-        return InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), key);
+        return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), key);
+    }
+
+    private static boolean isShiftDown() {
+        return isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT) || isKeyDown(GLFW.GLFW_KEY_RIGHT_SHIFT);
+    }
+
+    private static boolean isControlDown() {
+        return isKeyDown(GLFW.GLFW_KEY_LEFT_CONTROL) || isKeyDown(GLFW.GLFW_KEY_RIGHT_CONTROL);
     }
 
     public static void openGiver() {
         Minecraft mc = Minecraft.getInstance();
         assert mc.player != null;
-        final int slot = mc.player.getInventory().selected;
+        final int slot = mc.player.getInventory().getSelectedSlot();
         GuiUtils.displayScreen(new GuiItemStackModifier(null, mc.player.getMainHandItem().copy(),
                 is -> ItemUtils.give(is, 36 + slot)));
     }

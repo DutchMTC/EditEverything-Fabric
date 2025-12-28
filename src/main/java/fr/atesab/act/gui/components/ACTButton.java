@@ -1,5 +1,6 @@
 package fr.atesab.act.gui.components;
 
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
@@ -17,5 +18,11 @@ public class ACTButton extends Button {
     public ACTButton(int x, int y, int w, int h, Component message, OnPress pressAction, Tooltip tooltip) {
         super(x, y, w, h, message, pressAction, DEFAULT_NARRATION);
         setTooltip(tooltip);
+    }
+
+    @Override
+    protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        renderDefaultSprite(graphics);
+        renderDefaultLabel(graphics.textRendererForWidget(this, GuiGraphics.HoveredTextEffects.NONE));
     }
 }

@@ -4,9 +4,11 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import java.util.UUID;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.gson.JsonParseException;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.authlib.properties.PropertyMap;
 import fr.atesab.act.ACTMod;
 import fr.atesab.act.internalcommand.InternalCommandModule;
 import net.minecraft.ChatFormatting;
@@ -16,14 +18,17 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Unit;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -39,7 +44,6 @@ import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.core.Holder;
-import net.minecraft.world.item.component.Unbreakable;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.item.component.Fireworks;
@@ -72,13 +76,161 @@ import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
 @InternalCommandModule(name = "item")
 public class ItemUtils {
     
+    public static boolean hasTag(CompoundTag tag, String key, int type) {
+        return switch (type) {
+            case Tag.TAG_BYTE -> tag.getByte(key).isPresent();
+            case Tag.TAG_SHORT -> tag.getShort(key).isPresent();
+            case Tag.TAG_INT -> tag.getInt(key).isPresent();
+            case Tag.TAG_LONG -> tag.getLong(key).isPresent();
+            case Tag.TAG_FLOAT -> tag.getFloat(key).isPresent();
+            case Tag.TAG_DOUBLE -> tag.getDouble(key).isPresent();
+            case Tag.TAG_BYTE_ARRAY -> tag.getByteArray(key).isPresent();
+            case Tag.TAG_STRING -> tag.getString(key).isPresent();
+            case Tag.TAG_LIST -> tag.getList(key).isPresent();
+            case Tag.TAG_COMPOUND -> tag.getCompound(key).isPresent();
+            case Tag.TAG_INT_ARRAY -> tag.getIntArray(key).isPresent();
+            case Tag.TAG_LONG_ARRAY -> tag.getLongArray(key).isPresent();
+            default -> tag.contains(key);
+        };
+    }
+
+    public static CompoundTag getCompound(CompoundTag tag, String key) {
+        return tag.getCompound(key).orElse(new CompoundTag());
+    }
+
+    public static CompoundTag getCompound(ListTag tag, int index) {
+        if (index >= 0 && index < tag.size()) {
+             Tag t = tag.get(index);
+             return t instanceof CompoundTag ct ? ct : new CompoundTag();
+        }
+        return new CompoundTag();
+    }
+
+    public static ListTag getList(CompoundTag tag, String key, int type) {
+        ListTag list = tag.getList(key).orElse(new ListTag());
+        if (list.isEmpty()) {
+            return list;
+        }
+        return list.get(0).getId() == type ? list : new ListTag();
+    }
+
+    public static String getString(CompoundTag tag, String key) {
+        return tag.getString(key).orElse("");
+    }
+
+    public static int getInt(CompoundTag tag, String key) {
+        return tag.getInt(key).orElse(0);
+    }
+
+    public static byte getByte(CompoundTag tag, String key) {
+        return tag.getByte(key).orElse((byte) 0);
+    }
+
+    public static boolean getBoolean(CompoundTag tag, String key) {
+        return tag.getBoolean(key).orElse(getByte(tag, key) != 0);
+    }
+
+    public static int[] getIntArray(CompoundTag tag, String key) {
+        return tag.getIntArray(key).orElseGet(() -> new int[0]);
+    }
+
+    public static double getDouble(CompoundTag tag, String key) {
+        return tag.getDouble(key).orElse(0.0D);
+    }
+    public static float getFloat(CompoundTag tag, String key) {
+        return tag.getFloat(key).orElse(0.0F);
+    }
+    public static long getLong(CompoundTag tag, String key) {
+        return tag.getLong(key).orElse(0L);
+    }
+    public static short getShort(CompoundTag tag, String key) {
+        return tag.getShort(key).orElse((short) 0);
+    }
+    public static byte[] getByteArray(CompoundTag tag, String key) {
+        return tag.getByteArray(key).orElseGet(() -> new byte[0]);
+    }
+    public static long[] getLongArray(CompoundTag tag, String key) {
+        return tag.getLongArray(key).orElseGet(() -> new long[0]);
+    }
+
+    public static <T> T getComponent(ItemStack stack, DataComponentType<? extends T> type) {
+        try {
+            return stack.getComponents().get(type);
+        } catch (Throwable t) {
+            for (TypedDataComponent<?> typed : stack.getComponents()) {
+                if (typed.type() == type) {
+                    return (T) typed.value();
+                }
+            }
+            return null;
+        }
+    }
+
+    public static void putString(CompoundTag tag, String key, String value) {
+        tag.putString(key, value);
+    }
+    public static void putInt(CompoundTag tag, String key, int value) {
+        tag.putInt(key, value);
+    }
+    public static void putByte(CompoundTag tag, String key, byte value) {
+        tag.putByte(key, value);
+    }
+    public static void putBoolean(CompoundTag tag, String key, boolean value) {
+        tag.putBoolean(key, value);
+    }
+    public static void putDouble(CompoundTag tag, String key, double value) {
+        tag.putDouble(key, value);
+    }
+    public static void putFloat(CompoundTag tag, String key, float value) {
+        tag.putFloat(key, value);
+    }
+    public static void putLong(CompoundTag tag, String key, long value) {
+        tag.putLong(key, value);
+    }
+    public static void putShort(CompoundTag tag, String key, short value) {
+        tag.putShort(key, value);
+    }
+    public static void putIntArray(CompoundTag tag, String key, int[] value) {
+        tag.put(key, new IntArrayTag(value));
+    }
+    public static void putByteArray(CompoundTag tag, String key, byte[] value) {
+        tag.put(key, new ByteArrayTag(value));
+    }
+    public static void putLongArray(CompoundTag tag, String key, long[] value) {
+        tag.put(key, new LongArrayTag(value));
+    }
+
+    public static void remove(CompoundTag tag, String key) {
+        tag.remove(key);
+    }
+
+    public static Tag saveStack(ItemStack stack, net.minecraft.core.HolderLookup.Provider registryAccess) {
+        return ItemStack.CODEC.encodeStart(registryAccess.createSerializationContext(NbtOps.INSTANCE), stack)
+                .getOrThrow(IllegalStateException::new);
+    }
+
+    public static ItemStack parseStack(net.minecraft.core.HolderLookup.Provider registryAccess, CompoundTag tag) {
+        return ItemStack.CODEC.parse(registryAccess.createSerializationContext(NbtOps.INSTANCE), tag)
+                .result()
+                .orElse(ItemStack.EMPTY);
+    }
+
+    public static <T> void setComponent(ItemStack stack, DataComponentType<? super T> type, @Nullable T value) {
+        try {
+            stack.set(type, value);
+        } catch (Throwable t) {
+            stack.applyComponents(DataComponentPatch.builder().set(type, value).build());
+        }
+    }
+
     // Helper for NBT migration
     public static CompoundTag getTag(ItemStack stack) {
-        return stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        CustomData data = getComponent(stack, DataComponents.CUSTOM_DATA);
+        return data != null ? data.copyTag() : new CompoundTag();
     }
 
     public static void setTag(ItemStack stack, CompoundTag tag) {
-        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        setComponent(stack, DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
     
     public static CompoundTag getOrCreateTag(ItemStack stack) {
@@ -87,11 +239,11 @@ public class ItemUtils {
     
     public static CompoundTag getOrCreateTagElement(ItemStack stack, String key) {
         CompoundTag tag = getTag(stack);
-        if (!tag.contains(key, 10)) {
+        if (!hasTag(tag, key, 10)) {
             tag.put(key, new CompoundTag());
             setTag(stack, tag);
         }
-        return tag.getCompound(key);
+        return getCompound(tag, key);
     }
 
     public static class AttributeData {
@@ -177,8 +329,8 @@ public class ItemUtils {
         }
 
         public ExplosionInformation(CompoundTag explosion) {
-            this(explosion.getByte("Type"), explosion.getBoolean("Trail"), explosion.getBoolean("Flicker"),
-                    explosion.getIntArray("Colors"), explosion.getIntArray("FadeColors"));
+            this(getByte(explosion, "Type"), getBoolean(explosion, "Trail"), getBoolean(explosion, "Flicker"),
+                    getIntArray(explosion, "Colors"), getIntArray(explosion, "FadeColors"));
         }
 
         @Override
@@ -215,18 +367,18 @@ public class ItemUtils {
 
         public CompoundTag getTag() {
             CompoundTag tag = new CompoundTag();
-            tag.putByte("Type", (byte) type.getId());
+            putByte(tag, "Type", (byte) type.getId());
             if (trail) {
-                tag.putBoolean("Trail", true);
+                putBoolean(tag, "Trail", true);
             }
             if (flicker) {
-                tag.putBoolean("Flicker", true);
+                putBoolean(tag, "Flicker", true);
             }
             if (colors.length != 0) {
-                tag.putIntArray("Colors", colors);
+                putIntArray(tag, "Colors", colors);
             }
             if (fadeColors.length != 0) {
-                tag.putIntArray("FadeColors", fadeColors);
+                putIntArray(tag, "FadeColors", fadeColors);
             }
             return tag;
         }
@@ -310,13 +462,13 @@ public class ItemUtils {
         public static final AttributeModifierBuilder SWORD_ATTACK_SPEED;
 
         static {
-            ARMOR = new AttributeModifierBuilder(Attributes.ARMOR.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("armor"), 0, AttributeModifier.Operation.ADD_VALUE));
-            ARMOR_TOUGHNESS = new AttributeModifierBuilder(Attributes.ARMOR_TOUGHNESS.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("armor_toughness"), 0, AttributeModifier.Operation.ADD_VALUE));
-            KNOCKBACK_RESISTANCE = new AttributeModifierBuilder(Attributes.KNOCKBACK_RESISTANCE.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("knockback_resistance"), 0, AttributeModifier.Operation.ADD_VALUE));
-            TOOL_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
-            TOOL_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
-            SWORD_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
-            SWORD_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(ResourceLocation.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
+            ARMOR = new AttributeModifierBuilder(Attributes.ARMOR.value(), new AttributeModifier(Identifier.withDefaultNamespace("armor"), 0, AttributeModifier.Operation.ADD_VALUE));
+            ARMOR_TOUGHNESS = new AttributeModifierBuilder(Attributes.ARMOR_TOUGHNESS.value(), new AttributeModifier(Identifier.withDefaultNamespace("armor_toughness"), 0, AttributeModifier.Operation.ADD_VALUE));
+            KNOCKBACK_RESISTANCE = new AttributeModifierBuilder(Attributes.KNOCKBACK_RESISTANCE.value(), new AttributeModifier(Identifier.withDefaultNamespace("knockback_resistance"), 0, AttributeModifier.Operation.ADD_VALUE));
+            TOOL_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(Identifier.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
+            TOOL_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(Identifier.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
+            SWORD_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(Identifier.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
+            SWORD_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(Identifier.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
         }
 
         private final AttributeModifier clone;
@@ -328,7 +480,7 @@ public class ItemUtils {
             BUILDERS_INTERNAL.add(this);
         }
 
-        public ResourceLocation getId() {
+        public Identifier getId() {
             return clone.id(); // getId -> id
         }
 
@@ -341,7 +493,8 @@ public class ItemUtils {
         }
 
         public String getDescriptionId() {
-            return attribute.getDescriptionId();
+            Identifier id = BuiltInRegistries.ATTRIBUTE.getKey(attribute);
+            return "attribute." + id.getNamespace() + "." + id.getPath().replace('/', '.');
         }
 
         public AttributeData buildData(EquipmentSlot slot, double val, AttributeModifier.Operation op) {
@@ -379,7 +532,7 @@ public class ItemUtils {
                                        @Nullable Tuple<Enchantment, Integer>[] enchantments) {
         ItemStack is = new ItemStack(item, count);
         if (name != null) {
-            is.set(DataComponents.CUSTOM_NAME, Component.literal(name));
+            setComponent(is, DataComponents.CUSTOM_NAME, Component.literal(name));
         }
         if (lore != null) {
             setLore(is, lore);
@@ -405,7 +558,8 @@ public class ItemUtils {
 
     public static List<AttributeData> getAttributes(ItemStack stack) {
         List<AttributeData> l = new ArrayList<>();
-        ItemAttributeModifiers modifiers = stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        ItemAttributeModifiers modifiers = getComponent(stack, DataComponents.ATTRIBUTE_MODIFIERS);
+        modifiers = modifiers != null ? modifiers : ItemAttributeModifiers.EMPTY;
         for (var entry : modifiers.modifiers()) {
             EquipmentSlot slot = null;
             for (EquipmentSlot s : EquipmentSlot.values()) {
@@ -420,7 +574,7 @@ public class ItemUtils {
     }
 
     public static int getColor(ItemStack stack) {
-        DyedItemColor color = stack.get(DataComponents.DYED_COLOR);
+        DyedItemColor color = getComponent(stack, DataComponents.DYED_COLOR);
         return color != null ? color.rgb() : 10511680;
     }
 
@@ -429,7 +583,7 @@ public class ItemUtils {
         if (tag == null) {
             return defaultValue;
         }
-        return tag.contains(key) ? tag.getString(key) : defaultValue;
+        return hasTag(tag, key, 8) ? getString(tag, key) : defaultValue;
     }
 
     public static List<Tuple<Enchantment, Integer>> getEnchantments(ItemStack stack) {
@@ -438,7 +592,8 @@ public class ItemUtils {
 
     public static List<Tuple<Enchantment, Integer>> getEnchantments(ItemStack stack, boolean book) {
         List<Tuple<Enchantment, Integer>> list = new ArrayList<>();
-        ItemEnchantments enchantments = stack.getOrDefault(book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        ItemEnchantments enchantments = getComponent(stack, book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS);
+        enchantments = enchantments != null ? enchantments : ItemEnchantments.EMPTY;
         for (var entry : enchantments.entrySet()) {
             list.add(new Tuple<>(entry.getKey().value(), entry.getIntValue()));
         }
@@ -467,23 +622,29 @@ public class ItemUtils {
         }
         net.minecraft.core.HolderLookup.Provider registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : VanillaRegistries.createLookup();
         
-        ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
+        Identifier itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
         StringBuilder builder = new StringBuilder(itemId.toString());
         
-        Tag tag = itemStack.save(registryAccess);
-        if (tag instanceof CompoundTag ct && ct.contains("components", 10)) {
-            CompoundTag components = ct.getCompound("components");
+        Tag tag = saveStack(itemStack, registryAccess);
+        if (tag instanceof CompoundTag ct && ct.getCompound("components").isPresent()) {
+            CompoundTag components = ct.getCompound("components").orElseThrow();
             if (!components.isEmpty()) {
                 builder.append("[");
                 boolean first = true;
-                List<String> keys = new ArrayList<>(components.getAllKeys());
+                java.util.Map<String, Tag> entries = new java.util.HashMap<>();
+                components.forEach(entries::put);
+
+                List<String> keys = new ArrayList<>(components.keySet());
                 Collections.sort(keys);
                 
                 for (String key : keys) {
                     if (!first) builder.append(",");
                     first = false;
                     builder.append(key).append("=");
-                    builder.append(components.get(key).toString());
+                    Tag v = entries.get(key);
+                    if (v != null) {
+                        builder.append(v);
+                    }
                 }
                 builder.append("]");
             }
@@ -508,31 +669,31 @@ public class ItemUtils {
         CompoundTag skinTag = getSkinInformationFromUUID(uuidStr);
         
         UUID uuid = UUID.fromString(addHyphen(uuidStr));
-        GameProfile profile = new GameProfile(uuid, name);
+        GameProfile profile = new GameProfile(uuid, name, new PropertyMap(HashMultimap.create()));
         
-        if (skinTag.contains("Properties", 10)) {
-            CompoundTag props = skinTag.getCompound("Properties");
-            if (props.contains("textures", 9)) {
-                ListTag textures = props.getList("textures", 10);
+        if (hasTag(skinTag, "Properties", 10)) {
+            CompoundTag props = getCompound(skinTag, "Properties");
+            if (hasTag(props, "textures", 9)) {
+                ListTag textures = getList(props, "textures", 10);
                 for (int i = 0; i < textures.size(); i++) {
-                    CompoundTag tex = textures.getCompound(i);
-                    String value = tex.getString("Value");
-                    String signature = tex.contains("Signature") ? tex.getString("Signature") : null;
-                    profile.getProperties().put("textures", new Property("textures", value, signature));
+                    CompoundTag tex = getCompound(textures, i);
+                    String value = getString(tex, "Value");
+                    String signature = hasTag(tex, "Signature", 8) ? getString(tex, "Signature") : null;
+                    profile.properties().put("textures", new Property("textures", value, signature));
                 }
             }
         }
         
-        is.set(DataComponents.PROFILE, new ResolvableProfile(profile));
+        setComponent(is, DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         return is;
     }
 
     public static ItemStack getHead(ItemStack is, String uuid, String url, String name) {
         UUID id = UUID.fromString(addHyphen(uuid));
-        GameProfile profile = new GameProfile(id, name);
+        GameProfile profile = new GameProfile(id, name, new PropertyMap(HashMultimap.create()));
         String value = Base64.getEncoder().encodeToString(("{\"textures\":{\"SKIN\":{\"url\":\"" + url + "\"}}}").getBytes());
-        profile.getProperties().put("textures", new Property("textures", value));
-        is.set(DataComponents.PROFILE, new ResolvableProfile(profile));
+        profile.properties().put("textures", new Property("textures", value));
+        setComponent(is, DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         return is;
     }
 
@@ -559,21 +720,21 @@ public class ItemUtils {
                 CompoundTag skinTag = getSkinInformationFromUUID(uuidStr);
                 
                 UUID uuid = UUID.fromString(addHyphen(uuidStr));
-                GameProfile profile = new GameProfile(uuid, tuple.a);
+                GameProfile profile = new GameProfile(uuid, tuple.a, new PropertyMap(HashMultimap.create()));
                 
-                if (skinTag.contains("Properties", 10)) {
-                    CompoundTag props = skinTag.getCompound("Properties");
-                    if (props.contains("textures", 9)) {
-                        ListTag textures = props.getList("textures", 10);
+                if (hasTag(skinTag, "Properties", 10)) {
+                    CompoundTag props = getCompound(skinTag, "Properties");
+                    if (hasTag(props, "textures", 9)) {
+                        ListTag textures = getList(props, "textures", 10);
                         for (int i = 0; i < textures.size(); i++) {
-                            CompoundTag tex = textures.getCompound(i);
-                            String value = tex.getString("Value");
-                            String signature = tex.contains("Signature") ? tex.getString("Signature") : null;
-                            profile.getProperties().put("textures", new Property("textures", value, signature));
+                            CompoundTag tex = getCompound(textures, i);
+                            String value = getString(tex, "Value");
+                            String signature = hasTag(tex, "Signature", 8) ? getString(tex, "Signature") : null;
+                            profile.properties().put("textures", new Property("textures", value, signature));
                         }
                     }
                 }
-                stack.set(DataComponents.PROFILE, new ResolvableProfile(profile));
+                setComponent(stack, DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
                 stacks.add(stack);
             } catch (Exception ignore) {
             }
@@ -582,7 +743,7 @@ public class ItemUtils {
     }
 
     public static String[] getLore(ItemStack stack) {
-        ItemLore lore = stack.get(DataComponents.LORE);
+        ItemLore lore = getComponent(stack, DataComponents.LORE);
         if (lore == null) {
             return new String[0];
         }
@@ -592,8 +753,8 @@ public class ItemUtils {
     }
 
     public static CompoundTag getOrCreateSubCompound(CompoundTag compound, String key) {
-        if (compound.contains(key, 10)) {
-            return compound.getCompound(key);
+        if (hasTag(compound, key, 10)) {
+            return getCompound(compound, key);
         }
         CompoundTag nbttagcompound = new CompoundTag();
         compound.put(key, nbttagcompound);
@@ -601,7 +762,7 @@ public class ItemUtils {
     }
 
     public static PotionInformation getPotionInformation(ItemStack stack) {
-        PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
+        PotionContents contents = getComponent(stack, DataComponents.POTION_CONTENTS);
         if (contents == null) return new PotionInformation(OptionalInt.empty(), Potions.WATER.value(), new ArrayList<>());
         
         OptionalInt color = contents.customColor().map(OptionalInt::of).orElse(OptionalInt.empty());
@@ -612,7 +773,7 @@ public class ItemUtils {
     }
 
     public static CompoundTag getFireworkExplosionTag(ItemStack stack) {
-        FireworkExplosion exp = stack.get(DataComponents.FIREWORK_EXPLOSION);
+        FireworkExplosion exp = getComponent(stack, DataComponents.FIREWORK_EXPLOSION);
         if (exp != null) {
             return new ExplosionInformation(exp.shape(), exp.hasTrail(), exp.hasTwinkle(), exp.colors().toIntArray(), exp.fadeColors().toIntArray()).getTag();
         }
@@ -620,14 +781,14 @@ public class ItemUtils {
     }
 
     public static void setFireworkExplosionFromTag(ItemStack stack, CompoundTag tag) {
-        stack.set(DataComponents.FIREWORK_EXPLOSION, new ExplosionInformation(tag).toFireworkExplosion());
+        setComponent(stack, DataComponents.FIREWORK_EXPLOSION, new ExplosionInformation(tag).toFireworkExplosion());
     }
 
     public static CompoundTag getFireworksTag(ItemStack stack) {
-        Fireworks fireworks = stack.get(DataComponents.FIREWORKS);
+        Fireworks fireworks = getComponent(stack, DataComponents.FIREWORKS);
         CompoundTag tag = new CompoundTag();
         if (fireworks != null) {
-            tag.putByte("Flight", (byte) fireworks.flightDuration());
+            putByte(tag, "Flight", (byte) fireworks.flightDuration());
             ListTag explosions = new ListTag();
             for (FireworkExplosion exp : fireworks.explosions()) {
                 explosions.add(new ExplosionInformation(exp.shape(), exp.hasTrail(), exp.hasTwinkle(), exp.colors().toIntArray(), exp.fadeColors().toIntArray()).getTag());
@@ -638,13 +799,13 @@ public class ItemUtils {
     }
 
     public static void setFireworksFromTag(ItemStack stack, CompoundTag tag) {
-        int flight = tag.getByte("Flight");
-        ListTag explosionsTag = tag.getList("Explosions", 10);
+        int flight = getByte(tag, "Flight");
+        ListTag explosionsTag = getList(tag, "Explosions", 10);
         List<FireworkExplosion> explosions = new ArrayList<>();
         for (int i = 0; i < explosionsTag.size(); i++) {
-            explosions.add(new ExplosionInformation(explosionsTag.getCompound(i)).toFireworkExplosion());
+            explosions.add(new ExplosionInformation(getCompound(explosionsTag, i)).toFireworkExplosion());
         }
-        stack.set(DataComponents.FIREWORKS, new Fireworks(flight, explosions));
+        setComponent(stack, DataComponents.FIREWORKS, new Fireworks(flight, explosions));
     }
 
     public static ItemStack getRandomFireworks() {
@@ -660,7 +821,10 @@ public class ItemUtils {
         ItemStack fw = new ItemStack(Items.FIREWORK_ROCKET);
         setFireworksFromTag(fw, fwt);
         List<EntityType<?>> list = BuiltInRegistries.ENTITY_TYPE.stream().filter(EntityType::canSummon).toList();
-        fw.set(DataComponents.CUSTOM_NAME, Component.translatable(list.get(RANDOM.nextInt(list.size())).getDescriptionId())
+        EntityType<?> entityType = list.get(RANDOM.nextInt(list.size()));
+        Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
+        String desc = "entity." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+        setComponent(fw, DataComponents.CUSTOM_NAME, Component.translatable(desc)
                 .withStyle(ChatFormatting.values()[RANDOM.nextInt(16)])
                 .append(" " + CommandUtils.getRandomElement(RANDOM_CHAR) + RANDOM.nextInt(1000)));
         setLore(fw, new String[]{ChatFormatting.YELLOW + "" + ChatFormatting.ITALIC + I18n.get("cmd.act.rfw")});
@@ -671,24 +835,24 @@ public class ItemUtils {
         if (SKIN_CACHE.containsKey(uuid) && SKIN_CACHE.get(uuid).a + 60000 > System.currentTimeMillis()) {
             return SKIN_CACHE.get(uuid).b.copy();
         }
-        CompoundTag requestCompound = TagParser.parseTag(
+        CompoundTag requestCompound = TagParser.parseCompoundFully(
                 sendRequest("https://sessionserver.mojang.com/session/minecraft/profile/" + uuid.replaceAll("-", ""),
                         null, null, null));
         CompoundTag newTag = new CompoundTag();
-        if (requestCompound.contains("properties", 9)) {
-            ListTag properties = requestCompound.getList("properties", 10);
+        if (hasTag(requestCompound, "properties", 9)) {
+            ListTag properties = getList(requestCompound, "properties", 10);
             ListTag textures = new ListTag();
             properties.forEach(base -> {
                 CompoundTag tex = (CompoundTag) base;
                 CompoundTag newTex = new CompoundTag();
-                if (tex.contains("value", 8)) {
-                    newTex.putString("Value", tex.getString("value"));
+                if (hasTag(tex, "value", 8)) {
+                    newTex.putString("Value", getString(tex, "value"));
                 }
                 textures.add(newTex);
             });
             newTag.put("Properties", new CompoundTag());
-            newTag.putString("Id", addHyphen(uuid.replaceAll("-", "")));
-            newTag.getCompound("Properties").put("textures", textures);
+            putString(newTag, "Id", addHyphen(uuid.replaceAll("-", "")));
+            getCompound(newTag, "Properties").put("textures", textures);
         }
         SKIN_CACHE.put(uuid, new Tuple<>(System.currentTimeMillis(), newTag.copy()));
         return newTag;
@@ -707,14 +871,14 @@ public class ItemUtils {
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining(","));
         if (!query.isEmpty()) {
-            CompoundTag tag = TagParser.parseTag("{data:" + sendRequest("https://api.mojang.com/profiles/minecraft",
+            CompoundTag tag = TagParser.parseCompoundFully("{data:" + sendRequest("https://api.mojang.com/profiles/minecraft",
                     "POST", "application/json", "[" + query + "]") + "}");
-            if (tag.contains("data", 9)) {
-                tag.getList("data", 10).forEach(base -> {
+            if (hasTag(tag, "data", 9)) {
+                getList(tag, "data", 10).forEach(base -> {
                     CompoundTag data = (CompoundTag) base;
-                    if (data.contains("id", 8) && data.contains("name", 8)) {
-                        String name = data.getString("name");
-                        String id = data.getString("id");
+                    if (hasTag(data, "id", 8) && hasTag(data, "name", 8)) {
+                        String name = getString(data, "name");
+                        String id = getString(data, "id");
                         list.add(new Tuple<>(name, id));
                         UUID_CACHE.put(name, new Tuple<>(System.currentTimeMillis(), id));
                     }
@@ -741,7 +905,7 @@ public class ItemUtils {
         if (mc.player != null && mc.player.isCreative()) {
             if (stack != null) {
                 for (int i = 0; i < 9; i++) {
-                    if (mc.player.getInventory().items.get(i).isEmpty()) {
+                    if (mc.player.getInventory().getItem(i).isEmpty()) {
                         give(mc, stack, 36 + i);
                         ChatUtils.itemStack(stack);
                         return;
@@ -776,7 +940,7 @@ public class ItemUtils {
             for (; j < stacks.size(); j++) {
                 is = stacks.get(j);
                 for (; i < 9; i++) {
-                    if (mc.player.getInventory().items.get(i).isEmpty()) {
+                    if (mc.player.getInventory().getItem(i).isEmpty()) {
                         give(mc, is, 36 + i);
                         ChatUtils.itemStack(is);
                         i++;
@@ -833,7 +997,7 @@ public class ItemUtils {
             var holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(data.getAttribute());
             builder.add(holder, data.getModifier(), group);
         }
-        stack.set(DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
+        setComponent(stack, DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
         return stack;
     }
 
@@ -843,7 +1007,7 @@ public class ItemUtils {
         if (color == LEATHER_ARMOR_BASE_COLOR) {
             stack.remove(DataComponents.DYED_COLOR);
         } else {
-            stack.set(DataComponents.DYED_COLOR, new DyedItemColor(color, true));
+            setComponent(stack, DataComponents.DYED_COLOR, new DyedItemColor(color));
         }
         return stack;
     }
@@ -854,7 +1018,7 @@ public class ItemUtils {
     }
 
     public static boolean isLeatherArmor(ItemStack stack) {
-        return stack.getItem() instanceof ArmorItem ai && ai.getMaterial() == ArmorMaterials.LEATHER;
+        return stack.is(net.minecraft.tags.ItemTags.DYEABLE);
     }
 
     public static boolean canGlobalColorIt(ItemStack stack) {
@@ -865,7 +1029,7 @@ public class ItemUtils {
         if (isPotionItem(stack)) {
             PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
             if (contents != null && contents.customColor().isPresent()) {
-                 stack.set(DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(), Optional.empty(), contents.customEffects()));
+                 setComponent(stack, DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(), Optional.empty(), contents.customEffects(), contents.customName()));
             }
         } else if (isLeatherArmor(stack)) {
             stack.remove(DataComponents.DYED_COLOR);
@@ -875,8 +1039,9 @@ public class ItemUtils {
 
     public static ItemStack setGlobalColor(ItemStack stack, int color) {
         if (isPotionItem(stack)) {
-            PotionContents contents = stack.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
-            stack.set(DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(), Optional.of(color), contents.customEffects()));
+            PotionContents contents = getComponent(stack, DataComponents.POTION_CONTENTS);
+            contents = contents != null ? contents : PotionContents.EMPTY;
+            setComponent(stack, DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(), Optional.of(color), contents.customEffects(), contents.customName()));
         } else if (isLeatherArmor(stack)) {
             setColor(stack, color);
         }
@@ -898,7 +1063,7 @@ public class ItemUtils {
                 return OptionalInt.of(contents.customColor().get());
             }
         } else if (isLeatherArmor(stack)) {
-            DyedItemColor color = stack.get(DataComponents.DYED_COLOR);
+            DyedItemColor color = getComponent(stack, DataComponents.DYED_COLOR);
             if (color != null) {
                 return OptionalInt.of(color.rgb());
             }
@@ -927,13 +1092,13 @@ public class ItemUtils {
         RegistryAccess registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : null;
         if (registryAccess == null) return stack;
 
-        Registry<Enchantment> registry = registryAccess.registryOrThrow(Registries.ENCHANTMENT);
+        Registry<Enchantment> registry = registryAccess.lookupOrThrow(Registries.ENCHANTMENT);
 
         for (Tuple<Enchantment, Integer> t : enchantments) {
             var holder = registry.wrapAsHolder(t.a);
             mutable.set(holder, t.b);
         }
-        stack.set(book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS, mutable.toImmutable());
+        setComponent(stack, book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS, mutable.toImmutable());
         return stack;
     }
 
@@ -943,19 +1108,19 @@ public class ItemUtils {
             return 15;
         }
 
-        CompoundTag blockStateTag = tag.getCompound("BlockStateTag");
+        CompoundTag blockStateTag = getCompound(tag, "BlockStateTag");
 
         if (!blockStateTag.contains("level")) {
             return 15;
         }
 
-        return blockStateTag.getInt("level");
+        return getInt(blockStateTag, "level");
     }
 
     public static void setLightLevel(ItemStack stack, int level) {
         CompoundTag tag = getOrCreateTag(stack);
-        CompoundTag blockStateTag = tag.getCompound("BlockStateTag");
-        blockStateTag.putInt("level", level);
+        CompoundTag blockStateTag = getCompound(tag, "BlockStateTag");
+        putInt(blockStateTag, "level", level);
         tag.put("BlockStateTag", blockStateTag);
         setTag(stack, tag);
     }
@@ -974,21 +1139,21 @@ public class ItemUtils {
         List<Component> components = Arrays.stream(lore)
                 .map(Component::literal)
                 .collect(Collectors.toList());
-        stack.set(DataComponents.LORE, new ItemLore(components));
+        setComponent(stack, DataComponents.LORE, new ItemLore(components));
         return stack;
     }
 
     public static ItemStack setPotionInformation(ItemStack stack, PotionInformation info) {
         Optional<Holder<Potion>> potion = Optional.of(BuiltInRegistries.POTION.wrapAsHolder(info.getMain()));
         Optional<Integer> color = info.getCustomColor().isPresent() ? Optional.of(info.getCustomColor().getAsInt()) : Optional.empty();
-        PotionContents contents = new PotionContents(potion, color, info.getCustomEffects());
-        stack.set(DataComponents.POTION_CONTENTS, contents);
+        PotionContents contents = new PotionContents(potion, color, info.getCustomEffects(), Optional.empty());
+        setComponent(stack, DataComponents.POTION_CONTENTS, contents);
         return stack;
     }
 
     public static ItemStack setUnbreakable(ItemStack stack, boolean value) {
         if (value) {
-            stack.set(DataComponents.UNBREAKABLE, new Unbreakable(true));
+            setComponent(stack, DataComponents.UNBREAKABLE, Unit.INSTANCE);
         } else {
             stack.remove(DataComponents.UNBREAKABLE);
         }
@@ -1049,27 +1214,27 @@ public class ItemUtils {
             return;
         }
 
-        if (!tag.contains("BlockEntityTag", Tag.TAG_COMPOUND)) {
+        if (!hasTag(tag, "BlockEntityTag", Tag.TAG_COMPOUND)) {
             return;
         }
 
-        CompoundTag blockTag = tag.getCompound("BlockEntityTag");
+        CompoundTag blockTag = getCompound(tag, "BlockEntityTag");
 
-        if (!blockTag.contains("Items", Tag.TAG_LIST)) {
+        if (!hasTag(blockTag, "Items", Tag.TAG_LIST)) {
             return;
         }
 
-        ListTag items = blockTag.getList("Items", Tag.TAG_COMPOUND);
+        ListTag items = getList(blockTag, "Items", Tag.TAG_COMPOUND);
         RegistryAccess registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : RegistryAccess.EMPTY;
 
         for (int i = 0; i < items.size(); i++) {
-            CompoundTag item = items.getCompound(i);
-            byte slot = item.getByte("Slot");
+            CompoundTag item = getCompound(items, i);
+            byte slot = getByte(item, "Slot");
             if (!data.size().isIn(slot)) {
                 continue;
             }
 
-            data.stacks.set(slot, ItemStack.parse(registryAccess, item).orElse(ItemStack.EMPTY));
+            data.stacks.set(slot, parseStack(registryAccess, item));
         }
     }
 
@@ -1083,18 +1248,18 @@ public class ItemUtils {
             return air();
         }
 
-        if (!tag.contains("BlockEntityTag", Tag.TAG_COMPOUND)) {
+        if (!hasTag(tag, "BlockEntityTag", Tag.TAG_COMPOUND)) {
             return air();
         }
 
-        CompoundTag blockTag = tag.getCompound("BlockEntityTag");
+        CompoundTag blockTag = getCompound(tag, "BlockEntityTag");
 
-        if (!blockTag.contains("RecordItem", Tag.TAG_COMPOUND)) {
+        if (!hasTag(blockTag, "RecordItem", Tag.TAG_COMPOUND)) {
             return air();
         }
 
         RegistryAccess registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : RegistryAccess.EMPTY;
-        return ItemStack.parse(registryAccess, blockTag.getCompound("RecordItem")).orElse(ItemStack.EMPTY);
+        return parseStack(registryAccess, getCompound(blockTag, "RecordItem"));
     }
 
     public static ContainerData fetchContainerData(ItemStack stack) {
@@ -1111,7 +1276,7 @@ public class ItemUtils {
         if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b == Blocks.TRAPPED_CHEST || b == Blocks.CHEST
                 || b == Blocks.DISPENSER || b == Blocks.DROPPER || b instanceof AbstractFurnaceBlock
                 || b == Blocks.HOPPER) {
-            ItemContainerContents contents = stack.get(DataComponents.CONTAINER);
+            ItemContainerContents contents = getComponent(stack, DataComponents.CONTAINER);
             if (contents != null) {
                 contents.copyInto(stacks);
             }
@@ -1137,7 +1302,7 @@ public class ItemUtils {
         if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b == Blocks.TRAPPED_CHEST || b == Blocks.CHEST
                 || b == Blocks.DISPENSER || b == Blocks.DROPPER || b == Blocks.HOPPER
                 || b instanceof AbstractFurnaceBlock) {
-            stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(stacks));
+            setComponent(stack, DataComponents.CONTAINER, ItemContainerContents.fromItems(stacks));
         } else if (b == Blocks.JUKEBOX) {
             ItemStack cd = stacks.get(0);
             if (cd.getItem() == Items.AIR) {
@@ -1145,8 +1310,8 @@ public class ItemUtils {
             }
             CompoundTag blockTag = getOrCreateTagElement(stack, "BlockEntityTag");
             CompoundTag itemTag = new CompoundTag();
-            itemTag.putString("id", getRegistry(cd.getItem()).toString());
-            itemTag.putByte("Count", (byte) cd.getCount());
+            putString(itemTag, "id", getRegistry(cd.getItem()).toString());
+            putByte(itemTag, "Count", (byte) cd.getCount());
             CompoundTag it = getTag(cd);
             if (it != null) {
                 itemTag.put("tag", it);
@@ -1158,11 +1323,11 @@ public class ItemUtils {
         return stack;
     }
 
-    public static <T> ResourceLocation getRegistry(Registry<T> registry, T obj) {
+    public static <T> Identifier getRegistry(Registry<T> registry, T obj) {
         return registry.getKey(obj);
     }
 
-    public static ResourceLocation getRegistry(ItemLike obj) {
+    public static Identifier getRegistry(ItemLike obj) {
         if (obj instanceof Item item) {
             return getRegistry(BuiltInRegistries.ITEM, item);
         } else if (obj instanceof Block block) {
@@ -1171,7 +1336,7 @@ public class ItemUtils {
         throw new IllegalArgumentException("bad itemlike type: " + obj.getClass());
     }
 
-    public static ResourceLocation getRegistry(ItemStack obj) {
+    public static Identifier getRegistry(ItemStack obj) {
         return getRegistry(obj.getItem());
     }
 }

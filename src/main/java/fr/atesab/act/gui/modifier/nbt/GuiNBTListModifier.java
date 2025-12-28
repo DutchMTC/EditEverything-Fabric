@@ -26,8 +26,9 @@ public class GuiNBTListModifier extends GuiListModifier<ListTag> {
             addListElement(NBTElement.getElementByBase(this, k, base));
         }
         addListElement(new AddElementList(this, () -> {
-            if (this.list.getElementType() != 0) {
-                Tag base = GuiNBTModifier.getDefaultElement(this.list.getElementType());
+            byte elementType = this.list.isEmpty() ? 0 : this.list.get(0).getId();
+            if (elementType != 0) {
+                Tag base = GuiNBTModifier.getDefaultElement(elementType);
                 if (base != null)
                     addListElement(getElements().size() - 1, NBTElement.getElementByBase(this, k, base));
             } else

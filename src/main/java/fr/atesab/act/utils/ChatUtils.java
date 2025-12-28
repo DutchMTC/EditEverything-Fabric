@@ -84,9 +84,9 @@ public class ChatUtils {
             send(getPrefix().append(Component.translatable("gui.act.give.msg").append(": ")
                     .withStyle(ChatFormatting.GOLD).append(itemStack.getDisplayName().copy().withStyle(style -> {
                         style.withHoverEvent(
-                                new HoverEvent(HoverEvent.Action.SHOW_ITEM, new HoverEvent.ItemStackInfo(itemStack)));
-                        style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                                ACTMod.getModCommand().getName() + " " + ACTMod.getModCommand().SC_OPEN_GIVER.getName()
+                                new HoverEvent.ShowItem(itemStack));
+                        style.withClickEvent(new ClickEvent.RunCommand(
+                                "/" + ACTMod.getModCommand().getName() + " " + ACTMod.getModCommand().SC_OPEN_GIVER.getName()
                                         + " " + ItemUtils.getGiveCode(itemStack)));
                         return style;
                     }))));
@@ -104,9 +104,9 @@ public class ChatUtils {
      */
     @InternalCommand(name = "showraw")
     public static void send(Component message) {
-        Player plr = Minecraft.getInstance().player;
-        if (plr != null) {
-            plr.sendSystemMessage(message);
+        var mc = Minecraft.getInstance();
+        if (mc.gui != null) {
+            mc.gui.getChat().addMessage(message);
         }
     }
 

@@ -39,7 +39,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundTeleportToEntityPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
@@ -119,7 +119,7 @@ public class ACTMod implements ModInitializer {
     private static final Map<String, Map<String, Consumer<StringModifier>>> stringModifier = new HashMap<>();
     private static final Configuration config = new Configuration();
     private static final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
-    private static CommandDispatcher<SharedSuggestionProvider> SharedSuggestionProvider;
+    private static CommandDispatcher<? extends SharedSuggestionProvider> sharedSuggestionProvider;
     private static final InternalCommandExecutor internalCommandExecutor = new InternalCommandExecutor();
     public static final Component HIDE_COMPONENT = Component.literal("%HIDE_COMPONENT%");
 
@@ -197,7 +197,7 @@ public class ACTMod implements ModInitializer {
 
     // Client-side method
     public static void spectatorTeleport(PlayerInfo to) {
-        spectatorTeleport(to.getProfile().getId());
+        spectatorTeleport(to.getProfile().id());
     }
 
     // Client-side method
@@ -206,7 +206,7 @@ public class ACTMod implements ModInitializer {
         if (p == null) {
             return;
         }
-        var mode = Objects.requireNonNull(Objects.requireNonNull(Minecraft.getInstance().getConnection()).getPlayerInfo(p.getGameProfile().getId())).getGameMode();
+        var mode = Objects.requireNonNull(Objects.requireNonNull(Minecraft.getInstance().getConnection()).getPlayerInfo(p.getGameProfile().id())).getGameMode();
         if (mode != GameType.SPECTATOR) {
             ModdedCommand.sendSigned("/gamemode " + GameType.SPECTATOR.getName());
         }
@@ -276,6 +276,10 @@ public class ACTMod implements ModInitializer {
         return modCommand;
     }
 
+    public static void registerInternalModule(Class<?> module) {
+        internalCommandExecutor.registerModule(module);
+    }
+
     @Override
     public void onInitialize() {
         // Common Setup
@@ -283,7 +287,7 @@ public class ACTMod implements ModInitializer {
         internalCommandExecutor.registerModule(ChatUtils.class);
         internalCommandExecutor.registerModule(CommandUtils.class);
         internalCommandExecutor.registerModule(FileUtils.class);
-        internalCommandExecutor.registerModule(GuiUtils.class);
+        // GuiUtils is client side only
         internalCommandExecutor.registerModule(ItemUtils.class);
         internalCommandExecutor.registerModule(ReflectionUtils.class);
 
@@ -304,17 +308,17 @@ public class ACTMod implements ModInitializer {
 
         // Register Argument Types
         ArgumentTypeRegistry.registerArgumentType(
-                ResourceLocation.fromNamespaceAndPath(MOD_ID, "player_list"),
+                Identifier.fromNamespaceAndPath(MOD_ID, "player_list"),
                 PlayerListArgumentType.class,
                 SingletonArgumentInfo.contextFree(PlayerListArgumentType::new));
 
         ArgumentTypeRegistry.registerArgumentType(
-                ResourceLocation.fromNamespaceAndPath(MOD_ID, "string_list"),
+                Identifier.fromNamespaceAndPath(MOD_ID, "string_list"),
                 StringListArgumentType.class,
                 SingletonArgumentInfo.contextFree(() -> new StringListArgumentType(Collections::emptyList, Collections.emptyList(), true)));
 
         ArgumentTypeRegistry.registerArgumentType(
-                ResourceLocation.fromNamespaceAndPath(MOD_ID, "connection_player"),
+                Identifier.fromNamespaceAndPath(MOD_ID, "connection_player"),
                 ConnectionPlayerArgument.class,
                 SingletonArgumentInfo.contextFree(ConnectionPlayerArgument::player));
 
@@ -333,30 +337,37 @@ public class ACTMod implements ModInitializer {
                 ItemUtils.getGiveCode(new ItemStack(Items.POTION)));
         registerTemplate("gui.act.menu.template.fireworks", new ItemStack(Items.FIREWORK_ROCKET),
                 ItemUtils.getGiveCode(new ItemStack(Items.FIREWORK_ROCKET)));
-        registerTemplate(Items.PLAYER_HEAD.getDescriptionId(), new ItemStack(Items.PLAYER_HEAD),
+        
+        Identifier headId = BuiltInRegistries.ITEM.getKey(Items.PLAYER_HEAD);
+        String headDesc = "item." + headId.getNamespace() + "." + headId.getPath().replace('/', '.');
+        registerTemplate(headDesc, new ItemStack(Items.PLAYER_HEAD),
                 ItemUtils.getGiveCode(new ItemStack(Items.PLAYER_HEAD)));
+        
         registerTemplate("gui.act.menu.template.command", new ItemStack(Blocks.COMMAND_BLOCK),
                 ItemUtils.getGiveCode(new ItemStack(Blocks.COMMAND_BLOCK)));
-        registerTemplate(Items.EGG.getDescriptionId(), new ItemStack(Items.EGG),
+        
+        Identifier eggId = BuiltInRegistries.ITEM.getKey(Items.EGG);
+        String eggDesc = "item." + eggId.getNamespace() + "." + eggId.getPath().replace('/', '.');
+        registerTemplate(eggDesc, new ItemStack(Items.EGG),
                 ItemUtils.getGiveCode(new ItemStack(Items.EGG)));
 
         // Register Modifiers (using BuiltInRegistries)
         BuiltInRegistries.ITEM.entrySet().forEach(e -> {
-            var registryName = e.getKey().location();
-            var i = e.getValue();
-            registerStringModifier(i.getDescriptionId() + ".name", "registry.items",
+            var registryName = e.getKey().identifier();
+            String desc = "item." + registryName.getNamespace() + "." + registryName.getPath().replace('/', '.');
+            registerStringModifier(desc + ".name", "registry.items",
                     sm -> sm.setString(registryName.toString()));
         });
 
         BuiltInRegistries.BLOCK.entrySet().forEach(e -> {
-            var registryName = e.getKey().location();
+            var registryName = e.getKey().identifier();
             var b = e.getValue();
             registerStringModifier(b.getName().getString(), "registry.blocks",
                     sm -> sm.setString(registryName.toString()));
         });
 
         BuiltInRegistries.POTION.entrySet().forEach(e -> {
-            var registryName = e.getKey().location();
+            var registryName = e.getKey().identifier();
             var p = e.getValue();
             registerStringModifier(registryName.toString(), "registry.potions",
                     sm -> sm.setString(registryName.toString()));
@@ -368,14 +379,25 @@ public class ACTMod implements ModInitializer {
         BuiltInRegistries.SOUND_EVENT.keySet().forEach(s -> registerStringModifier(s.toString(), "registry.sounds",
                 sm -> sm.setString(s.toString())));
 
-        BuiltInRegistries.VILLAGER_PROFESSION.forEach(vp -> registerStringModifier(vp.name(), "registry.villagerProfessions",
-                sm -> sm.setString(vp.toString())));
+        BuiltInRegistries.VILLAGER_PROFESSION.entrySet().forEach(entry -> {
+            Identifier id = entry.getKey().identifier();
+            registerStringModifier(id.toString(), "registry.villagerProfessions",
+                    sm -> sm.setString(id.toString()));
+        });
 
-        BuiltInRegistries.ENTITY_TYPE.entrySet().forEach(ee -> registerStringModifier(ee.getValue().getDescriptionId(), "registry.entities",
-                sm -> sm.setString(ee.getKey().location().toString())));
+        BuiltInRegistries.ENTITY_TYPE.entrySet().forEach(ee -> {
+            Identifier id = ee.getKey().identifier();
+            String desc = "entity." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+            registerStringModifier(desc, "registry.entities",
+                sm -> sm.setString(id.toString()));
+        });
 
-        BuiltInRegistries.ATTRIBUTE.entrySet().forEach(ee -> registerStringModifier(ee.getValue().getDescriptionId(), "attributes",
-                sm -> sm.setString(ee.getKey().location().toString())));
+        BuiltInRegistries.ATTRIBUTE.entrySet().forEach(ee -> {
+            Identifier id = ee.getKey().identifier();
+            String descriptionId = "attribute." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+            registerStringModifier(descriptionId, "attributes",
+                sm -> sm.setString(id.toString()));
+        });
 
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             registerStringModifier("item.modifiers." + slot.getName(), "attributes.slot",
@@ -420,7 +442,7 @@ public class ACTMod implements ModInitializer {
                 RequiredArgumentBuilder<SharedSuggestionProvider, ?> requiredargumentbuilder = (RequiredArgumentBuilder) argumentbuilder;
                 if (requiredargumentbuilder.getSuggestionsProvider() != null) {
                     requiredargumentbuilder
-                            .suggests(SuggestionProviders.safelySwap(requiredargumentbuilder.getSuggestionsProvider()));
+                            .suggests(SuggestionProviders.cast(requiredargumentbuilder.getSuggestionsProvider()));
                 }
             }
 
@@ -437,11 +459,11 @@ public class ACTMod implements ModInitializer {
         }
     }
     
-    public static CommandDispatcher<SharedSuggestionProvider> getSharedSuggestionProvider() {
-        return SharedSuggestionProvider;
+    public static CommandDispatcher<? extends SharedSuggestionProvider> getSharedSuggestionProvider() {
+        return sharedSuggestionProvider;
     }
 
-    public static void setSharedSuggestionProvider(CommandDispatcher<SharedSuggestionProvider> sharedSuggestionProvider) {
-        SharedSuggestionProvider = sharedSuggestionProvider;
+    public static void setSharedSuggestionProvider(CommandDispatcher<? extends SharedSuggestionProvider> dispatcher) {
+        sharedSuggestionProvider = dispatcher;
     }
 }

@@ -12,6 +12,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -122,10 +125,12 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             font = mc.font;
         }
 
-        public boolean charTyped(char key, int modifiers) {
-            for (EditBox field : fieldList)
-                if (field.isVisible() && field.charTyped(key, modifiers))
+        public boolean charTyped(CharacterEvent event) {
+            for (EditBox field : fieldList) {
+                if (field.isVisible() && field.charTyped(event)) {
                     return true;
+                }
+            }
             return false;
         }
 
@@ -161,10 +166,12 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             return false;
         }
 
-        public boolean keyPressed(int key, int scanCode, int modifiers) {
-            for (EditBox field : fieldList)
-                if (field.isVisible() && field.keyPressed(key, scanCode, modifiers))
+        public boolean keyPressed(KeyEvent event) {
+            for (EditBox field : fieldList) {
+                if (field.isVisible() && field.keyPressed(event)) {
                     return true;
+                }
+            }
             return false;
         }
 
@@ -178,7 +185,10 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             return true;
         }
 
-        public void mouseClicked(double mouseX, double mouseY, int mouseButton) {
+        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+            int mouseButton = event.button();
             buttonList.forEach(b -> {
                 if (GuiUtils.isHover(b, (int) mouseX, (int) mouseY)) {
                     if (b instanceof RunElementButton) {
@@ -191,7 +201,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                         }
                     } else if (mouseButton == 0) {
                         playClick();
-                        b.onClick(mouseX, mouseY);
+                        b.onClick(event, doubleClick);
                     } else
                         otherActionPerformed(b, mouseButton);
                 }
@@ -204,7 +214,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                     if (GuiUtils.isHover(tf, (int) mouseX, (int) mouseY)) {
                         tf.setFocused(true);
                     }
-                    tf.mouseClicked(mouseX, mouseY, mouseButton);
+                    tf.mouseClicked(event, doubleClick);
                 }
             });
         }
@@ -336,7 +346,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
     }
 
     @Override
-    public boolean charTyped(char key, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
         boolean flag = false;
         for (List<ListElement> lel : visibleElements)
             for (ListElement le : lel)
@@ -348,7 +358,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         boolean handled = false;
         for (List<ListElement> lel : visibleElements)
             for (ListElement le : lel)
-                if (le.charTyped(key, modifiers))
+                if (le.charTyped(event))
                     handled = true;
 
         if (!flag && !justStart)
@@ -358,7 +368,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             if (flag)
                 search.setFocused(false);
         }
-        return handled || super.charTyped(key, modifiers);
+        return handled || super.charTyped(event);
 
     }
 
@@ -502,7 +512,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
         boolean flag = false;
         for (List<ListElement> lel : visibleElements)
             for (ListElement le : lel)
@@ -514,25 +524,28 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         boolean handled = false;
         for (List<ListElement> lel : visibleElements)
             for (ListElement le : lel)
-                if (le.keyPressed(key, scanCode, modifiers))
+                if (le.keyPressed(event))
                     handled = true;
 
         if (!flag)
             search.setFocused(true);
-        return handled || super.keyPressed(key, scanCode, modifiers);
+        return handled || super.keyPressed(event);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        if (super.mouseClicked(mouseX, mouseY, mouseButton))
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (super.mouseClicked(event, doubleClick))
             return true;
         boolean elementClicked = false;
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int mouseButton = event.button();
         for (int i = 0; i < visibleElements.length; i++) {
             int currentSize = dSize;
             for (ListElement le : visibleElements[i]) {
                 int offsetX = getOffsetX() + sizeX * i - le.getSizeX() / 2;
-                le.mouseClicked(mouseX - offsetX, mouseY - currentSize, mouseButton);
+                le.mouseClicked(new MouseButtonEvent(event.x() - offsetX, event.y() - currentSize, event.buttonInfo()), doubleClick);
                 if (le.isFocused()) {
                     elementClicked = true;
                 }
@@ -575,8 +588,8 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        super.render(graphics, mouseX, mouseY, partialTicks);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
+
         for (int i = 0; i < visibleElements.length; i++) {
             int currentSize = dSize;
             for (ListElement le : visibleElements[i]) {
@@ -585,6 +598,8 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                 currentSize += le.getSizeY() + paddingTop;
             }
         }
+
+        super.render(graphics, mouseX, mouseY, partialTicks);
         // search.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
         GuiUtils.drawCenterString(graphics, font, getStringTitle(), width / 2, 2, 0xFFFFFFFF, 10);
         GuiUtils.drawRightString(graphics, font, I18n.get("gui.act.search") + " : ", search.getX(), search.getY(), Color.ORANGE.getRGB(),

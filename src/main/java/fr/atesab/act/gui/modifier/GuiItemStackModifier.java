@@ -49,14 +49,14 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        super.render(graphics, mouseX, mouseY, partialTicks);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
+
+        super.render(graphics, mouseX, mouseY, partialTicks);
         if (currentItemStack != null) {
             GuiUtils.drawItemStack(graphics, currentItemStack, width / 2 - 10, height / 2 - 63);
             if (GuiUtils.isHover(width / 2 - 10, height / 2 - 63, 20, 20, mouseX, mouseY))
-                graphics.renderTooltip(font, currentItemStack, mouseX, mouseY);
+                GuiUtils.renderTooltip(graphics, font, currentItemStack, mouseX, mouseY);
         }
-        reRenderWidgets(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -98,8 +98,7 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                 new ACTButton(width / 2 + 1, height / 2, 99, 20, Component.translatable("gui.act.modifier.meta"), b -> getMinecraft().setScreen(new GuiMetaModifier(GuiItemStackModifier.this, is -> currentItemStack = is,
                         currentItemStack.copy()))));
         int i = 1;
-        if (currentItemStack.getItem() instanceof ArmorItem
-                && ((ArmorItem) currentItemStack.getItem()).getMaterial() == ArmorMaterials.LEATHER)
+        if (ItemUtils.isLeatherArmor(currentItemStack))
             addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 + 21, 200, 20,
                     Component.translatable("gui.act.modifier.meta.setColor"), b -> getMinecraft().setScreen(new GuiColorModifier(GuiItemStackModifier.this,
                     color -> ItemUtils.setColor(currentItemStack, color),
@@ -107,7 +106,7 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
         else if (currentItemStack.getItem().equals(Items.ENCHANTED_BOOK))
             addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 + 21, 200, 20,
                     Component.translatable("gui.act.modifier.ench").append(" (")
-                            .append(Items.ENCHANTED_BOOK.getDescription()).append(")"),
+                            .append(Items.ENCHANTED_BOOK.getName()).append(")"),
                     b -> getMinecraft().setScreen(new GuiEnchModifier(GuiItemStackModifier.this,
                             ItemUtils.getEnchantments(currentItemStack, true),
                             list -> ItemUtils.setEnchantments(list, currentItemStack, true)))));
@@ -137,7 +136,7 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
             }));
         } else if (currentItemStack.getItem().equals(Items.PLAYER_HEAD))
             addRenderableWidget(
-                    new ACTButton(width / 2 - 100, height / 2 + 21, 200, 20, Items.PLAYER_HEAD.getDescription(), b -> getMinecraft().setScreen(new GuiHeadModifier(GuiItemStackModifier.this,
+                    new ACTButton(width / 2 - 100, height / 2 + 21, 200, 20, Items.PLAYER_HEAD.getName(), b -> getMinecraft().setScreen(new GuiHeadModifier(GuiItemStackModifier.this,
                             is -> currentItemStack = is, currentItemStack))));
         else if (currentItemStack.getItem().equals(Items.COMMAND_BLOCK_MINECART)
                 || currentItemStack.getItem().equals(Blocks.COMMAND_BLOCK.asItem())

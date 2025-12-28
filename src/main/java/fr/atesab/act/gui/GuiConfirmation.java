@@ -28,8 +28,7 @@ public class GuiConfirmation extends GuiACT {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics, mouseX, mouseY, partialTicks);
         super.render(graphics, mouseX, mouseY, partialTicks);
-        GuiUtils.drawCenterString(graphics, font, message.getString(), width / 2, height / 2 - 20, 0xFFFFFF);
+        GuiUtils.drawCenterString(graphics, font, message.getString(), width / 2, height / 2 - 20, 0xFFFFFFFF);
     }
 }

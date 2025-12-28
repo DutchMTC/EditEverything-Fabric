@@ -6,6 +6,8 @@
   "key.act.edit": "Edit in-hand item",
 
   "key.act": "Advanced Creative Tab",
+  "key.category.act.key.act": "Advanced Creative Tab",
+  "key.categories.act.key.act": "Advanced Creative Tab",
   "itemGroup.act": "Advanced Creative Tab",
 
   "gui.act.error": "Error",

@@ -33,7 +33,7 @@ public class ModdedCommandRename extends ModdedCommand {
             is.set(DataComponents.CUSTOM_NAME, Component.literal(StringArgumentType.getString(c, "itemname")
                     .replaceAll("&([0-9a-fA-FrRk-oK-O])", ChatUtils.MODIFIER + "$1")
                     .replaceAll("&" + ChatUtils.MODIFIER, "&")));
-            ItemUtils.give(is, 36 + player.getInventory().selected);
+            ItemUtils.give(is, 36 + player.getInventory().getSelectedSlot());
             return 0;
         }));
     }
@@ -48,7 +48,7 @@ public class ModdedCommandRename extends ModdedCommand {
             ItemStack is = player.getMainHandItem();
             is = is.copy();
             is.remove(DataComponents.CUSTOM_NAME);
-            ItemUtils.give(is, 36 + player.getInventory().selected);
+            ItemUtils.give(is, 36 + player.getInventory().getSelectedSlot());
             return 0;
         };
     }

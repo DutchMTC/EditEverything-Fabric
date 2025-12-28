@@ -9,6 +9,8 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 
+import java.net.URI;
+
 public class ModdedCommandInfo extends ModdedCommand {
 
     public ModdedCommandInfo() {
@@ -32,19 +34,17 @@ public class ModdedCommandInfo extends ModdedCommand {
             src.sendSuccess(() -> Component.translatable("cmd.act.info.licence").withStyle(ChatFormatting.GOLD)
                             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
                             .append(Component.literal(ACTMod.getModLicense()).withStyle(s -> s
-                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                            Component.translatable("cmd.act.info.link.open")
-                                                    .withStyle(ChatFormatting.YELLOW)))
-                                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, ACTMod.getModLicenseLink()))
+                                    .withHoverEvent(new HoverEvent.ShowText(Component.translatable("cmd.act.info.link.open")
+                                            .withStyle(ChatFormatting.YELLOW)))
+                                    .withClickEvent(new ClickEvent.OpenUrl(URI.create(ACTMod.getModLicenseLink())))
                                     .withColor(ChatFormatting.WHITE))),
                     false);
             src.sendSuccess(() -> Component.translatable("cmd.act.info.link").withStyle(ChatFormatting.GOLD)
                             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
                             .append(Component.literal("curseforge.com").withStyle(s -> s
-                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                                            Component.translatable("cmd.act.info.link.open")
-                                                    .withStyle(ChatFormatting.YELLOW)))
-                                    .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, ACTMod.getModLink()))
+                                    .withHoverEvent(new HoverEvent.ShowText(Component.translatable("cmd.act.info.link.open")
+                                            .withStyle(ChatFormatting.YELLOW)))
+                                    .withClickEvent(new ClickEvent.OpenUrl(URI.create(ACTMod.getModLink())))
                                     .withColor(ChatFormatting.BLUE))),
                     false);
             return 5;

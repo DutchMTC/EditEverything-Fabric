@@ -10,7 +10,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.enchantment.Enchantments;
@@ -73,7 +73,7 @@ public class AdvancedCreativeTab {
         return null;
     }
 
-    public static final ResourceKey<CreativeModeTab> ACT_TAB_KEY = ResourceKey.create(Registries.CREATIVE_MODE_TAB, ResourceLocation.fromNamespaceAndPath(ACTMod.MOD_ID, "act_tab"));
+    public static final ResourceKey<CreativeModeTab> ACT_TAB_KEY = ResourceKey.create(Registries.CREATIVE_MODE_TAB, Identifier.fromNamespaceAndPath(ACTMod.MOD_ID, "act_tab"));
 
     private final Collection<ItemStack> subItems = new ArrayList<>();
     private CreativeModeTab tab;

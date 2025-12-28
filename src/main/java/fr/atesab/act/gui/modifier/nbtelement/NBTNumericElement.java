@@ -2,6 +2,8 @@ package fr.atesab.act.gui.modifier.nbtelement;
 
 import fr.atesab.act.gui.modifier.GuiListModifier;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -69,8 +71,8 @@ public abstract class NBTNumericElement<T extends Number> extends NBTElement {
     }
 
     @Override
-    public boolean charTyped(char key, int modifiers) {
-        if (super.charTyped(key, modifiers)) {
+    public boolean charTyped(CharacterEvent event) {
+        if (super.charTyped(event)) {
             try {
                 if (field.getValue().isEmpty())
                     setNull();
@@ -86,8 +88,8 @@ public abstract class NBTNumericElement<T extends Number> extends NBTElement {
     }
 
     @Override
-    public boolean keyPressed(int key, int scanCode, int modifiers) {
-        if (super.keyPressed(key, scanCode, modifiers)) {
+    public boolean keyPressed(KeyEvent event) {
+        if (super.keyPressed(event)) {
             try {
                 if (field.getValue().isEmpty())
                     setNull();

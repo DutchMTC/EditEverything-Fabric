@@ -26,7 +26,7 @@ public class ModdedCommandUnbreakable extends ModdedCommand {
             }
             var is = mc.player.getMainHandItem();
             ItemUtils.give(ItemUtils.setUnbreakable(is, BoolArgumentType.getBool(c, "unbreakable")),
-                    36 + mc.player.getInventory().selected);
+                    36 + mc.player.getInventory().getSelectedSlot());
             return 0;
         }));
     }
@@ -40,7 +40,7 @@ public class ModdedCommandUnbreakable extends ModdedCommand {
             }
             var is = mc.player.getMainHandItem();
             ItemUtils.give(ItemUtils.setUnbreakable(is, !ItemUtils.isUnbreakable(is)),
-                    36 + mc.player.getInventory().selected);
+                    36 + mc.player.getInventory().getSelectedSlot());
             return 0;
         };
     }

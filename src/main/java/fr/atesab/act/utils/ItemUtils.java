@@ -2,18 +2,13 @@ package fr.atesab.act.utils;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import java.util.UUID;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.gson.JsonParseException;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.authlib.properties.PropertyMap;
+import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+
 import fr.atesab.act.ACTMod;
 import fr.atesab.act.internalcommand.InternalCommandModule;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
@@ -71,11 +66,9 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
-
 @InternalCommandModule(name = "item")
 public class ItemUtils {
-    
+
     public static boolean hasTag(CompoundTag tag, String key, int type) {
         return switch (type) {
             case Tag.TAG_BYTE -> tag.getByte(key).isPresent();
@@ -100,8 +93,8 @@ public class ItemUtils {
 
     public static CompoundTag getCompound(ListTag tag, int index) {
         if (index >= 0 && index < tag.size()) {
-             Tag t = tag.get(index);
-             return t instanceof CompoundTag ct ? ct : new CompoundTag();
+            Tag t = tag.get(index);
+            return t instanceof CompoundTag ct ? ct : new CompoundTag();
         }
         return new CompoundTag();
     }
@@ -137,18 +130,23 @@ public class ItemUtils {
     public static double getDouble(CompoundTag tag, String key) {
         return tag.getDouble(key).orElse(0.0D);
     }
+
     public static float getFloat(CompoundTag tag, String key) {
         return tag.getFloat(key).orElse(0.0F);
     }
+
     public static long getLong(CompoundTag tag, String key) {
         return tag.getLong(key).orElse(0L);
     }
+
     public static short getShort(CompoundTag tag, String key) {
         return tag.getShort(key).orElse((short) 0);
     }
+
     public static byte[] getByteArray(CompoundTag tag, String key) {
         return tag.getByteArray(key).orElseGet(() -> new byte[0]);
     }
+
     public static long[] getLongArray(CompoundTag tag, String key) {
         return tag.getLongArray(key).orElseGet(() -> new long[0]);
     }
@@ -169,33 +167,43 @@ public class ItemUtils {
     public static void putString(CompoundTag tag, String key, String value) {
         tag.putString(key, value);
     }
+
     public static void putInt(CompoundTag tag, String key, int value) {
         tag.putInt(key, value);
     }
+
     public static void putByte(CompoundTag tag, String key, byte value) {
         tag.putByte(key, value);
     }
+
     public static void putBoolean(CompoundTag tag, String key, boolean value) {
         tag.putBoolean(key, value);
     }
+
     public static void putDouble(CompoundTag tag, String key, double value) {
         tag.putDouble(key, value);
     }
+
     public static void putFloat(CompoundTag tag, String key, float value) {
         tag.putFloat(key, value);
     }
+
     public static void putLong(CompoundTag tag, String key, long value) {
         tag.putLong(key, value);
     }
+
     public static void putShort(CompoundTag tag, String key, short value) {
         tag.putShort(key, value);
     }
+
     public static void putIntArray(CompoundTag tag, String key, int[] value) {
         tag.put(key, new IntArrayTag(value));
     }
+
     public static void putByteArray(CompoundTag tag, String key, byte[] value) {
         tag.put(key, new ByteArrayTag(value));
     }
+
     public static void putLongArray(CompoundTag tag, String key, long[] value) {
         tag.put(key, new LongArrayTag(value));
     }
@@ -232,11 +240,11 @@ public class ItemUtils {
     public static void setTag(ItemStack stack, CompoundTag tag) {
         setComponent(stack, DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
-    
+
     public static CompoundTag getOrCreateTag(ItemStack stack) {
         return getTag(stack);
     }
-    
+
     public static CompoundTag getOrCreateTagElement(ItemStack stack, String key) {
         CompoundTag tag = getTag(stack);
         if (!hasTag(tag, key, 10)) {
@@ -283,8 +291,10 @@ public class ItemUtils {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
             AttributeData that = (AttributeData) o;
             return Objects.equals(slot, that.slot) &&
                     Objects.equals(modifier, that.modifier) &&
@@ -303,8 +313,14 @@ public class ItemUtils {
         private boolean trail, flicker;
         private FireworkExplosion.Shape type;
 
+        private static FireworkExplosion.Shape randomShape() {
+            FireworkExplosion.Shape[] shapes = FireworkExplosion.Shape.values();
+            return shapes[RANDOM.nextInt(shapes.length)];
+        }
+
         public ExplosionInformation() {
-            this(CommandUtils.getRandomElement(FireworkExplosion.Shape.values()), RANDOM.nextBoolean(), RANDOM.nextBoolean(),
+            this(randomShape(), RANDOM.nextBoolean(),
+                    RANDOM.nextBoolean(),
                     new int[RANDOM.nextInt(6) + 1], new int[RANDOM.nextInt(7)]);
             colors = new int[RANDOM.nextInt(6 - ((trail ? 1 : 0) + (flicker ? 1 : 0))) + 1];
             for (int i = 0; i < colors.length; i++) {
@@ -320,7 +336,8 @@ public class ItemUtils {
             this(FireworkExplosion.Shape.byId(type), trail, flicker, colors, fadeColors);
         }
 
-        public ExplosionInformation(FireworkExplosion.Shape type, boolean trail, boolean flicker, int[] colors, int[] fadeColors) {
+        public ExplosionInformation(FireworkExplosion.Shape type, boolean trail, boolean flicker, int[] colors,
+                int[] fadeColors) {
             this.type = type;
             this.trail = trail;
             this.flicker = flicker;
@@ -462,13 +479,21 @@ public class ItemUtils {
         public static final AttributeModifierBuilder SWORD_ATTACK_SPEED;
 
         static {
-            ARMOR = new AttributeModifierBuilder(Attributes.ARMOR.value(), new AttributeModifier(Identifier.withDefaultNamespace("armor"), 0, AttributeModifier.Operation.ADD_VALUE));
-            ARMOR_TOUGHNESS = new AttributeModifierBuilder(Attributes.ARMOR_TOUGHNESS.value(), new AttributeModifier(Identifier.withDefaultNamespace("armor_toughness"), 0, AttributeModifier.Operation.ADD_VALUE));
-            KNOCKBACK_RESISTANCE = new AttributeModifierBuilder(Attributes.KNOCKBACK_RESISTANCE.value(), new AttributeModifier(Identifier.withDefaultNamespace("knockback_resistance"), 0, AttributeModifier.Operation.ADD_VALUE));
-            TOOL_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(Identifier.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
-            TOOL_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(Identifier.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
-            SWORD_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(Identifier.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
-            SWORD_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(Identifier.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
+            ARMOR = new AttributeModifierBuilder(Attributes.ARMOR.value(), new AttributeModifier(
+                    Identifier.withDefaultNamespace("armor"), 0, AttributeModifier.Operation.ADD_VALUE));
+            ARMOR_TOUGHNESS = new AttributeModifierBuilder(Attributes.ARMOR_TOUGHNESS.value(), new AttributeModifier(
+                    Identifier.withDefaultNamespace("armor_toughness"), 0, AttributeModifier.Operation.ADD_VALUE));
+            KNOCKBACK_RESISTANCE = new AttributeModifierBuilder(Attributes.KNOCKBACK_RESISTANCE.value(),
+                    new AttributeModifier(Identifier.withDefaultNamespace("knockback_resistance"), 0,
+                            AttributeModifier.Operation.ADD_VALUE));
+            TOOL_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(
+                    Identifier.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
+            TOOL_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(
+                    Identifier.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
+            SWORD_ATTACK_DAMAGE = new AttributeModifierBuilder(Attributes.ATTACK_DAMAGE.value(), new AttributeModifier(
+                    Identifier.withDefaultNamespace("attack_damage"), 0, AttributeModifier.Operation.ADD_VALUE));
+            SWORD_ATTACK_SPEED = new AttributeModifierBuilder(Attributes.ATTACK_SPEED.value(), new AttributeModifier(
+                    Identifier.withDefaultNamespace("attack_speed"), 0, AttributeModifier.Operation.ADD_VALUE));
         }
 
         private final AttributeModifier clone;
@@ -513,7 +538,7 @@ public class ItemUtils {
     private static final Map<String, Tuple<Long, CompoundTag>> SKIN_CACHE = new HashMap<>();
     private static final Map<String, Tuple<Long, String>> UUID_CACHE = new HashMap<>();
 
-    private static final Character[] RANDOM_CHAR = {'X', 'Y', 'M', 'Z'};
+    private static final Character[] RANDOM_CHAR = { 'X', 'Y', 'M', 'Z' };
 
     private static String addHyphen(String uuid) {
         if (uuid.length() < 20) {
@@ -524,12 +549,12 @@ public class ItemUtils {
     }
 
     public static ItemStack buildStack(Block block, int count, @Nullable String name, @Nullable String[] lore,
-                                       @Nullable Tuple<Enchantment, Integer>[] enchantments) {
+            @Nullable Tuple<Enchantment, Integer>[] enchantments) {
         return buildStack(block.asItem(), count, name, lore, enchantments);
     }
 
     public static ItemStack buildStack(Item item, int count, @Nullable String name, @Nullable String[] lore,
-                                       @Nullable Tuple<Enchantment, Integer>[] enchantments) {
+            @Nullable Tuple<Enchantment, Integer>[] enchantments) {
         ItemStack is = new ItemStack(item, count);
         if (name != null) {
             setComponent(is, DataComponents.CUSTOM_NAME, Component.literal(name));
@@ -541,19 +566,6 @@ public class ItemUtils {
             setEnchantments(Arrays.asList(enchantments), is, is.getItem().equals(Items.ENCHANTED_BOOK));
         }
         return is;
-    }
-
-    public static boolean canGive(Minecraft mc) {
-        if (mc.player == null) {
-            return false;
-        }
-        for (int i = 0; i < 9; i++) {
-            ItemStack it = mc.player.getInventory().getItem(i);
-            if (it.isEmpty()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public static List<AttributeData> getAttributes(ItemStack stack) {
@@ -592,7 +604,8 @@ public class ItemUtils {
 
     public static List<Tuple<Enchantment, Integer>> getEnchantments(ItemStack stack, boolean book) {
         List<Tuple<Enchantment, Integer>> list = new ArrayList<>();
-        ItemEnchantments enchantments = getComponent(stack, book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS);
+        ItemEnchantments enchantments = getComponent(stack,
+                book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS);
         enchantments = enchantments != null ? enchantments : ItemEnchantments.EMPTY;
         for (var entry : enchantments.entrySet()) {
             list.add(new Tuple<>(entry.getKey().value(), entry.getIntValue()));
@@ -608,7 +621,7 @@ public class ItemUtils {
         if (code == null || code.isEmpty()) {
             return null;
         }
-        net.minecraft.core.HolderLookup.Provider registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : VanillaRegistries.createLookup();
+        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createLookup();
         return new ItemReader(registryAccess).readItem(code);
     }
 
@@ -620,11 +633,11 @@ public class ItemUtils {
         if (itemStack.isEmpty()) {
             return "";
         }
-        net.minecraft.core.HolderLookup.Provider registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : VanillaRegistries.createLookup();
-        
+        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createLookup();
+
         Identifier itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
         StringBuilder builder = new StringBuilder(itemId.toString());
-        
+
         Tag tag = saveStack(itemStack, registryAccess);
         if (tag instanceof CompoundTag ct && ct.getCompound("components").isPresent()) {
             CompoundTag components = ct.getCompound("components").orElseThrow();
@@ -636,9 +649,10 @@ public class ItemUtils {
 
                 List<String> keys = new ArrayList<>(components.keySet());
                 Collections.sort(keys);
-                
+
                 for (String key : keys) {
-                    if (!first) builder.append(",");
+                    if (!first)
+                        builder.append(",");
                     first = false;
                     builder.append(key).append("=");
                     Tag v = entries.get(key);
@@ -649,50 +663,62 @@ public class ItemUtils {
                 builder.append("]");
             }
         } else {
-            // Fallback for legacy or if components are missing but custom_data exists in old format (unlikely)
+            // Fallback for legacy or if components are missing but custom_data exists in
+            // old format (unlikely)
             boolean noTag = getTag(itemStack) != null && !getTag(itemStack).isEmpty();
             if (noTag) {
                 builder.append(getTag(itemStack).toString());
             }
         }
-        
+
         if (showCount && itemStack.getCount() != 1) {
             builder.append(" ").append(itemStack.getCount());
         }
-        
+
         return builder.toString();
     }
 
     public static ItemStack getHead(ItemStack is, String name)
             throws IOException, CommandSyntaxException, NoSuchElementException {
-        String uuidStr = getUUIDByNames(name).stream().findFirst().orElseThrow().b;
-        CompoundTag skinTag = getSkinInformationFromUUID(uuidStr);
-        
-        UUID uuid = UUID.fromString(addHyphen(uuidStr));
-        GameProfile profile = new GameProfile(uuid, name, new PropertyMap(HashMultimap.create()));
-        
-        if (hasTag(skinTag, "Properties", 10)) {
-            CompoundTag props = getCompound(skinTag, "Properties");
-            if (hasTag(props, "textures", 9)) {
-                ListTag textures = getList(props, "textures", 10);
-                for (int i = 0; i < textures.size(); i++) {
-                    CompoundTag tex = getCompound(textures, i);
-                    String value = getString(tex, "Value");
-                    String signature = hasTag(tex, "Signature", 8) ? getString(tex, "Signature") : null;
-                    profile.properties().put("textures", new Property("textures", value, signature));
-                }
-            }
-        }
-        
-        setComponent(is, DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
+        // Modern versions can resolve the skin from the profile name alone (same as:
+        // /give @s minecraft:player_head[profile=<name>])
+        setComponent(is, DataComponents.PROFILE, ResolvableProfile.createUnresolved(name));
         return is;
     }
 
     public static ItemStack getHead(ItemStack is, String uuid, String url, String name) {
-        UUID id = UUID.fromString(addHyphen(uuid));
-        GameProfile profile = new GameProfile(id, name, new PropertyMap(HashMultimap.create()));
-        String value = Base64.getEncoder().encodeToString(("{\"textures\":{\"SKIN\":{\"url\":\"" + url + "\"}}}").getBytes());
-        profile.properties().put("textures", new Property("textures", value));
+        UUID id = null;
+        if (uuid != null && !uuid.isEmpty()) {
+            try {
+                id = UUID.fromString(addHyphen(uuid));
+            } catch (IllegalArgumentException e) {
+                // Be tolerant: some callers may provide non-UUID strings (e.g. legacy UI
+                // inputs).
+                id = UUID.nameUUIDFromBytes(("ACT:uuid:" + uuid).getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        String value = Base64.getEncoder()
+                .encodeToString(("{\"textures\":{\"SKIN\":{\"url\":\"" + url + "\"}}}").getBytes());
+        // authlib PropertyMap is immutable, so build properties before constructing it
+        com.google.common.collect.Multimap<String, Property> props = com.google.common.collect.HashMultimap.create();
+        props.put("textures", new Property("textures", value));
+        GameProfile profile = new GameProfile(id, name, new com.mojang.authlib.properties.PropertyMap(props));
+        setComponent(is, DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
+        return is;
+    }
+
+    public static ItemStack getHeadFromUrl(ItemStack is, String url, @Nullable String name) {
+        String value = Base64.getEncoder()
+                .encodeToString(("{\"textures\":{\"SKIN\":{\"url\":\"" + url + "\"}}}").getBytes());
+        com.google.common.collect.Multimap<String, Property> props = com.google.common.collect.HashMultimap.create();
+        props.put("textures", new Property("textures", value));
+        // Minecraft requires a non-null profile id for resolved profiles; generate a
+        // stable id from the URL.
+        UUID id = UUID.nameUUIDFromBytes(("ACT:url:" + url).getBytes(StandardCharsets.UTF_8));
+        if (name == null) {
+            name = "";
+        }
+        GameProfile profile = new GameProfile(id, name, new com.mojang.authlib.properties.PropertyMap(props));
         setComponent(is, DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         return is;
     }
@@ -713,32 +739,11 @@ public class ItemUtils {
     public static List<ItemStack> getHeads(String... names)
             throws IOException, CommandSyntaxException, NoSuchElementException {
         List<ItemStack> stacks = new ArrayList<>();
-        getUUIDByNames(names).forEach(tuple -> {
-            try {
-                ItemStack stack = new ItemStack(Items.PLAYER_HEAD, 1);
-                String uuidStr = tuple.b;
-                CompoundTag skinTag = getSkinInformationFromUUID(uuidStr);
-                
-                UUID uuid = UUID.fromString(addHyphen(uuidStr));
-                GameProfile profile = new GameProfile(uuid, tuple.a, new PropertyMap(HashMultimap.create()));
-                
-                if (hasTag(skinTag, "Properties", 10)) {
-                    CompoundTag props = getCompound(skinTag, "Properties");
-                    if (hasTag(props, "textures", 9)) {
-                        ListTag textures = getList(props, "textures", 10);
-                        for (int i = 0; i < textures.size(); i++) {
-                            CompoundTag tex = getCompound(textures, i);
-                            String value = getString(tex, "Value");
-                            String signature = hasTag(tex, "Signature", 8) ? getString(tex, "Signature") : null;
-                            profile.properties().put("textures", new Property("textures", value, signature));
-                        }
-                    }
-                }
-                setComponent(stack, DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
-                stacks.add(stack);
-            } catch (Exception ignore) {
-            }
-        });
+        for (String name : names) {
+            ItemStack stack = new ItemStack(Items.PLAYER_HEAD, 1);
+            setComponent(stack, DataComponents.PROFILE, ResolvableProfile.createUnresolved(name));
+            stacks.add(stack);
+        }
         return stacks;
     }
 
@@ -763,19 +768,21 @@ public class ItemUtils {
 
     public static PotionInformation getPotionInformation(ItemStack stack) {
         PotionContents contents = getComponent(stack, DataComponents.POTION_CONTENTS);
-        if (contents == null) return new PotionInformation(OptionalInt.empty(), Potions.WATER.value(), new ArrayList<>());
-        
+        if (contents == null)
+            return new PotionInformation(OptionalInt.empty(), Potions.WATER.value(), new ArrayList<>());
+
         OptionalInt color = contents.customColor().map(OptionalInt::of).orElse(OptionalInt.empty());
         Potion potion = contents.potion().map(Holder::value).orElse(Potions.WATER.value());
         List<MobEffectInstance> effects = new ArrayList<>(contents.customEffects());
-        
+
         return new PotionInformation(color, potion, effects);
     }
 
     public static CompoundTag getFireworkExplosionTag(ItemStack stack) {
         FireworkExplosion exp = getComponent(stack, DataComponents.FIREWORK_EXPLOSION);
         if (exp != null) {
-            return new ExplosionInformation(exp.shape(), exp.hasTrail(), exp.hasTwinkle(), exp.colors().toIntArray(), exp.fadeColors().toIntArray()).getTag();
+            return new ExplosionInformation(exp.shape(), exp.hasTrail(), exp.hasTwinkle(), exp.colors().toIntArray(),
+                    exp.fadeColors().toIntArray()).getTag();
         }
         return new CompoundTag();
     }
@@ -791,7 +798,8 @@ public class ItemUtils {
             putByte(tag, "Flight", (byte) fireworks.flightDuration());
             ListTag explosions = new ListTag();
             for (FireworkExplosion exp : fireworks.explosions()) {
-                explosions.add(new ExplosionInformation(exp.shape(), exp.hasTrail(), exp.hasTwinkle(), exp.colors().toIntArray(), exp.fadeColors().toIntArray()).getTag());
+                explosions.add(new ExplosionInformation(exp.shape(), exp.hasTrail(), exp.hasTwinkle(),
+                        exp.colors().toIntArray(), exp.fadeColors().toIntArray()).getTag());
             }
             tag.put("Explosions", explosions);
         }
@@ -826,8 +834,9 @@ public class ItemUtils {
         String desc = "entity." + id.getNamespace() + "." + id.getPath().replace('/', '.');
         setComponent(fw, DataComponents.CUSTOM_NAME, Component.translatable(desc)
                 .withStyle(ChatFormatting.values()[RANDOM.nextInt(16)])
-                .append(" " + CommandUtils.getRandomElement(RANDOM_CHAR) + RANDOM.nextInt(1000)));
-        setLore(fw, new String[]{ChatFormatting.YELLOW + "" + ChatFormatting.ITALIC + I18n.get("cmd.act.rfw")});
+                .append(Component.literal(" " + RANDOM_CHAR[RANDOM.nextInt(RANDOM_CHAR.length)] + RANDOM.nextInt(1000))));
+        setLoreComponents(fw, List.of(Component.translatable("cmd.act.rfw")
+                .withStyle(ChatFormatting.YELLOW, ChatFormatting.ITALIC)));
         return fw;
     }
 
@@ -861,18 +870,23 @@ public class ItemUtils {
     public static List<Tuple<String, String>> getUUIDByNames(String... names)
             throws IOException, CommandSyntaxException {
         List<Tuple<String, String>> list = new ArrayList<>();
-        String query = Arrays.stream(names).map(n -> {
-                    if (UUID_CACHE.containsKey(n) && UUID_CACHE.get(n).a + 60000 > System.currentTimeMillis()) {
-                        list.add(new Tuple<>(n, UUID_CACHE.get(n).b));
-                        return null;
-                    }
-                    return '"' + n + '"';
-                })
-                .filter(Objects::nonNull)
+        List<String> toQuery = new ArrayList<>();
+        long now = System.currentTimeMillis();
+        for (String n : names) {
+            if (UUID_CACHE.containsKey(n) && UUID_CACHE.get(n).a + 60000 > now) {
+                list.add(new Tuple<>(n, UUID_CACHE.get(n).b));
+            } else {
+                toQuery.add(n);
+            }
+        }
+
+        String query = toQuery.stream()
+                .map(n -> '"' + n + '"')
                 .collect(Collectors.joining(","));
         if (!query.isEmpty()) {
-            CompoundTag tag = TagParser.parseCompoundFully("{data:" + sendRequest("https://api.mojang.com/profiles/minecraft",
-                    "POST", "application/json", "[" + query + "]") + "}");
+            CompoundTag tag = TagParser
+                    .parseCompoundFully("{data:" + sendRequest("https://api.mojang.com/profiles/minecraft",
+                            "POST", "application/json", "[" + query + "]") + "}");
             if (hasTag(tag, "data", 9)) {
                 getList(tag, "data", 10).forEach(base -> {
                     CompoundTag data = (CompoundTag) base;
@@ -888,72 +902,6 @@ public class ItemUtils {
         return list;
     }
 
-    public static void give(ItemStack stack) {
-        give(Minecraft.getInstance(), stack);
-    }
-
-    public static void give(ItemStack stack, int slot) {
-        give(Minecraft.getInstance(), stack, slot);
-    }
-
-    public static void give(List<ItemStack> stacks) {
-        give(Minecraft.getInstance(), stacks);
-    }
-
-    @Deprecated
-    public static void give(Minecraft mc, ItemStack stack) {
-        if (mc.player != null && mc.player.isCreative()) {
-            if (stack != null) {
-                for (int i = 0; i < 9; i++) {
-                    if (mc.player.getInventory().getItem(i).isEmpty()) {
-                        give(mc, stack, 36 + i);
-                        ChatUtils.itemStack(stack);
-                        return;
-                    }
-                }
-            }
-            ChatUtils.error(I18n.get("gui.act.give.fail"));
-        } else {
-            ChatUtils.error(I18n.get("gui.act.nocreative"));
-        }
-    }
-
-    @Deprecated
-    public static void give(Minecraft mc, ItemStack stack, int slot) {
-        if (mc.player == null || mc.gameMode == null) {
-            return;
-        }
-        if (mc.player.isCreative()) {
-            mc.player.connection.send(new ServerboundSetCreativeModeSlotPacket(slot, stack));
-            mc.player.inventoryMenu.getSlot(slot).set(stack);
-        } else {
-            ChatUtils.error(I18n.get("gui.act.nocreative"));
-        }
-    }
-
-    @Deprecated
-    public static void give(Minecraft mc, List<ItemStack> stacks) {
-        if (mc.player != null && mc.player.isCreative()) {
-            int i = 0, j = 0;
-            ItemStack is;
-            stacks:
-            for (; j < stacks.size(); j++) {
-                is = stacks.get(j);
-                for (; i < 9; i++) {
-                    if (mc.player.getInventory().getItem(i).isEmpty()) {
-                        give(mc, is, 36 + i);
-                        ChatUtils.itemStack(is);
-                        i++;
-                        continue stacks;
-                    }
-                }
-                ChatUtils.error(I18n.get("gui.act.give.fail"));
-                return;
-            }
-        } else {
-            ChatUtils.error(I18n.get("gui.act.nocreative"));
-        }
-    }
 
     public static boolean isUnbreakable(ItemStack stack) {
         return stack.has(DataComponents.UNBREAKABLE);
@@ -961,7 +909,7 @@ public class ItemUtils {
 
     private static String sendRequest(String url, String method, String contentType, String content)
             throws IOException {
-        Proxy proxy = Minecraft.getInstance().getProxy();
+        Proxy proxy = Proxy.NO_PROXY;
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection(proxy);
         if (method != null) {
             connection.setRequestMethod(method);
@@ -993,7 +941,8 @@ public class ItemUtils {
     public static ItemStack setAttributes(List<AttributeData> attributes, ItemStack stack) {
         ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
         for (AttributeData data : attributes) {
-            EquipmentSlotGroup group = data.getSlot() == null ? EquipmentSlotGroup.ANY : EquipmentSlotGroup.bySlot(data.getSlot());
+            EquipmentSlotGroup group = data.getSlot() == null ? EquipmentSlotGroup.ANY
+                    : EquipmentSlotGroup.bySlot(data.getSlot());
             var holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(data.getAttribute());
             builder.add(holder, data.getModifier(), group);
         }
@@ -1029,7 +978,8 @@ public class ItemUtils {
         if (isPotionItem(stack)) {
             PotionContents contents = stack.get(DataComponents.POTION_CONTENTS);
             if (contents != null && contents.customColor().isPresent()) {
-                 setComponent(stack, DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(), Optional.empty(), contents.customEffects(), contents.customName()));
+                setComponent(stack, DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(),
+                        Optional.empty(), contents.customEffects(), contents.customName()));
             }
         } else if (isLeatherArmor(stack)) {
             stack.remove(DataComponents.DYED_COLOR);
@@ -1041,7 +991,8 @@ public class ItemUtils {
         if (isPotionItem(stack)) {
             PotionContents contents = getComponent(stack, DataComponents.POTION_CONTENTS);
             contents = contents != null ? contents : PotionContents.EMPTY;
-            setComponent(stack, DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(), Optional.of(color), contents.customEffects(), contents.customName()));
+            setComponent(stack, DataComponents.POTION_CONTENTS, new PotionContents(contents.potion(),
+                    Optional.of(color), contents.customEffects(), contents.customName()));
         } else if (isLeatherArmor(stack)) {
             setColor(stack, color);
         }
@@ -1087,18 +1038,19 @@ public class ItemUtils {
     }
 
     public static ItemStack setEnchantments(List<Tuple<Enchantment, Integer>> enchantments, ItemStack stack,
-                                            boolean book) {
+            boolean book) {
         ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
-        RegistryAccess registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : null;
-        if (registryAccess == null) return stack;
-
-        Registry<Enchantment> registry = registryAccess.lookupOrThrow(Registries.ENCHANTMENT);
-
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        Registry<Enchantment> registry = (Registry) BuiltInRegistries.REGISTRY.getValue(Registries.ENCHANTMENT.identifier());
+        if (registry == null) {
+            return stack;
+        }
         for (Tuple<Enchantment, Integer> t : enchantments) {
             var holder = registry.wrapAsHolder(t.a);
             mutable.set(holder, t.b);
         }
-        setComponent(stack, book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS, mutable.toImmutable());
+        setComponent(stack, book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS,
+                mutable.toImmutable());
         return stack;
     }
 
@@ -1133,19 +1085,27 @@ public class ItemUtils {
 
     public static ItemStack setLore(ItemStack stack, String[] lore) {
         if (lore == null || lore.length == 0) {
-            stack.remove(DataComponents.LORE);
-            return stack;
+            return setLoreComponents(stack, List.of());
         }
         List<Component> components = Arrays.stream(lore)
                 .map(Component::literal)
                 .collect(Collectors.toList());
-        setComponent(stack, DataComponents.LORE, new ItemLore(components));
+        return setLoreComponents(stack, components);
+    }
+
+    public static ItemStack setLoreComponents(ItemStack stack, List<Component> lore) {
+        if (lore == null || lore.isEmpty()) {
+            stack.remove(DataComponents.LORE);
+            return stack;
+        }
+        setComponent(stack, DataComponents.LORE, new ItemLore(lore));
         return stack;
     }
 
     public static ItemStack setPotionInformation(ItemStack stack, PotionInformation info) {
         Optional<Holder<Potion>> potion = Optional.of(BuiltInRegistries.POTION.wrapAsHolder(info.getMain()));
-        Optional<Integer> color = info.getCustomColor().isPresent() ? Optional.of(info.getCustomColor().getAsInt()) : Optional.empty();
+        Optional<Integer> color = info.getCustomColor().isPresent() ? Optional.of(info.getCustomColor().getAsInt())
+                : Optional.empty();
         PotionContents contents = new PotionContents(potion, color, info.getCustomEffects(), Optional.empty());
         setComponent(stack, DataComponents.POTION_CONTENTS, contents);
         return stack;
@@ -1225,7 +1185,7 @@ public class ItemUtils {
         }
 
         ListTag items = getList(blockTag, "Items", Tag.TAG_COMPOUND);
-        RegistryAccess registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : RegistryAccess.EMPTY;
+        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createLookup();
 
         for (int i = 0; i < items.size(); i++) {
             CompoundTag item = getCompound(items, i);
@@ -1258,7 +1218,7 @@ public class ItemUtils {
             return air();
         }
 
-        RegistryAccess registryAccess = Minecraft.getInstance().level != null ? Minecraft.getInstance().level.registryAccess() : RegistryAccess.EMPTY;
+        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createLookup();
         return parseStack(registryAccess, getCompound(blockTag, "RecordItem"));
     }
 

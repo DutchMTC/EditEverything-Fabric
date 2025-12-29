@@ -1,10 +1,8 @@
 package fr.atesab.act;
 
-import fr.atesab.act.utils.ChatUtils;
 import fr.atesab.act.utils.ItemUtils;
 import fr.atesab.act.utils.Tuple;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
-import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -25,53 +23,6 @@ import java.util.*;
  * A creative tab to add items
  */
 public class AdvancedCreativeTab {
-    
-    private static final Field SELECT_TAB_FIELD;
-    // private static final Field DISPLAY_ITEMS_GENERATOR_FIELD; // Not easily accessible or needed in the same way
-
-    static {
-        Field selectTabField = null;
-        Class<CreativeModeInventoryScreen> creativeModeInventoryScreenClass = CreativeModeInventoryScreen.class;
-        for (Field field : creativeModeInventoryScreenClass.getDeclaredFields()) {
-            if (field.getType().equals(CreativeModeTab.class)) { // selectedTab is not static
-                field.setAccessible(true);
-                selectTabField = field;
-                break;
-            }
-        }
-        // Note: In 1.21, selectedTab is an instance field, not static. 
-        // But the original code looked for a static field? 
-        // "field.getModifiers() & Modifier.STATIC) != 0" was in the original code.
-        // Wait, CreativeModeInventoryScreen.selectedTab is NOT static.
-        // The original code might have been wrong or I'm misremembering 1.19.3.
-        // Let's assume we need to access it from an instance.
-        
-        SELECT_TAB_FIELD = selectTabField;
-    }
-
-    /**
-     * @return get the current selected tab in the creative mode menu
-     */
-    public static CreativeModeTab getCurrentSelectedTab() {
-        // This requires an instance of the screen.
-        // The original code used SELECT_TAB_FIELD.get(null) which implies it expected a static field.
-        // But CreativeModeInventoryScreen doesn't have a static selectedTab.
-        // Maybe it was accessing a static holder?
-        // For now, I'll return null or try to find a way if needed.
-        // Actually, we can pass the screen instance if we have it.
-        return null; 
-    }
-    
-    public static CreativeModeTab getCurrentSelectedTab(CreativeModeInventoryScreen screen) {
-        if (SELECT_TAB_FIELD != null) {
-            try {
-                return (CreativeModeTab) SELECT_TAB_FIELD.get(screen);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
 
     public static final ResourceKey<CreativeModeTab> ACT_TAB_KEY = ResourceKey.create(Registries.CREATIVE_MODE_TAB, Identifier.fromNamespaceAndPath(ACTMod.MOD_ID, "act_tab"));
 
@@ -126,7 +77,7 @@ public class AdvancedCreativeTab {
     private void accept(CreativeModeTab.ItemDisplayParameters params, CreativeModeTab.Output output) {
         output.acceptAll(subItems);
         ACTMod.getCustomItems().stream()
-                .map(s -> s.replaceAll("&", "" + ChatUtils.MODIFIER))
+                .map(s -> s.replaceAll("&", "" + ACTMod.FORMAT_CHAR))
                 .map(ItemUtils::getFromGiveCode)
                 .peek(s -> s.setCount(1))
                 .forEach(output::accept);

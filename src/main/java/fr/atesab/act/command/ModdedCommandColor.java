@@ -6,271 +6,172 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import fr.atesab.act.ACTMod;
 import fr.atesab.act.command.ModdedCommandHelp.CommandClickOption;
-import fr.atesab.act.gui.modifier.GuiColorModifier;
-import fr.atesab.act.utils.GuiUtils;
+import fr.atesab.act.network.ACTNetworking;
+import fr.atesab.act.utils.ColorMath;
 import fr.atesab.act.utils.ItemUtils;
+import fr.atesab.act.utils.ServerItemOps;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.TextColor;
 
-import java.util.Arrays;
+import java.util.OptionalInt;
 
 public class ModdedCommandColor extends ModdedCommand {
 
     public ModdedCommandColor() {
         super("color", "cmd.act.color", CommandClickOption.doCommand, true);
-        registerDefaultSubCommand(new ModdedCommand("info", "cmd.act.color.info", CommandClickOption.doCommand) {
+
+        registerSubCommand(new ModdedCommand("info", "cmd.act.color.info", CommandClickOption.doCommand) {
             @Override
             protected Command<CommandSourceStack> onNoArgument() {
                 return c -> {
-                    var mc = Minecraft.getInstance();
-                    if (mc.player == null) {
+                    var source = c.getSource();
+                    var player = source.getPlayerOrException();
+                    var is = player.getMainHandItem();
+                    if (!ItemUtils.canGlobalColorIt(is)) {
+                        source.sendFailure(Component.translatable("cmd.act.color.error.notcolorable")
+                                .withStyle(ChatFormatting.RED));
                         return 0;
                     }
-                    var is = mc.player.getMainHandItem();
-                    // try if we can color it
-                    if (!ItemUtils.canGlobalColorIt(is)) {
-                        c.getSource().sendFailure(Component.translatable("cmd.act.color.error.notcolorable")
-                                .withStyle(ChatFormatting.RED));
-                        return 1;
-                    }
 
-                    // we have a colorable item
-                    var color = ItemUtils.getGlobalColor(is);
-                    var actCmd = ACTMod.getModCommand();
+                    OptionalInt color = ItemUtils.getGlobalColor(is);
                     if (color.isEmpty()) {
-                        c.getSource()
-                                .sendSuccess(() -> Component.translatable("cmd.act.color.color")
-                                                .withStyle(ChatFormatting.YELLOW)
-                                                .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY))
-                                                .append(Component.translatable("cmd.act.color.error.nocolor")
-                                                        .withStyle(ChatFormatting.WHITE)),
-                                        false);
+                        source.sendSuccess(() -> Component.translatable("cmd.act.color.color")
+                                        .withStyle(ChatFormatting.YELLOW)
+                                        .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY))
+                                        .append(Component.translatable("cmd.act.color.error.nocolor")
+                                                .withStyle(ChatFormatting.WHITE)),
+                                false);
                     } else {
-                        c.getSource()
-                                .sendSuccess(() ->
-                                        Component.translatable("cmd.act.color.color")
-                                                .withStyle(ChatFormatting.YELLOW)
-                                                .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY))
-                                                .append(Component.literal(
-                                                        "\u2589\u2589\u2589\u2589").withStyle(
-                                                        s -> s.withColor(TextColor.fromRgb(color.getAsInt()))))
-                                                .append(" ")
-                                                // remove color button
-                                                .append(Component.literal("[").withStyle(ChatFormatting.RED)
-                                                        .withStyle(s -> s
-                                                                .withHoverEvent(new HoverEvent.ShowText(
-                                                                        Component.translatable("cmd.act.color.remove.hover")
-                                                                                .withStyle(ChatFormatting.YELLOW)))
-                                                                .withClickEvent(
-                                                                        new ClickEvent.RunCommand("/" + actCmd.getName() + " " + actCmd.SC_COLOR.getName() + " remove")))
-                                                        .append(Component.translatable("cmd.act.color.remove"))
-                                                        .append("]")),
-                                        false);
+                        source.sendSuccess(() -> Component.translatable("cmd.act.color.color")
+                                        .withStyle(ChatFormatting.YELLOW)
+                                        .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY))
+                                        .append(Component.literal("\u2589\u2589\u2589\u2589")
+                                                .withStyle(s -> s.withColor(TextColor.fromRgb(color.getAsInt()))))
+                                        .append(Component.literal(" 0x" + Integer.toHexString(color.getAsInt()).toUpperCase())
+                                                .withStyle(ChatFormatting.GRAY)),
+                                false);
                     }
-
-                    c.getSource()
-                            .sendSuccess(() ->
-                                    Component.literal(
-                                                    "[").withStyle(ChatFormatting.WHITE)
-                                            .withStyle(s -> s
-                                                    .withHoverEvent(new HoverEvent.ShowText(
-                                                            Component.translatable("cmd.act.color.picker.hover")
-                                                                    .withStyle(ChatFormatting.YELLOW)))
-                                                    .withClickEvent(
-                                                            new ClickEvent.RunCommand(
-                                                                    "/" + actCmd.getName() + " " + actCmd.SC_COLOR.getName() + " picker")))
-                                            .append(Component.translatable("cmd.act.color.picker"))
-                                            .append("]"),
-                                    false);
-
-                    return 2;
-                };
-            }
-        });
-        registerDefaultSubCommand(
-                new ModdedCommandHelp(this, "color", ChatFormatting.GOLD, ChatFormatting.YELLOW, ChatFormatting.WHITE));
-        registerSubCommand(new ModdedCommand("picker", "cmd.act.color.picker", CommandClickOption.doCommand) {
-            @Override
-            protected Command<CommandSourceStack> onNoArgument() {
-                return c -> {
-                    var mc = Minecraft.getInstance();
-                    if (mc.player == null) {
-                        return 0;
-                    }
-                    var is = mc.player.getMainHandItem();
-                    // try if we can color it
-                    if (!ItemUtils.canGlobalColorIt(is)) {
-                        c.getSource().sendFailure(Component.translatable("cmd.act.color.error.notcolorable")
-                                .withStyle(ChatFormatting.RED));
-                        return 1;
-                    }
-
-                    var color = ItemUtils.getGlobalColor(is);
-                    var defaultColor = ItemUtils.getDefaultGlobalColor(is);
-
-                    GuiUtils.displayScreen(new GuiColorModifier(null, newColor -> {
-                        if (newColor.isEmpty()) {
-                            ItemUtils.give(ItemUtils.removeColor(is), 36 + mc.player.getInventory().getSelectedSlot());
-                        } else {
-                            ItemUtils.give(ItemUtils.setGlobalColor(is, newColor.getAsInt()),
-                                    36 + mc.player.getInventory().getSelectedSlot());
-                        }
-                    }, color, defaultColor.orElse(0), defaultColor.isEmpty()));
-
                     return 1;
                 };
             }
         });
+
         registerSubCommand(new ModdedCommand("remove", "cmd.act.color.remove", CommandClickOption.doCommand) {
             @Override
             protected Command<CommandSourceStack> onNoArgument() {
                 return c -> {
-                    var mc = Minecraft.getInstance();
-                    if (mc.player == null) {
+                    var player = c.getSource().getPlayerOrException();
+                    var is = player.getMainHandItem().copy();
+                    ServerItemOps.setMainHand(player, ItemUtils.removeColor(is));
+                    return 1;
+                };
+            }
+        });
+
+        registerSubCommand(new ModdedCommand("gui", "cmd.act.color.set.gui", CommandClickOption.doCommand) {
+            @Override
+            protected Command<CommandSourceStack> onNoArgument() {
+                return c -> {
+                    var source = c.getSource();
+                    var player = source.getPlayer();
+                    if (player == null) {
+                        source.sendFailure(Component.translatable("cmd.act.error.playeronly")
+                                .withStyle(ChatFormatting.RED));
                         return 0;
                     }
-                    var is = mc.player.getMainHandItem();
-                    // try if we can color it
-                    if (!ItemUtils.canGlobalColorIt(is)) {
-                        c.getSource().sendFailure(Component.translatable("cmd.act.color.error.notcolorable")
-                                .withStyle(ChatFormatting.RED));
-                        return 1;
-                    }
-
-                    ItemUtils.give(ItemUtils.removeColor(is), 36 + mc.player.getInventory().getSelectedSlot());
-                    return 0;
+                    ACTNetworking.sendOpenColorPicker(player);
+                    return 1;
                 };
             }
         });
 
         registerSubCommand(new ModdedCommand("set", "cmd.act.color.set", CommandClickOption.suggestCommand) {
-            {
-                registerDefaultSubCommand(new ModdedCommandHelp(this, "set", ChatFormatting.GOLD, ChatFormatting.YELLOW,
-                        ChatFormatting.WHITE));
-                registerSubCommand(
-                        new ModdedCommand("rgb", "cmd.act.color.set.rgb", CommandClickOption.suggestCommand) {
-                            @Override
-                            protected LiteralArgumentBuilder<CommandSourceStack> onArgument(
-                                    LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
-                                return command.then(Commands.argument("red", IntegerArgumentType.integer(0, 0xFF)).then(
-                                        Commands.argument("green", IntegerArgumentType.integer(0, 0xFF)).then(Commands
-                                                .argument("blue", IntegerArgumentType.integer(0, 0xFF)).executes(c -> {
-                                                    var r = IntegerArgumentType.getInteger(c, "red");
-                                                    var g = IntegerArgumentType.getInteger(c, "green");
-                                                    var b = IntegerArgumentType.getInteger(c, "blue");
-                                                    var rgb = GuiUtils.asRGBA(r, g, b, 0xFF);
-
-                                                    var mc = Minecraft.getInstance();
-                                                    if (mc.player == null) {
-                                                        return 0;
-                                                    }
-                                                    var is = mc.player.getMainHandItem();
-                                                    ItemUtils.give(ItemUtils.setGlobalColor(is, rgb),
-                                                            36 + mc.player.getInventory().getSelectedSlot());
-                                                    return 1;
-                                                }))));
-                            }
-                        });
-                registerSubCommand(
-                        new ModdedCommand("hsl", "cmd.act.color.set.hsl", CommandClickOption.suggestCommand) {
-                            @Override
-                            protected LiteralArgumentBuilder<CommandSourceStack> onArgument(
-                                    LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
-                                return command.then(Commands.argument("hue", IntegerArgumentType.integer(0, 359))
-                                        .then(Commands.argument("saturation", IntegerArgumentType.integer(0, 100))
-                                                .then(Commands
-                                                        .argument("lightness", IntegerArgumentType.integer(0, 100))
+            @Override
+            protected LiteralArgumentBuilder<CommandSourceStack> onArgument(
+                    LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
+                return command
+                        .then(Commands.literal("rgb")
+                                .then(Commands.argument("red", IntegerArgumentType.integer(0, 255))
+                                        .then(Commands.argument("green", IntegerArgumentType.integer(0, 255))
+                                                .then(Commands.argument("blue", IntegerArgumentType.integer(0, 255))
                                                         .executes(c -> {
-                                                            var h = IntegerArgumentType.getInteger(c, "hue");
-                                                            var s = IntegerArgumentType.getInteger(c, "saturation");
-                                                            var l = IntegerArgumentType.getInteger(c, "lightness");
-                                                            var rgb = GuiUtils.fromHSL(h, s, l);
-
-                                                            var mc = Minecraft.getInstance();
-                                                            if (mc.player == null) {
-                                                                return 0;
-                                                            }
-                                                            var is = mc.player.getMainHandItem();
-                                                            ItemUtils.give(ItemUtils.setGlobalColor(is, rgb),
-                                                                    36 + mc.player.getInventory().getSelectedSlot());
+                                                            int r = IntegerArgumentType.getInteger(c, "red");
+                                                            int g = IntegerArgumentType.getInteger(c, "green");
+                                                            int b = IntegerArgumentType.getInteger(c, "blue");
+                                                            applyColor(c.getSource(), ColorMath.rgb(r, g, b));
                                                             return 1;
-                                                        }))));
-                            }
-                        });
-                registerSubCommand(
-                        new ModdedCommand("hex", "cmd.act.color.set.hex", CommandClickOption.suggestCommand) {
-                            @Override
-                            protected LiteralArgumentBuilder<CommandSourceStack> onArgument(
-                                    LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
-                                return command
-                                        .then(Commands.argument("hexcode", StringArgumentType.word()).executes(c -> {
-                                            var h = StringArgumentType.getString(c, "hexcode");
-                                            int rgb;
-                                            try {
-                                                rgb = Integer.valueOf(h, 16);
-                                            } catch (NumberFormatException r) {
-                                                c.getSource().sendFailure(
-                                                        Component.translatable("cmd.act.color.error.valid")
-                                                                .withStyle(ChatFormatting.RED));
-                                                return 1;
-                                            }
-
-                                            var mc = Minecraft.getInstance();
-                                            if (mc.player == null) {
-                                                return 0;
-                                            }
-                                            var is = mc.player.getMainHandItem();
-                                            ItemUtils.give(ItemUtils.setGlobalColor(is, rgb),
-                                                    36 + mc.player.getInventory().getSelectedSlot());
-                                            return 1;
-                                        }));
-                            }
-                        });
-
-                registerSubCommand(new ModdedCommand("random") {
-                    @Override
-                    protected Command<CommandSourceStack> onNoArgument() {
-                        return c -> {
-                            var mc = Minecraft.getInstance();
-                            if (mc.player == null) {
-                                return 0;
-                            }
-                            var is = mc.player.getMainHandItem();
-                            ItemUtils.give(ItemUtils.setGlobalColor(is, GuiUtils.getRandomColor()),
-                                    36 + mc.player.getInventory().getSelectedSlot());
-                            return 0;
-                        };
-                    }
-                });
-
-                Arrays.stream(ChatFormatting.values()).filter(ChatFormatting::isColor).forEach(t -> {
-                    var name = t.getName().toLowerCase();
-                    var rgb = t.getColor();
-                    assert rgb != null;
-                    registerSubCommand(new ModdedCommand(name) {
-                        @Override
-                        protected Command<CommandSourceStack> onNoArgument() {
-                            return c -> {
-                                var mc = Minecraft.getInstance();
-                                if (mc.player == null) {
-                                    return 0;
-                                }
-                                var is = mc.player.getMainHandItem();
-                                ItemUtils.give(ItemUtils.setGlobalColor(is, rgb),
-                                          36 + mc.player.getInventory().getSelectedSlot());
-                                return 1;
-                            };
-                        }
-                    });
-                });
+                                                        })))))
+                        .then(Commands.literal("hsl")
+                                .then(Commands.argument("hue", IntegerArgumentType.integer(0, 360))
+                                        .then(Commands.argument("saturation", IntegerArgumentType.integer(0, 100))
+                                                .then(Commands.argument("lightness", IntegerArgumentType.integer(0, 100))
+                                                        .executes(c -> {
+                                                            int h = IntegerArgumentType.getInteger(c, "hue");
+                                                            int s = IntegerArgumentType.getInteger(c, "saturation");
+                                                            int l = IntegerArgumentType.getInteger(c, "lightness");
+                                                            applyColor(c.getSource(), ColorMath.fromHsl(h, s, l));
+                                                            return 1;
+                                                        })))))
+                        .then(Commands.literal("hex")
+                                .then(Commands.argument("hexcode", StringArgumentType.word()).executes(c -> {
+                                    String h = StringArgumentType.getString(c, "hexcode");
+                                    if (h.startsWith("#")) {
+                                        h = h.substring(1);
+                                    }
+                                    int rgb;
+                                    try {
+                                        rgb = Integer.parseInt(h, 16) & 0xFFFFFF;
+                                    } catch (NumberFormatException e) {
+                                        c.getSource().sendFailure(Component.translatable("cmd.act.color.error.valid")
+                                                .withStyle(ChatFormatting.RED));
+                                        return 0;
+                                    }
+                                    applyColor(c.getSource(), rgb);
+                                    return 1;
+                                })))
+                        .then(Commands.literal("random").executes(c -> {
+                            applyColor(c.getSource(), ColorMath.randomRgb(ACTMod.RANDOM));
+                            return 1;
+                        }));
             }
         });
+
+        for (ChatFormatting formatting : ChatFormatting.values()) {
+            if (!formatting.isColor() || formatting.getColor() == null) {
+                continue;
+            }
+            String name = formatting.getName().toLowerCase();
+            int rgb = formatting.getColor() & 0xFFFFFF;
+            registerSubCommand(new ModdedCommand(name) {
+                @Override
+                protected Command<CommandSourceStack> onNoArgument() {
+                    return c -> {
+                        applyColor(c.getSource(), rgb);
+                        return 1;
+                    };
+                }
+            });
+        }
+    }
+
+    private static void applyColor(CommandSourceStack source, int rgb) {
+        var player = source.getPlayer();
+        if (player == null) {
+            source.sendFailure(Component.translatable("cmd.act.error.playeronly")
+                    .withStyle(ChatFormatting.RED));
+            return;
+        }
+        var is = player.getMainHandItem();
+        if (!ItemUtils.canGlobalColorIt(is)) {
+            source.sendFailure(Component.translatable("cmd.act.color.error.notcolorable")
+                    .withStyle(ChatFormatting.RED));
+            return;
+        }
+        var copy = is.copy();
+        ServerItemOps.setMainHand(player, ItemUtils.setGlobalColor(copy, rgb));
     }
 }

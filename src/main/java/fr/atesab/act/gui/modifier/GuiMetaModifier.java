@@ -51,6 +51,16 @@ public class GuiMetaModifier extends GuiModifier<ItemStack> {
                 () -> ItemUtils.isUnbreakable(stack)));
 
         addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 - 21 + 21 * ++i, 200, 20,
+                Component.translatable("gui.act.modifier.meta.canBreak"),
+                b -> getMinecraft().setScreen(new GuiAdventureBlockModifier(GuiMetaModifier.this, stack,
+                        GuiAdventureBlockModifier.Kind.CAN_BREAK))));
+
+        addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 - 21 + 21 * ++i, 200, 20,
+                Component.translatable("gui.act.modifier.meta.canPlace"),
+                b -> getMinecraft().setScreen(new GuiAdventureBlockModifier(GuiMetaModifier.this, stack,
+                        GuiAdventureBlockModifier.Kind.CAN_PLACE))));
+
+        addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 - 21 + 21 * ++i, 200, 20,
                 Component.translatable("gui.act.modifier.tag.editor"), b -> getMinecraft().setScreen(new GuiNBTModifier(GuiMetaModifier.this, tag -> ItemUtils.setTag(stack, tag),
                 ItemUtils.getTag(stack) != null ? ItemUtils.getTag(stack) : new CompoundTag()))));
         addRenderableWidget(new ACTButton(width / 2 - 100, height / 2 - 17 + 21 * ++i, 100, 20,

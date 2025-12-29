@@ -3,6 +3,8 @@ package fr.atesab.act.command;
 import com.mojang.brigadier.Command;
 import fr.atesab.act.command.ModdedCommandHelp.CommandClickOption;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.GameType;
 
 public class ModdedCommandGamemodeQuick extends ModdedCommand {
@@ -21,8 +23,15 @@ public class ModdedCommandGamemodeQuick extends ModdedCommand {
     @Override
     protected Command<CommandSourceStack> onNoArgument() {
         return c -> {
-            sendSigned("/gamemode " + gamemode.getName());
-            return 0;
+            var source = c.getSource();
+            if (!source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+                return 0;
+            }
+            var player = source.getPlayerOrException();
+            player.setGameMode(gamemode);
+            source.sendSuccess(() -> Component.translatable("commands.gamemode.success.self",
+                    Component.translatable("gameMode." + gamemode.getName())), true);
+            return 1;
         };
     }
 

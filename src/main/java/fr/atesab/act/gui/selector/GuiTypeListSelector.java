@@ -16,10 +16,12 @@ import java.util.stream.Stream;
 public class GuiTypeListSelector extends GuiListSelector<ItemStack> {
 
     static class TypeListElement extends ListElement {
+        private final GuiTypeListSelector parent;
         private final ItemStack itemStack;
 
         public TypeListElement(GuiTypeListSelector parent, ItemStack itemStack) {
             super(24, 24);
+            this.parent = parent;
             this.itemStack = itemStack;
             buttonList.add(new ItemStackButtonWidget(0, 0, itemStack, b -> parent.select(b.getStack())));
         }
@@ -29,6 +31,16 @@ public class GuiTypeListSelector extends GuiListSelector<ItemStack> {
             String s = search.toLowerCase();
             return itemStack.getDisplayName().getString().toLowerCase().contains(s)
                     || ItemUtils.getRegistry(itemStack).toString().toLowerCase().contains(s);
+        }
+
+        @Override
+        public void drawNext(net.minecraft.client.gui.GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY,
+                             float partialTicks) {
+            if (fr.atesab.act.utils.GuiUtils.isHover(0, 0, 18, 18, mouseX, mouseY)) {
+                fr.atesab.act.utils.GuiUtils.renderTooltip(graphics, parent.getMinecraft().font, itemStack,
+                        mouseX + offsetX, mouseY + offsetY);
+            }
+            super.drawNext(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         }
     }
 

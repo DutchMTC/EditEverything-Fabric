@@ -23,6 +23,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -190,6 +191,16 @@ public class GuiUtils {
             Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
             cb.setContents(select, select);
         } catch (Exception ignore) {
+        }
+    }
+
+    public static String getClipboardText() {
+        try {
+            Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
+            Object data = cb.getData(DataFlavor.stringFlavor);
+            return data instanceof String s ? s : "";
+        } catch (Exception ignore) {
+            return "";
         }
     }
 

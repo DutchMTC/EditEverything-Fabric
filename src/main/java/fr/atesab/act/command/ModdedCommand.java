@@ -7,9 +7,6 @@ import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import fr.atesab.act.command.ModdedCommandHelp.CommandClickOption;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -48,24 +45,6 @@ public class ModdedCommand {
 
     public static MutableComponent createTranslatedText(String lang, ChatFormatting color, Object... args) {
         return Component.translatable(Objects.requireNonNull(lang), args).withStyle(color);
-    }
-
-    /**
-     * send a signed chat or command
-     *
-     * @param message the message
-     */
-    public static void sendSigned(String message) {
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if (player == null) {
-            return;
-        }
-        if (message.startsWith("/")) {
-            player.connection.sendCommand(message.substring(1));
-        } else {
-            player.connection.sendChat(message);
-        }
     }
 
     private final Map<String, ModdedCommand> NAME_TO_COMMAND = new TreeMap<>();
@@ -123,13 +102,6 @@ public class ModdedCommand {
      */
     public CommandClickOption getClickOption() {
         return clickOption;
-    }
-
-    /**
-     * @return the translated description of this command
-     */
-    public String getDescription() {
-        return I18n.get(getDescriptionTranslationKey());
     }
 
     /**

@@ -3,7 +3,7 @@ package fr.atesab.act.command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import fr.atesab.act.command.ModdedCommandHelp.CommandClickOption;
-import fr.atesab.act.utils.ItemUtils;
+import fr.atesab.act.utils.ServerItemOps;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -20,12 +20,14 @@ public class ModdedCommandGive extends ModdedCommand {
             LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
         return command.then(Commands.argument("giveoption", ItemArgument.item(context))
                 .then(Commands.argument("givecount", IntegerArgumentType.integer()).executes(c -> {
-                    ItemUtils.give(ItemArgument.getItem(c, "giveoption")
+                    var player = c.getSource().getPlayerOrException();
+                    ServerItemOps.give(player, ItemArgument.getItem(c, "giveoption")
                             .createItemStack(IntegerArgumentType.getInteger(c, "givecount"), false));
-                    return 0;
+                    return 1;
                 })).executes(c -> {
-                    ItemUtils.give(ItemArgument.getItem(c, "giveoption").createItemStack(1, false));
-                    return 0;
+                    var player = c.getSource().getPlayerOrException();
+                    ServerItemOps.give(player, ItemArgument.getItem(c, "giveoption").createItemStack(1, false));
+                    return 1;
                 }));
     }
 

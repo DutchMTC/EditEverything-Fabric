@@ -5,7 +5,6 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import fr.atesab.act.command.arguments.StringListArgumentType;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -64,10 +63,10 @@ public class ModdedCommandHelp extends ModdedCommand {
                                 String parentName = mainCommand.getGlobalName();
                                 if (cmd != null) {
                                     count += 3;
-                                    src.sendSuccess(() -> createText("-- " + I18n.get("cmd.act.help", cmd.getName()) + " --",
-                                            titleColor), false);
-                                    src.sendSuccess(() -> createTranslatedText(cmd.getDescriptionTranslationKey(), textColor),
-                                            false);
+                                    src.sendSuccess(() -> createText("-- ", titleColor)
+                                            .append(createTranslatedText("cmd.act.help", titleColor, cmd.getName()))
+                                            .append(createText(" --", titleColor)), false);
+                                    src.sendSuccess(() -> createTranslatedText(cmd.getDescriptionTranslationKey(), textColor), false);
                                     src.sendSuccess(() ->
                                             createTranslatedText("cmd.act.aliases",
                                                     titleColor)
@@ -91,9 +90,8 @@ public class ModdedCommandHelp extends ModdedCommand {
                                         }
 
                                 } else {
-                                    src.sendFailure(createText(
-                                            I18n.get("cmd.act.mc.invalid", "/" + parentName + " " + getName()),
-                                            ChatFormatting.RED));
+                                    src.sendFailure(createTranslatedText("cmd.act.mc.invalid", ChatFormatting.RED,
+                                            "/" + parentName + " " + getName()));
                                     return count + 1;
                                 }
                             }
@@ -107,7 +105,9 @@ public class ModdedCommandHelp extends ModdedCommand {
         return c -> {
             CommandSourceStack src = c.getSource();
             int count = 1;
-            src.sendSuccess(() -> createText("-- " + I18n.get("cmd.act.help", title) + " --", titleColor), false);
+            src.sendSuccess(() -> createText("-- ", titleColor)
+                    .append(createTranslatedText("cmd.act.help", titleColor, title))
+                    .append(createText(" --", titleColor)), false);
             Map<CommandNode<CommandSourceStack>, String> usages;
             String parentName = mainCommand.getGlobalName();
             for (ModdedCommand command : mainCommand.getSubCommands()) {

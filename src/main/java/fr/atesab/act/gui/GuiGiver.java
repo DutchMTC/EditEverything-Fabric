@@ -7,15 +7,19 @@ import fr.atesab.act.gui.modifier.GuiItemStackModifier;
 import fr.atesab.act.gui.modifier.GuiModifier;
 import fr.atesab.act.utils.ChatUtils;
 import fr.atesab.act.utils.GuiUtils;
+import fr.atesab.act.utils.ItemReader;
 import fr.atesab.act.utils.ItemUtils;
+import fr.atesab.act.utils.ItemUtilsClient;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
 import java.util.function.Consumer;
@@ -93,7 +97,7 @@ public class GuiGiver extends GuiModifier<String> {
         int s1 = deleteButton ? 120 : 180;
         int s2 = 120;
         addRenderableWidget(giveButton = new ACTButton(width / 2 - 180, height / 2 + 21, s1, 20,
-                Component.translatable("gui.act.give.give"), b -> ItemUtils.give(currentItemStack)));
+                Component.translatable("gui.act.give.give"), b -> ItemUtilsClient.give(currentItemStack)));
         addRenderableWidget(new ACTButton(width / 2 + s1 - 178, height / 2 + 21, s1 - 2, 20,
                 Component.translatable("gui.act.give.copy"), b -> GuiUtils.addToClipboard(code.getValue())));
         addRenderableWidget(
@@ -153,5 +157,21 @@ public class GuiGiver extends GuiModifier<String> {
         if (saveButton != null)
             saveButton.active = this.currentItemStack != null;
         super.tick();
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (code != null && code.isFocused() && event.hasControlDown() && event.key() == GLFW.GLFW_KEY_V) {
+            String clipboard = GuiUtils.getClipboardText();
+            if (clipboard == null || clipboard.isEmpty()) {
+                return super.keyPressed(event);
+            }
+            String filtered = ItemReader.extractItemPart(clipboard);
+            if (!filtered.isEmpty()) {
+                code.insertText(filtered);
+            }
+            return true;
+        }
+        return super.keyPressed(event);
     }
 }

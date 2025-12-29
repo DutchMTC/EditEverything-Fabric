@@ -4,14 +4,13 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import fr.atesab.act.command.ModdedCommandHelp.CommandClickOption;
-import fr.atesab.act.gui.GuiGiver;
-import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
+import fr.atesab.act.network.ACTNetworking;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 
 public class ModdedCommandOpenGiver extends ModdedCommand {
@@ -25,20 +24,31 @@ public class ModdedCommandOpenGiver extends ModdedCommand {
     protected LiteralArgumentBuilder<CommandSourceStack> onArgument(
             LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
         return command.then(Commands.argument("giveroptions", StringArgumentType.greedyString()).executes(c -> {
-            GuiUtils.displayScreen(new GuiGiver(null, StringArgumentType.getString(c, "giveroptions")));
-            return 0;
+            var source = c.getSource();
+            var player = source.getPlayer();
+            if (player == null) {
+                source.sendFailure(Component.translatable("cmd.act.error.playeronly")
+                        .withStyle(ChatFormatting.RED));
+                return 0;
+            }
+            ACTNetworking.sendOpenGiver(player, StringArgumentType.getString(c, "giveroptions"));
+            return 1;
         }));
     }
 
     @Override
     protected Command<CommandSourceStack> onNoArgument() {
         return c -> {
-            LocalPlayer player = Minecraft.getInstance().player;
-            if (player != null) {
-                GuiUtils.displayScreen(new GuiGiver(null,
-                        ItemUtils.getGiveCode(player.getItemInHand(InteractionHand.MAIN_HAND))));
+            var source = c.getSource();
+            var player = source.getPlayer();
+            if (player == null) {
+                source.sendFailure(Component.translatable("cmd.act.error.playeronly")
+                        .withStyle(ChatFormatting.RED));
+                return 0;
             }
-            return 0;
+            var code = ItemUtils.getGiveCode(player.getItemInHand(InteractionHand.MAIN_HAND));
+            ACTNetworking.sendOpenGiver(player, code);
+            return 1;
         };
     }
 

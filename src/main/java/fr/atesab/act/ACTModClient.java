@@ -9,9 +9,11 @@ import fr.atesab.act.gui.modifier.GuiItemStackModifier;
 import fr.atesab.act.gui.modifier.GuiModifier;
 import fr.atesab.act.gui.modifier.nbt.GuiNBTModifier;
 import fr.atesab.act.gui.selector.GuiButtonListSelector;
+import fr.atesab.act.network.ACTClientNetworking;
 import fr.atesab.act.utils.CommandUtils;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
+import fr.atesab.act.utils.ItemUtilsClient;
 import fr.atesab.act.utils.ReflectionUtils;
 import fr.atesab.act.utils.Tuple;
 import net.fabricmc.api.ClientModInitializer;
@@ -51,6 +53,8 @@ public class ACTModClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        ACTClientNetworking.initClient();
+
         // Register KeyMappings
         giver = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.act.giver", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, ACT_CATEGORY));
         menu = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.act.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, ACT_CATEGORY));
@@ -259,7 +263,7 @@ public class ACTModClient implements ClientModInitializer {
         assert mc.player != null;
         final int slot = mc.player.getInventory().getSelectedSlot();
         GuiUtils.displayScreen(new GuiItemStackModifier(null, mc.player.getMainHandItem().copy(),
-                is -> ItemUtils.give(is, 36 + slot)));
+                is -> ItemUtilsClient.give(is, 36 + slot)));
     }
 
     public static void drawString(Font renderer, String str, int x, int y, int color) {

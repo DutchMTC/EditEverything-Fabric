@@ -35,61 +35,92 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     private static final int ICON_SIZE = 16;
     private static final int ROW_H = 24;
 
+    private static final int PANEL_W = 308;
+    private static final int PANEL_HEADER_Y_OFF = 22;
+    private static final int PANEL_ROW_Y_OFF = 34;
+    private static final int PANEL_PADDING_X = 12;
+
+    private static final int SLIDER_W = 128;
+    private static final int AMOUNT_W = 56;
+
     private final EquipmentData data;
     private final Component title;
     private final List<Component> slotNames;
 
     private final List<EditBox> amountFields = new ArrayList<>();
-    private final List<EditBox> chanceFields = new ArrayList<>();
     private final List<PercentSlider> chanceSliders = new ArrayList<>();
     private boolean syncing;
 
-    public GuiSpawnEggEquipmentModifier(Screen parent, Component title, Consumer<EquipmentData> setter, EquipmentData data, List<Component> slotNames) {
+    public GuiSpawnEggEquipmentModifier(Screen parent, Component title, Consumer<EquipmentData> setter,
+            EquipmentData data, List<Component> slotNames) {
         super(parent, Component.literal("Equipment"), setter);
         this.data = data.copy();
         this.title = title;
         this.slotNames = slotNames;
     }
 
+    private int panelLeft() {
+        return width / 2 - PANEL_W / 2;
+    }
+
+    private int panelTop() {
+        int panelH = panelHeight();
+        return height / 2 - panelH / 2;
+    }
+
+    private int panelHeight() {
+        return 40 + ROW_H * 8 + 36;
+    }
+
+    private int sliderX(int left) {
+        return left + 96;
+    }
+
+    private int amountX(int left) {
+        return left + PANEL_W - PANEL_PADDING_X - AMOUNT_W;
+    }
+
+    private int rowY(int top, int slot) {
+        return top + PANEL_ROW_Y_OFF + slot * ROW_H + 2;
+    }
+
     @Override
     protected void init() {
+        super.init();
         amountFields.clear();
-        chanceFields.clear();
         chanceSliders.clear();
 
-        int panelW = 300;
-        int panelH = 40 + ROW_H * 8 + 36;
-        int left = width / 2 - panelW / 2;
-        int top = height / 2 - panelH / 2;
+        int panelH = panelHeight();
+        int left = panelLeft();
+        int top = panelTop();
 
-        addRenderableWidget(new ACTButton(width / 2 - 96, top + panelH - 26, 94, 20, Component.translatable("gui.done"), b -> {
-            set(data);
-            mc.setScreen(parent);
-        }));
-        addRenderableWidget(new ACTButton(width / 2 + 2, top + panelH - 26, 94, 20, Component.translatable("gui.cancel"), b -> mc.setScreen(parent)));
+        addRenderableWidget(
+                new ACTButton(width / 2 - 96, top + panelH - 26, 94, 20, Component.translatable("gui.done"), b -> {
+                    applyAmountsFromFields();
+                    set(data);
+                    mc.setScreen(parent);
+                }));
+        addRenderableWidget(new ACTButton(width / 2 + 2, top + panelH - 26, 94, 20,
+                Component.translatable("gui.cancel"), b -> mc.setScreen(parent)));
 
-        int startY = top + 28;
         for (int slot = 0; slot < 8; slot++) {
-            int y = startY + slot * ROW_H;
+            int y = rowY(top, slot);
 
-            EditBox amount = new EditBox(font, left + 170, y, 44, 18, Component.literal("Amount"));
             int finalSlot = slot;
+            EditBox amount = new EditBox(font, amountX(left), y, AMOUNT_W, 18, Component.literal("Amount"));
+            amount.setMaxLength(3);
+            amount.setFilter(v -> v.isEmpty() || v.chars().allMatch(Character::isDigit));
             amount.setResponder(v -> onAmountEdited(finalSlot, v));
             addRenderableWidget(amount);
             amountFields.add(amount);
 
-            EditBox chance = new EditBox(font, left + 220, y, 44, 18, Component.literal("Drop %"));
-            chance.setResponder(v -> onChanceEdited(finalSlot, v));
-            addRenderableWidget(chance);
-            chanceFields.add(chance);
-
-            PercentSlider slider = new PercentSlider(left + 58, y, 108, 18, Component.empty(), () -> getChancePercent(finalSlot), p -> setChancePercent(finalSlot, p));
+            PercentSlider slider = new PercentSlider(sliderX(left), y, SLIDER_W, 18, Component.empty(),
+                    () -> getChancePercent(finalSlot), p -> setChancePercent(finalSlot, p));
             addRenderableWidget(slider);
             chanceSliders.add(slider);
         }
 
         syncAllFields();
-        super.init();
     }
 
     @Override
@@ -100,34 +131,32 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         super.renderBackground(graphics, mouseX, mouseY, delta);
-        super.render(graphics, mouseX, mouseY, delta);
 
-        int panelW = 300;
-        int panelH = 40 + ROW_H * 8 + 36;
-        int left = width / 2 - panelW / 2;
-        int top = height / 2 - panelH / 2;
-        int right = left + panelW;
+        int panelH = panelHeight();
+        int left = panelLeft();
+        int top = panelTop();
+        int right = left + PANEL_W;
         int bottom = top + panelH;
 
         GuiUtils.drawRect(graphics, left, top, right, bottom, GuiUtils.COLOR_CONTAINER_BORDER | 0xFF000000);
         GuiUtils.drawCenterString(graphics, font, title.getString(), width / 2, top + 8, 0xFF7F7F7F);
 
-        GuiUtils.drawString(graphics, font, "Slot", left + 10, top + 20, 0xFF7F7F7F, font.lineHeight);
-        GuiUtils.drawString(graphics, font, "Drop %", left + 60, top + 20, 0xFF7F7F7F, font.lineHeight);
-        GuiUtils.drawString(graphics, font, "Amount", left + 170, top + 20, 0xFF7F7F7F, font.lineHeight);
-        GuiUtils.drawString(graphics, font, "Drop %", left + 220, top + 20, 0xFF7F7F7F, font.lineHeight);
+        int headerY = top + PANEL_HEADER_Y_OFF;
+        GuiUtils.drawString(graphics, font, "Slot", left + PANEL_PADDING_X, headerY, 0xFF7F7F7F, font.lineHeight);
+        GuiUtils.drawString(graphics, font, "Drop %", sliderX(left), headerY, 0xFF7F7F7F, font.lineHeight);
+        GuiUtils.drawString(graphics, font, "Amount", amountX(left), headerY, 0xFF7F7F7F, font.lineHeight);
 
         ItemStack hoverStack = null;
         Component hoverName = null;
 
-        int startY = top + 28;
         for (int slot = 0; slot < 8; slot++) {
-            int y = startY + slot * ROW_H;
+            int y = rowY(top, slot);
 
-            int iconX = left + 10;
-            int iconY = y + 1;
+            int iconX = left + PANEL_PADDING_X;
+            int iconY = y;
 
-            GuiUtils.drawRect(graphics, iconX - 1, iconY - 1, iconX - 1 + SLOT_SIZE, iconY - 1 + SLOT_SIZE, GuiUtils.COLOR_CONTAINER_SLOT | 0xFF000000);
+            GuiUtils.drawRect(graphics, iconX - 1, iconY - 1, iconX - 1 + SLOT_SIZE, iconY - 1 + SLOT_SIZE,
+                    GuiUtils.COLOR_CONTAINER_SLOT | 0xFF000000);
 
             ItemStack stack = data.equipment().stacks().get(slot);
             if (!stack.isEmpty()) {
@@ -136,7 +165,8 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
             }
 
             if (slotNames != null && slot < slotNames.size()) {
-                GuiUtils.drawString(graphics, font, slotNames.get(slot).getString(), iconX + 22, y + 5, 0xFFE0E0E0, font.lineHeight);
+                GuiUtils.drawString(graphics, font, slotNames.get(slot).getString(), iconX + 22, y + 4, 0xFFE0E0E0,
+                        font.lineHeight);
             }
 
             if (GuiUtils.isHover(iconX, iconY, ICON_SIZE, ICON_SIZE, mouseX, mouseY)) {
@@ -148,6 +178,8 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
             }
         }
 
+        super.render(graphics, mouseX, mouseY, delta);
+
         if (hoverStack != null) {
             graphics.pose().pushMatrix();
             GuiUtils.renderTooltip(graphics, font, hoverStack, mouseX, mouseY);
@@ -155,29 +187,35 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
         } else if (hoverName != null) {
             GuiUtils.renderTooltip(graphics, font, List.of(hoverName), java.util.Optional.empty(), mouseX, mouseY);
         }
-
-        reRenderWidgets(graphics, mouseX, mouseY, delta);
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         double mouseX = event.x();
         double mouseY = event.y();
+        int mouseButton = event.button();
 
-        int panelW = 300;
-        int panelH = 40 + ROW_H * 8 + 36;
-        int left = width / 2 - panelW / 2;
-        int top = height / 2 - panelH / 2;
+        int left = panelLeft();
+        int top = panelTop();
 
-        int startY = top + 28;
         for (int slot = 0; slot < 8; slot++) {
-            int y = startY + slot * ROW_H;
-            int iconX = left + 10;
-            int iconY = y + 1;
+            int y = rowY(top, slot);
+            int iconX = left + PANEL_PADDING_X;
+            int iconY = y;
             if (GuiUtils.isHover(iconX, iconY, ICON_SIZE, ICON_SIZE, (int) mouseX, (int) mouseY)) {
                 playClick();
                 openItemEditor(slot);
                 return true;
+            }
+        }
+
+        for (EditBox amount : amountFields) {
+            if (GuiUtils.isHover(amount, (int) mouseX, (int) mouseY)) {
+                if (mouseButton == 1) {
+                    amount.setFocused(true);
+                    amount.setValue("");
+                    return true;
+                }
             }
         }
 
@@ -216,10 +254,6 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
             amount.setValue(stack.isEmpty() ? "" : String.valueOf(stack.getCount()));
             amount.setTextColor(stack.isEmpty() ? 0xA0A0A0 : 0xE0E0E0);
 
-            EditBox chance = chanceFields.get(slot);
-            chance.setValue(String.valueOf(getChancePercent(slot)));
-            chance.setTextColor(0xE0E0E0);
-
             chanceSliders.get(slot).syncFromValue();
         } finally {
             syncing = false;
@@ -246,57 +280,13 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
         try {
             int parsed = Integer.parseInt(value.trim());
             if (parsed <= 0) {
-                data.equipment().stacks().set(slot, ItemStack.EMPTY);
-                syncSlotFields(slot);
+                amount.setTextColor(0xFF0000);
                 return;
             }
-            int clamped = Math.min(parsed, stack.getMaxStackSize());
-            stack.setCount(clamped);
-            amount.setTextColor(0xE0E0E0);
-            if (clamped != parsed) {
-                syncing = true;
-                try {
-                    amount.setValue(String.valueOf(clamped));
-                } finally {
-                    syncing = false;
-                }
-            }
+            int max = stack.getMaxStackSize();
+            amount.setTextColor(parsed > max ? 0xFFFFA000 : 0xE0E0E0);
         } catch (NumberFormatException e) {
             amount.setTextColor(0xFF0000);
-        }
-    }
-
-    private void onChanceEdited(int slot, String value) {
-        if (syncing) {
-            return;
-        }
-
-        EditBox chance = chanceFields.get(slot);
-        if (value == null || value.isBlank()) {
-            chance.setTextColor(0xFF0000);
-            return;
-        }
-
-        try {
-            String trimmed = value.trim();
-            if (trimmed.endsWith("%")) {
-                trimmed = trimmed.substring(0, trimmed.length() - 1).trim();
-            }
-            float percent = Float.parseFloat(trimmed.replace(',', '.'));
-            if (Float.isNaN(percent) || Float.isInfinite(percent)) {
-                chance.setTextColor(0xFF0000);
-                return;
-            }
-            setChancePercent(slot, percent);
-            chance.setTextColor(0xE0E0E0);
-            syncing = true;
-            try {
-                chanceSliders.get(slot).syncFromValue();
-            } finally {
-                syncing = false;
-            }
-        } catch (NumberFormatException e) {
-            chance.setTextColor(0xFF0000);
         }
     }
 
@@ -313,14 +303,37 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
         }
         float clamped = Mth.clamp(percent, 0.0f, 100.0f);
         data.dropChances()[slot] = clamped / 100.0f;
-        EditBox chance = chanceFields.get(slot);
-        if (chance != null) {
-            syncing = true;
-            try {
-                chance.setValue(String.valueOf(clamped));
-            } finally {
-                syncing = false;
+    }
+
+    private void applyAmountsFromFields() {
+        syncing = true;
+        try {
+            for (int slot = 0; slot < 8; slot++) {
+                ItemStack stack = data.equipment().stacks().get(slot);
+                EditBox amount = amountFields.get(slot);
+                String raw = amount.getValue();
+
+                if (stack == null || stack.isEmpty()) {
+                    continue;
+                }
+
+                if (raw == null || raw.isBlank()) {
+                    continue;
+                }
+
+                try {
+                    int parsed = Integer.parseInt(raw.trim());
+                    if (parsed <= 0) {
+                        data.equipment().stacks().set(slot, ItemStack.EMPTY);
+                        continue;
+                    }
+                    stack.setCount(Math.min(parsed, stack.getMaxStackSize()));
+                } catch (NumberFormatException ignored) {
+                    // keep existing stack count
+                }
             }
+        } finally {
+            syncing = false;
         }
     }
 
@@ -329,8 +342,8 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
         private final java.util.function.Consumer<Float> setter;
 
         private PercentSlider(int x, int y, int width, int height, Component message,
-                              java.util.function.Supplier<Float> percentGetter,
-                              java.util.function.Consumer<Float> percentSetter) {
+                java.util.function.Supplier<Float> percentGetter,
+                java.util.function.Consumer<Float> percentSetter) {
             super(x, y, width, height, message, 0.0);
             this.getter = percentGetter;
             this.setter = percentSetter;
@@ -358,4 +371,3 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
         }
     }
 }
-

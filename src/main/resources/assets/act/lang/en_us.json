@@ -71,6 +71,16 @@
   "gui.act.modifier.attr.slot": "Slot",
   "gui.act.modifier.attr.type": "Type",
   "gui.act.modifier.meta": "Meta",
+  "gui.act.modifier.meta.canBreak": "Can Break",
+  "gui.act.modifier.meta.canPlace": "Can Place",
+  "gui.act.modifier.meta.adventure.note": "Only works for players in Adventure mode.",
+  "gui.act.modifier.meta.adventure.mode": "Mode",
+  "gui.act.modifier.meta.adventure.mode.only": "Only",
+  "gui.act.modifier.meta.adventure.mode.except": "Everything Except",
+  "gui.act.modifier.meta.adventure.modebtn.only": "Only",
+  "gui.act.modifier.meta.adventure.modebtn.except": "Except",
+  "gui.act.modifier.meta.adventure.selectBlock": "Select a block",
+  "gui.act.modifier.meta.adventure.add": "Add block",
   "gui.act.modifier.meta.setColor": "Color editor",
   "gui.act.modifier.meta.setColor.picker": "Picker",
   "gui.act.modifier.meta.setColor.random": "Random",
@@ -213,6 +223,9 @@
   "cmd.act.instantplace": "Instant place",
 
   "cmd.act.error.noargument": "This command takes argument(s)!",
+  "cmd.act.error.playeronly": "This command can only be used by a player.",
+  "cmd.act.toggle.requested": "Requested",
+  "cmd.act.color.set.gui": "Open the picker",
   "cmd.act.argument.player.unknown": "Unknown player '%s'",
   "cmd.act.argument.player.noconnection": "No connection!"
 }

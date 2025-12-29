@@ -2,12 +2,14 @@ package fr.atesab.act.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import fr.atesab.act.ACTMod;
+import fr.atesab.act.ACTModClient;
 import fr.atesab.act.gui.modifier.GuiItemStackModifier;
 import fr.atesab.act.gui.modifier.GuiListModifier;
 import fr.atesab.act.gui.selector.GuiTypeListSelector;
 import fr.atesab.act.utils.ChatUtils;
 import fr.atesab.act.utils.GuiUtils;
 import fr.atesab.act.utils.ItemUtils;
+import fr.atesab.act.utils.ItemUtilsClient;
 import fr.atesab.act.utils.Tuple;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -69,7 +71,7 @@ public class GuiMenu extends GuiListModifier<Object> {
             if (GuiUtils.isHover(0, 0, 18, 18, (int) mouseX, (int) mouseY)) {
                 playClick();
                 if (mouseButton == 0) {
-                    if (ACTMod.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) {
+                    if (ACTModClient.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) {
                         int i = parent.getElements().indexOf(this);
                         parent.addListElement(i, new MenuListElement(parent, stack.copy()));
                     } else
@@ -81,10 +83,10 @@ public class GuiMenu extends GuiListModifier<Object> {
                                 parent.removeListElement(this);
                         }, true));
                 } else if (mouseButton == 1)
-                    if (ACTMod.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT))
+                    if (ACTModClient.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT))
                         parent.removeListElement(this);
                     else
-                        ItemUtils.give(stack);
+                        ItemUtilsClient.give(stack);
             }
             super.mouseClicked(event, doubleClick);
         }
@@ -107,7 +109,7 @@ public class GuiMenu extends GuiListModifier<Object> {
             assert player != null;
             final int slot = player.getInventory().getSelectedSlot();
             getMinecraft().setScreen(new GuiItemStackModifier(this, player.getMainHandItem().copy(),
-                    is -> ItemUtils.give(is, 36 + slot)));
+                    is -> ItemUtilsClient.give(is, 36 + slot)));
         }, () -> {
         }));
         Tuple<?, ?> btn2 = new Tuple<String, Tuple<Runnable, Runnable>>(I18n.get("key.act.giver"),

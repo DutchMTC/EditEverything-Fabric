@@ -1,7 +1,6 @@
 package fr.atesab.act.command;
 
 import fr.atesab.act.ACTMod;
-import fr.atesab.act.gui.GuiMenu;
 import net.minecraft.ChatFormatting;
 
 public class ModdedCommandACT extends ModdedCommand {
@@ -34,8 +33,7 @@ public class ModdedCommandACT extends ModdedCommand {
         registerSubCommand(SC_GIVE = new ModdedCommandGive());
         registerSubCommand(SC_HEAD = new ModdedCommandHead());
         registerSubCommand(SC_OPEN_GIVER = new ModdedCommandOpenGiver());
-        registerSubCommand((SC_OPEN_MENU = new ModdedCommandOpenMenu("menu", "cmd.act.menu", () -> new GuiMenu(null)))
-                .addAlias("om"));
+        registerSubCommand(SC_OPEN_MENU = new ModdedCommandOpenMenu());
         registerSubCommand(SC_RANDOM_FIREWORKS = new ModdedCommandRandomFireWorks());
         registerSubCommand(SC_RENAME = new ModdedCommandRename());
         registerSubCommand(SC_INFO = new ModdedCommandInfo());

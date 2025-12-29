@@ -6,6 +6,8 @@ import fr.atesab.act.command.ModdedCommandHelp.CommandClickOption;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.GameType;
 
 public class ModdedCommandGamemode extends ModdedCommand {
@@ -26,17 +28,27 @@ public class ModdedCommandGamemode extends ModdedCommand {
     @Override
     protected LiteralArgumentBuilder<CommandSourceStack> onArgument(
             LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
+        command.requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER));
         // /gm <gamemode>
         for (GameType gametype : GameType.values())
             command.then(Commands.literal(gametype.getName()).executes(c -> {
-                sendSigned("/gamemode " + gametype.getName().toLowerCase());
-                return 0;
+                var source = c.getSource();
+                var player = source.getPlayerOrException();
+                player.setGameMode(gametype);
+                source.sendSuccess(() -> Component.translatable("commands.gamemode.success.self",
+                        Component.translatable("gameMode." + gametype.getName())), true);
+                return 1;
             }));
         // /gm 0,1,2,3
         return command.then(Commands
-                .argument("gamemodeid", IntegerArgumentType.integer(0, GameType.values().length - 2)).executes(c -> {
-                    sendSigned("/gamemode " + GameType.values()[1 + IntegerArgumentType.getInteger(c, "gamemodeid")]);
-                    return 0;
+                .argument("gamemodeid", IntegerArgumentType.integer(0, GameType.values().length - 1)).executes(c -> {
+                    var source = c.getSource();
+                    var player = source.getPlayerOrException();
+                    var gametype = GameType.byId(IntegerArgumentType.getInteger(c, "gamemodeid"));
+                    player.setGameMode(gametype);
+                    source.sendSuccess(() -> Component.translatable("commands.gamemode.success.self",
+                            Component.translatable("gameMode." + gametype.getName())), true);
+                    return 1;
                 }));
     }
 

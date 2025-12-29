@@ -3,13 +3,14 @@ package fr.atesab.act.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import fr.atesab.act.command.ModdedCommandHelp.CommandClickOption;
-import fr.atesab.act.command.arguments.PlayerListArgumentType;
-import fr.atesab.act.utils.ChatUtils;
 import fr.atesab.act.utils.ItemUtils;
-import net.minecraft.client.Minecraft;
+import fr.atesab.act.utils.ServerItemOps;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.GameProfileArgument;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 
 public class ModdedCommandHead extends ModdedCommand {
 
@@ -21,25 +22,37 @@ public class ModdedCommandHead extends ModdedCommand {
     @Override
     protected LiteralArgumentBuilder<CommandSourceStack> onArgument(
             LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
-        return command.then(Commands.argument("players", PlayerListArgumentType.playerList()).executes(c -> {
+        return command.then(Commands.argument("players", GameProfileArgument.gameProfile()).executes(c -> {
+            var player = c.getSource().getPlayerOrException();
+            var profiles = GameProfileArgument.getGameProfiles(c, "players");
+            var names = profiles.stream().map(p -> p.name() != null ? p.name() : "").toArray(String[]::new);
             try {
-                ItemUtils.give(ItemUtils.getHeads(PlayerListArgumentType.getPlayerList(c, "players")));
+                for (var stack : ItemUtils.getHeads(names)) {
+                    ServerItemOps.give(player, stack);
+                }
             } catch (Exception e) {
-                ChatUtils.error(e.getClass().getName() + ": " + e.getMessage());
+                c.getSource().sendFailure(Component.literal(e.getClass().getSimpleName() + ": " + e.getMessage())
+                        .withStyle(ChatFormatting.RED));
+                return 0;
             }
-            return 0;
+            return names.length;
         }));
     }
 
     @Override
     protected Command<CommandSourceStack> onNoArgument() {
         return c -> {
+            var player = c.getSource().getPlayerOrException();
             try {
-                ItemUtils.getHeads(Minecraft.getInstance().getUser().getName()).forEach(ItemUtils::give);
+                for (var stack : ItemUtils.getHeads(player.getScoreboardName())) {
+                    ServerItemOps.give(player, stack);
+                }
             } catch (Exception e) {
-                ChatUtils.error(e.getClass().getName() + ": " + e.getMessage());
+                c.getSource().sendFailure(Component.literal(e.getClass().getSimpleName() + ": " + e.getMessage())
+                        .withStyle(ChatFormatting.RED));
+                return 0;
             }
-            return 0;
+            return 1;
         };
     }
 

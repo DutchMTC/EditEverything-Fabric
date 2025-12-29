@@ -5,20 +5,15 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
-import fr.atesab.act.command.ModdedCommand;
 import fr.atesab.act.command.ModdedCommandACT;
 import fr.atesab.act.command.ModdedCommandGamemode;
 import fr.atesab.act.command.ModdedCommandGamemodeQuick;
-import fr.atesab.act.command.arguments.ConnectionPlayerArgument;
-import fr.atesab.act.command.arguments.PlayerListArgumentType;
 import fr.atesab.act.command.arguments.StringListArgumentType;
 import fr.atesab.act.config.Configuration;
-import fr.atesab.act.gui.GuiGiver;
-import fr.atesab.act.gui.modifier.GuiModifier;
-import fr.atesab.act.gui.modifier.nbt.GuiNBTModifier;
-import fr.atesab.act.gui.selector.GuiButtonListSelector;
+import fr.atesab.act.network.ACTNetworking;
 import fr.atesab.act.internalcommand.InternalCommandExecutor;
 import fr.atesab.act.utils.*;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -26,9 +21,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -36,9 +28,7 @@ import net.minecraft.commands.synchronization.SingletonArgumentInfo;
 import net.minecraft.commands.synchronization.SuggestionProviders;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ServerboundTeleportToEntityPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -75,6 +65,7 @@ public class ACTMod implements ModInitializer {
 
     public static final ACTState MOD_STATE = ACTState.RELEASE;
     public static final String MOD_ID = "act";
+    public static final char FORMAT_CHAR = '\u00a7';
     private static String modName = null;
     private static String modVersion = null;
     private static final String modLittleName = "ACT-Mod";
@@ -154,16 +145,6 @@ public class ACTMod implements ModInitializer {
         });
     }
 
-    // Client-side method
-    public static boolean isKeyDown(int key) {
-        return ACTModClient.isKeyDown(key);
-    }
-
-    // Client-side method
-    public static void openGiver() {
-        ACTModClient.openGiver();
-    }
-
     public static void registerStringModifier(String name, Consumer<StringModifier> modifier) {
         registerStringModifier(name, "", modifier);
     }
@@ -188,32 +169,6 @@ public class ACTMod implements ModInitializer {
 
     public static void setDoesDisableToolTip(boolean doesDisableToolTip) {
         config.setDoesDisableToolTip(doesDisableToolTip);
-    }
-
-    // Client-side method
-    public static void drawString(Font renderer, String str, int x, int y, int color) {
-        ACTModClient.drawString(renderer, str, x, y, color);
-    }
-
-    // Client-side method
-    public static void spectatorTeleport(PlayerInfo to) {
-        spectatorTeleport(to.getProfile().id());
-    }
-
-    // Client-side method
-    public static void spectatorTeleport(UUID to) {
-        var p = Minecraft.getInstance().player;
-        if (p == null) {
-            return;
-        }
-        var mode = Objects.requireNonNull(Objects.requireNonNull(Minecraft.getInstance().getConnection()).getPlayerInfo(p.getGameProfile().id())).getGameMode();
-        if (mode != GameType.SPECTATOR) {
-            ModdedCommand.sendSigned("/gamemode " + GameType.SPECTATOR.getName());
-        }
-        p.connection.send(new ServerboundTeleportToEntityPacket(to));
-        if (mode != GameType.SPECTATOR) {
-            ModdedCommand.sendSigned("/gamemode " + mode.getName());
-        }
     }
 
     public static ACTState getModState() {
@@ -282,14 +237,7 @@ public class ACTMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        // Common Setup
-        internalCommandExecutor.registerModule(ACTUtils.class);
-        internalCommandExecutor.registerModule(ChatUtils.class);
-        internalCommandExecutor.registerModule(CommandUtils.class);
-        internalCommandExecutor.registerModule(FileUtils.class);
-        // GuiUtils is client side only
-        internalCommandExecutor.registerModule(ItemUtils.class);
-        internalCommandExecutor.registerModule(ReflectionUtils.class);
+        ACTNetworking.initCommon();
 
         // Register Creative Tab
         ADVANCED_CREATIVE_TAB.register();
@@ -308,19 +256,9 @@ public class ACTMod implements ModInitializer {
 
         // Register Argument Types
         ArgumentTypeRegistry.registerArgumentType(
-                Identifier.fromNamespaceAndPath(MOD_ID, "player_list"),
-                PlayerListArgumentType.class,
-                SingletonArgumentInfo.contextFree(PlayerListArgumentType::new));
-
-        ArgumentTypeRegistry.registerArgumentType(
                 Identifier.fromNamespaceAndPath(MOD_ID, "string_list"),
                 StringListArgumentType.class,
                 SingletonArgumentInfo.contextFree(() -> new StringListArgumentType(Collections::emptyList, Collections.emptyList(), true)));
-
-        ArgumentTypeRegistry.registerArgumentType(
-                Identifier.fromNamespaceAndPath(MOD_ID, "connection_player"),
-                ConnectionPlayerArgument.class,
-                SingletonArgumentInfo.contextFree(ConnectionPlayerArgument::player));
 
         // Register Commands
         CommandRegistrationCallback.EVENT.register((dispatcher, context, environment) -> {
@@ -404,10 +342,15 @@ public class ACTMod implements ModInitializer {
                     sm -> sm.setString(slot.getName()));
         }
 
-        // Client-side modifiers (Giver, NBT, etc.) - These might need to be moved or guarded
-        // Since they use Gui classes, they MUST be guarded or moved.
-        // I'll move them to ACTModClient or a separate ClientSetup class.
-        // For now, I'll comment them out here and move them to ACTModClient.
+        // Internal command modules are client-only (they rely on client classes and reflection).
+        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
+            internalCommandExecutor.registerModule(ACTUtils.class);
+            internalCommandExecutor.registerModule(ChatUtils.class);
+            internalCommandExecutor.registerModule(CommandUtils.class);
+            internalCommandExecutor.registerModule(FileUtils.class);
+            internalCommandExecutor.registerModule(ItemUtils.class);
+            internalCommandExecutor.registerModule(ReflectionUtils.class);
+        }
     }
 
     private void syncItemConfig(List<String> itemConfig) {

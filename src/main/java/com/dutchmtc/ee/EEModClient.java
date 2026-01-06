@@ -22,6 +22,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
@@ -73,6 +74,10 @@ public class EEModClient implements ClientModInitializer {
 
         // Register Client-side Modifiers
         registerClientModifiers();
+
+        // Register Client Commands
+        com.dutchmtc.ee.command.ClientCommands.register();
+
 
         // Build sub items
         // EEMod.ADVANCED_CREATIVE_TAB.buildSubItems(); // Can't call this safely here if it uses server logic? 

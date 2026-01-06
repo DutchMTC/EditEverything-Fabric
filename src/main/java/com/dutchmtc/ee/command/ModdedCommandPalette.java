@@ -4,7 +4,10 @@ import com.mojang.brigadier.Command;
 import com.dutchmtc.ee.command.ModdedCommandHelp.CommandClickOption;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
 
 public class ModdedCommandPalette extends ModdedCommand {
 
@@ -15,13 +18,40 @@ public class ModdedCommandPalette extends ModdedCommand {
     @Override
     protected Command<CommandSourceStack> onNoArgument() {
         return c -> {
-            var compo = Component.translatable("cmd.ee.palette").withStyle(ChatFormatting.WHITE)
-                    .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY));
+            c.getSource().sendSuccess(() -> Component.translatable("cmd.ee.palette").withStyle(ChatFormatting.GOLD)
+                    .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY)), false);
+            
+            MutableComponent row = Component.literal("");
+            int count = 0;
             for (var cf : ChatFormatting.values()) {
-                var t = "&" + cf.getChar();
-                compo.append(t).append(" ").append(Component.literal(t).withStyle(cf)).append(" ");
+                if (!cf.isColor()) continue;
+                
+                String code = "&" + cf.getChar();
+                MutableComponent colorBlock = Component.literal(" \u2588 ").withStyle(cf);
+                MutableComponent codeText = Component.literal(code).withStyle(ChatFormatting.WHITE);
+                
+                MutableComponent entry = Component.literal("[")
+                        .withStyle(ChatFormatting.DARK_GRAY)
+                        .append(colorBlock)
+                        .append(codeText)
+                        .append(Component.literal("] "))
+                        .withStyle(ChatFormatting.DARK_GRAY);
+                        
+                entry.withStyle(s -> s.withClickEvent(new ClickEvent.CopyToClipboard(code))
+                        .withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to copy " + code))));
+                
+                row.append(entry);
+                count++;
+                if (count % 4 == 0) {
+                    MutableComponent finalRow = row;
+                    c.getSource().sendSuccess(() -> finalRow, false);
+                    row = Component.literal("");
+                }
             }
-            c.getSource().sendSuccess(() -> compo, false);
+            if (count % 4 != 0) {
+                MutableComponent finalRow = row;
+                c.getSource().sendSuccess(() -> finalRow, false);
+            }
             return 1;
         };
     }

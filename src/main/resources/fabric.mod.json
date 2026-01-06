@@ -9,9 +9,9 @@
     "ATE47 (Creator of AdvancedCreativeTab)"
   ],
   "contact": {
-    "homepage": "https://www.curseforge.com/minecraft/mc-mods/advanced-extended-creative-mode",
-    "sources": "https://github.com/ate47/AdvancedCreativeTab",
-    "issues": "https://github.com/ate47/AdvancedCreativeTab/issues"
+    "homepage": "https://modrinth.com/project/edit-everything",
+    "sources": "https://github.com/DutchMTC/EditEverything-Fabric",
+    "issues": "https://github.com/DutchMTC/EditEverything-Fabric/issues"
   },
   "license": "LGPL-3.0",
   "icon": "logo.png",

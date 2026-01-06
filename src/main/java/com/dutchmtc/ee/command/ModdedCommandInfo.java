@@ -41,7 +41,7 @@ public class ModdedCommandInfo extends ModdedCommand {
                     false);
             src.sendSuccess(() -> Component.translatable("cmd.ee.info.link").withStyle(ChatFormatting.GOLD)
                             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
-                            .append(Component.literal("curseforge.com").withStyle(s -> s
+                            .append(Component.literal("modrinth.com").withStyle(s -> s
                                     .withHoverEvent(new HoverEvent.ShowText(Component.translatable("cmd.ee.info.link.open")
                                             .withStyle(ChatFormatting.YELLOW)))
                                     .withClickEvent(new ClickEvent.OpenUrl(URI.create(EEMod.getModLink())))

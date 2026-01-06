@@ -105,9 +105,9 @@ public class ModdedCommandHelp extends ModdedCommand {
         return c -> {
             CommandSourceStack src = c.getSource();
             int count = 1;
-            src.sendSuccess(() -> createText("-- ", titleColor)
-                    .append(createTranslatedText("cmd.ee.help", titleColor, title))
-                    .append(createText(" --", titleColor)), false);
+            src.sendSuccess(() -> createText("================ ", ChatFormatting.GOLD)
+                    .append(createTranslatedText("cmd.ee.help", ChatFormatting.YELLOW, title))
+                    .append(createText(" ================", ChatFormatting.GOLD)), false);
             Map<CommandNode<CommandSourceStack>, String> usages;
             String parentName = mainCommand.getGlobalName();
             for (ModdedCommand command : mainCommand.getSubCommands()) {
@@ -132,9 +132,9 @@ public class ModdedCommandHelp extends ModdedCommand {
         MutableComponent component;
 
         if (usage.isEmpty())
-            component = createText(name, commandColor);
+            component = createText(" > ", ChatFormatting.GOLD).append(createText(name, commandColor));
         else
-            component = createText(name + " " + usage, commandColor);
+            component = createText(" > ", ChatFormatting.GOLD).append(createText(name + " " + usage, commandColor));
 
         if (command.getClickOption() == CommandClickOption.doCommand)
             component = component.withStyle(s -> s.withHoverEvent(new HoverEvent.ShowText(
@@ -146,7 +146,7 @@ public class ModdedCommandHelp extends ModdedCommand {
                     .withClickEvent(new ClickEvent.SuggestCommand(name + " ")));
         MutableComponent finalComponent = component;
         if (showDescription)
-            src.sendSuccess(() -> finalComponent.append(createText(": ", ChatFormatting.DARK_GRAY))
+            src.sendSuccess(() -> finalComponent.append(createText(" - ", ChatFormatting.DARK_GRAY))
                     .append(createTranslatedText(command.getDescriptionTranslationKey(), textColor)), false);
         else
             src.sendSuccess(() -> finalComponent, false);

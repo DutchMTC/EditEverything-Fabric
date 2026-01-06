@@ -57,7 +57,11 @@ public class ReflectionUtils {
             try {
                 f = Minecraft.class.getDeclaredField("field_1728");
             } catch (NoSuchFieldException e) {
-                f = Minecraft.class.getDeclaredField("rightClickDelay");
+                try {
+                    f = Minecraft.class.getDeclaredField("rightClickDelay");
+                } catch (NoSuchFieldException e2) {
+                    f = Minecraft.class.getDeclaredField("missTime");
+                }
             }
             f.setAccessible(true);
             f.setInt(mc, delay);
@@ -72,7 +76,11 @@ public class ReflectionUtils {
             try {
                 f = MultiPlayerGameMode.class.getDeclaredField("field_3719");
             } catch (NoSuchFieldException e) {
-                f = MultiPlayerGameMode.class.getDeclaredField("destroyDelay");
+                try {
+                    f = MultiPlayerGameMode.class.getDeclaredField("destroyDelay");
+                } catch (NoSuchFieldException e2) {
+                    f = MultiPlayerGameMode.class.getDeclaredField("blockHitDelay");
+                }
             }
             f.setAccessible(true);
             f.setInt(gameMode, delay);

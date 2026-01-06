@@ -73,7 +73,7 @@ public class EEMod implements ModInitializer {
     private static final String modAuthors = String.join(", ", modAuthorsArray);
     private static final String modLicense = "GNU GPL 3";
     private static final String modLicenseLink = "https://www.gnu.org/licenses/gpl-3.0.en.html";
-    private static final String modLink = "https://www.curseforge.com/minecraft/mc-mods/advanced-extended-creative-mode";
+    private static final String modLink = "https://modrinth.com/project/edit-everything";
 
     @Deprecated
     public static final String MOD_FACTORY = "com.dutchmtc.ee.gui.ModGuiFactory";

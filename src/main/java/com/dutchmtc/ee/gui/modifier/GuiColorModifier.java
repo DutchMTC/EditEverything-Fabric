@@ -54,9 +54,7 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     private static final int RANDOM_PICKER_FREQUENCY = 3600;
 
     private static ItemStack updatePicker() {
-        CompoundTag tag = ItemUtils.getOrCreateTag(RANDOM_PICKER);
-        ItemUtils.putInt(tag, "CustomPotionColor", GuiUtils.getTimeColor(RANDOM_PICKER_FREQUENCY, 100, 50));
-        ItemUtils.setTag(RANDOM_PICKER, tag);
+        ItemUtils.setGlobalColor(RANDOM_PICKER, GuiUtils.getTimeColor(RANDOM_PICKER_FREQUENCY, 100, 50));
         return RANDOM_PICKER;
     }
 

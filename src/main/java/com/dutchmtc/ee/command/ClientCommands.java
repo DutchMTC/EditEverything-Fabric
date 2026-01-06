@@ -271,9 +271,10 @@ public class ClientCommands {
         ItemStack item = mc.player.getMainHandItem();
         if (item.isEmpty()) return;
         
-        List<Tuple<Enchantment, Integer>> enchants = ItemUtils.getEnchantments(item);
+        boolean book = item.getItem().equals(net.minecraft.world.item.Items.ENCHANTED_BOOK);
+        List<Tuple<Enchantment, Integer>> enchants = ItemUtils.getEnchantments(item, book);
         enchants.add(new Tuple<>(enchantment.value(), level));
-        ItemUtils.setEnchantments(enchants, item);
+        ItemUtils.setEnchantments(enchants, item, book, mc.player.level().registryAccess());
         
         int slot = 36 + mc.player.getInventory().getSelectedSlot();
         ItemUtilsClient.give(item, slot);

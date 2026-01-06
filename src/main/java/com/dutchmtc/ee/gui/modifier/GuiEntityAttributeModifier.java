@@ -138,6 +138,8 @@ public class GuiEntityAttributeModifier extends GuiListModifier<List<CompoundTag
             int mouseButton = event.button();
             if (GuiUtils.isHover(base, (int) mouseX, (int) mouseY)) {
                 base.setFocused(true);
+            } else {
+                base.setFocused(false);
             }
             base.mouseClicked(event, doubleClick);
             if (mouseButton == 1) {

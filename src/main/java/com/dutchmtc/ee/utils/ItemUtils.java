@@ -55,6 +55,7 @@ import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import org.jetbrains.annotations.Nullable;
 
@@ -1062,15 +1063,39 @@ public class ItemUtils {
 
     public static ItemStack setEnchantments(List<Tuple<Enchantment, Integer>> enchantments, ItemStack stack,
             boolean book) {
-        ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
-        @SuppressWarnings({"rawtypes", "unchecked"})
-        Registry<Enchantment> registry = (Registry) BuiltInRegistries.REGISTRY.getValue(Registries.ENCHANTMENT.identifier());
-        if (registry == null) {
+        if (enchantments == null) {
+            enchantments = java.util.Collections.emptyList();
+        }
+        // If nothing to apply, we can still clear the component without needing a registry.
+        boolean needsRegistry = enchantments.stream().anyMatch(t -> t != null && t.a != null);
+        if (!needsRegistry) {
+            setComponent(stack, book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS,
+                    ItemEnchantments.EMPTY);
             return stack;
         }
+
+        // Enchantments are registry-backed (datapack registry in modern versions), so callers should
+        // prefer the overload that takes a registry access provider. Keep this overload best-effort.
+        return stack;
+    }
+
+    public static ItemStack setEnchantments(List<Tuple<Enchantment, Integer>> enchantments, ItemStack stack,
+                                           boolean book, RegistryAccess registryAccess) {
+        if (enchantments == null) {
+            enchantments = java.util.Collections.emptyList();
+        }
+        if (registryAccess == null) {
+            return setEnchantments(enchantments, stack, book);
+        }
+
+        ItemEnchantments.Mutable mutable = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+        Registry<Enchantment> registry = registryAccess.lookupOrThrow(Registries.ENCHANTMENT);
         for (Tuple<Enchantment, Integer> t : enchantments) {
+            if (t == null || t.a == null) {
+                continue;
+            }
             var holder = registry.wrapAsHolder(t.a);
-            mutable.set(holder, t.b);
+            mutable.set(holder, t.b != null ? t.b : 0);
         }
         setComponent(stack, book ? DataComponents.STORED_ENCHANTMENTS : DataComponents.ENCHANTMENTS,
                 mutable.toImmutable());
@@ -1173,7 +1198,7 @@ public class ItemUtils {
         }
 
         Block b = bi.getBlock();
-        if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b == Blocks.TRAPPED_CHEST || b == Blocks.CHEST) {
+        if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b instanceof ChestBlock || b == Blocks.CRAFTER) {
             return new ContainerSize(9, 3);
         }
         if (b == Blocks.DISPENSER || b == Blocks.DROPPER) {
@@ -1182,11 +1207,14 @@ public class ItemUtils {
         if (b instanceof AbstractFurnaceBlock) {
             return new ContainerSize(1, 2);
         }
-        if (b == Blocks.JUKEBOX) {
+        if (b == Blocks.JUKEBOX || b == Blocks.DECORATED_POT) {
             return new ContainerSize(1, 1);
         }
         if (b == Blocks.HOPPER) {
             return new ContainerSize(5, 1);
+        }
+        if (b == Blocks.CHISELED_BOOKSHELF) {
+            return new ContainerSize(3, 2);
         }
         return null;
     }
@@ -1256,9 +1284,10 @@ public class ItemUtils {
 
         Block b = bi.getBlock();
         ContainerData data = new ContainerData(size, stacks);
-        if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b == Blocks.TRAPPED_CHEST || b == Blocks.CHEST
+        if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b instanceof ChestBlock
                 || b == Blocks.DISPENSER || b == Blocks.DROPPER || b instanceof AbstractFurnaceBlock
-                || b == Blocks.HOPPER) {
+                || b == Blocks.HOPPER || b == Blocks.CRAFTER || b == Blocks.CHISELED_BOOKSHELF
+                || b == Blocks.DECORATED_POT) {
             ItemContainerContents contents = getComponent(stack, DataComponents.CONTAINER);
             if (contents != null) {
                 contents.copyInto(stacks);
@@ -1282,9 +1311,10 @@ public class ItemUtils {
         }
 
         Block b = bi.getBlock();
-        if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b == Blocks.TRAPPED_CHEST || b == Blocks.CHEST
+        if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b instanceof ChestBlock
                 || b == Blocks.DISPENSER || b == Blocks.DROPPER || b == Blocks.HOPPER
-                || b instanceof AbstractFurnaceBlock) {
+                || b instanceof AbstractFurnaceBlock || b == Blocks.CRAFTER || b == Blocks.CHISELED_BOOKSHELF
+                || b == Blocks.DECORATED_POT) {
             setComponent(stack, DataComponents.CONTAINER, ItemContainerContents.fromItems(stacks));
         } else if (b == Blocks.JUKEBOX) {
             ItemStack cd = stacks.get(0);

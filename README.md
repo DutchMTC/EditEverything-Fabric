@@ -1,194 +1,127 @@
 # Edit Everything
 
-> This mod is fully client side! You only need to be in creative to use the give/modifier action, some features/fixes can be missing if you're not using the latest version of the mod for the latest Minecraft version.
+![Logo](src/main/resources/logo.png)
+
+**Edit Everything** is a comprehensive Minecraft Fabric mod designed to enhance your Creative Mode experience. Based on the "Advanced Creative Tab" by ATE47, this mod provides a suite of powerful tools for editing items, managing inventories, and utilizing useful commands to streamline your creative workflow.
+
+Whether you are a map maker, a server admin, or just someone who loves to experiment with custom items, Edit Everything gives you the control you need.
+
+## Features
+
+### 🛠️ Advanced Item Editor
+Modify every aspect of your items with an intuitive GUI.
+
+#### Meta & Data Components
+The Meta tab serves as a hub for advanced item properties.
+- **Unbreakable:** Toggle the unbreakable tag.
+- **Data Components:** Add, edit, or remove modern data components (1.20.5+).
+- **NBT Editor:** Edit raw NBT data directly with a tree-view editor.
+
+![Meta Editor Screenshot](path/to/meta_editor_screenshot.png)
+![Data Component Editor Screenshot](path/to/datacomponent_editor_screenshot.png)
+
+#### Adventure Mode (Can Place / Can Break)
+Easily configure the `CanPlaceOn` and `CanDestroy` tags for Adventure mode map making. Select blocks from a list to define where items can be used.
+![Adventure Editor Screenshot](path/to/adventure_editor_screenshot.png)
 
-# Features
+#### Container Editor
+Edit the contents of containers (Chests, Shulker Boxes, Barrels, etc.) directly without placing them.
+![Container Editor Screenshot](path/to/container_editor_screenshot.png)
 
-## Global
+#### Command Block Editor
+Edit Command Block items (Command, Name, Auto-Execute) directly in your inventory.
+![Command Block Editor Screenshot](path/to/commandblock_editor_screenshot.png)
 
-- Tooltip: Repair cost, durability
-- Container (like Shulker box): Show the inventory of a container by doing **CTRL+SHIFT**
+#### Attributes
+Customize attack damage, attack speed, max health, movement speed, and other attributes.
+![Attributes Editor Screenshot](path/to/attributes_editor_screenshot.png)
 
-## Creative
+#### Enchantments
+Add any enchantment at any level, even those not normally compatible.
+![Enchantments Editor Screenshot](path/to/enchantments_editor_screenshot.png)
 
-- item modifiers
-- item give command
-- create tab with every non obtainable item
+#### Potion Effects
+Create custom potions with specific effects, durations, amplifiers, and custom colors.
+![Potion Editor Screenshot](path/to/potion_editor_screenshot.png)
 
-## Spectator
+#### Fireworks
+Design custom firework rockets with multiple explosions, colors, and fade effects.
+![Fireworks Editor Screenshot](path/to/fireworks_editor_screenshot.png)
 
-- `/ee sptp <username>` - Teleport to `username` using the spectator game mode.
+#### Player Heads
+Get heads with specific textures or player names.
+![Head Editor Screenshot](path/to/head_editor_screenshot.png)
 
-# Commands
+#### Spawn Eggs
+Customize spawn egg entities and their equipment.
+![Spawn Egg Editor Screenshot](path/to/spawnegg_editor_screenshot.png)
 
-- `/ee [help]` - show all commands
-- `/ee edit` - Edit your inhand item
-- `/ee head [name=you]` - Give a head by a name
-- `/ee rename <name>` - Rename your inhand item
-- `/ee rfw` - Get a random (legit seems) fireworks
-- `/ee enchant [enchant] [level]` - Enchant the inhand item
-- `/ee format [format]` - Get formatting help
-- `/ee info` - Get mod information
-- `/ee unbreakable [true|false]` - Set the inhand item unbreakable
-- `/ee color` - Color command
-  - `/ee color picker` - Set the color of the inhand item using the picker
-  - `/ee color remove` - Remove the color of the inhand item
-  - `/ee color set <color>` - Set the color of the inhand item
-  - `/ee color set rgb <red> <green> <blue>` - Set with RGB (0-255,0-255,0-255)
-  - `/ee color set hsl <hue> <saturation> <lightness>` - Set with HSL (0-355,0-100,0-100)
-  - `/ee color set hex <hexcode>` - Set with hex code, example: FF0000 is red
-- `/gm [mode]` - `/gamemode [mode]`
-- `/gms` - `/gamemode survival`
-- `/gmc` - `/gamemode creative`
-- `/gma` - `/gamemode adventure`
-- `/gmsp` - `/gamemode spectator`
+### 📦 Item Giver
+A powerful alternative to the standard Creative Inventory.
+- Search and filter items easily.
+- Access custom items and saved palettes.
 
-The [Spectator Teleporter mod](https://www.curseforge.com/minecraft/mc-mods/gm3-teleporter) is integrated with the command
+![Item Giver Screenshot](path/to/giver_screenshot.png)
 
-- `/ee sptp <username>` - Teleport using the gamemode spectator, you need to be in spectator mode or be able to do the /gamemode spectator command
+### ⚡ Instant Tools
+- **Instant Click:** Instantly mine blocks without delay.
+- **Instant Place:** Place blocks instantly for rapid building.
 
-# Inventory item viewer
+### 🎨 Color & Formatting
+- **Color Modifier:** Change the color of leather armor, potions, and more with a visual picker.
+- **Chat Formatting:** Built-in reference for chat color codes (`/ee format`).
+- **Palette:** Copy-paste color codes easily (`/ee palette`).
 
-View inside a container using the **CTRL + SHIFT** command.
+![Color Modifier Screenshot](path/to/color_modifier_screenshot.png)
 
-![shulker example](https://i.imgur.com/dNjIUiF.png)
+### 🎮 Enhanced Gamemode Switcher (F3 + F4)
+Edit Everything enhances the vanilla F3 + F4 gamemode switcher. It allows you to use this shortcut to switch gamemodes even if you don't have standard permission for the vanilla gamemode commands, provided the server supports the switch (or if you are in a singleplayer world where the mod handles the logic).
 
-# Tool tips
+## Commands
 
-By Shifting when you looking at an item in you inventory you can get some information
+The main command is `/ee` (or `/editeverything`).
 
-![tooltip](https://i.imgur.com/Wb9rpZr.png)
+| Command | Alias | Description |
+| :--- | :--- | :--- |
+| `/ee menu` | `/ee om` | Opens the main mod menu. |
+| `/ee edit` | `/ee e` | Opens the Item Editor / Giver interface. |
+| `/ee give <item>` | `/ee g` | Give yourself an item (supports custom NBT). |
+| `/ee opengiver` | | Opens the Item Giver GUI directly. |
+| `/ee instantclick` | | Toggles Instant Click (Instant Mine) mode. |
+| `/ee instantplace` | | Toggles Instant Place mode. |
+| `/ee color` | | Opens the Color Modifier for the held item. |
+| `/ee enchant <id> <lvl>` | | Enchants the held item. |
+| `/ee rename <name>` | | Renames the held item. Supports `&` for color codes. |
+| `/ee unbreakable [bool]` | | Toggles the Unbreakable tag on the held item. |
+| `/ee head <name>` | | Gives you the head of the specified player. |
+| `/ee randomfireworks` | `/ee rfw` | Gives a randomly generated firework rocket. |
+| `/ee info` | | Displays mod version, authors, and license info. |
+| `/ee format` | | Shows a list of chat formatting codes. |
+| `/ee palette` | | Shows a color palette with copyable codes. |
+| `/ee spectatortp <player>` | `/ee sptp` | Teleports to a player (useful for spectators). |
 
-**Combat** : Creative tab
+### Gamemode Shortcuts
+Quickly switch gamemodes with these commands:
+- `/gm <mode>` (e.g., `/gm creative`, `/gm 1`, `/gm c`)
+- `/gmc` - Creative Mode
+- `/gms` - Survival Mode
+- `/gma` - Adventure Mode
+- `/gmsp` - Spectator Mode
 
-**Color** : Armor/Potion color
+## Installation
 
-**Durability** (With colors) : How many time you can use your tool/armor
+1.  Install **Minecraft** (Version 1.21 - 1.21.11).
+2.  Install **Fabric Loader**.
+3.  Download **Edit Everything** and place the `.jar` file into your `mods` folder.
+4.  Ensure you have the **Fabric API** installed.
 
-**RepairCost** : how much you need to repair/rename/enchant-it in a anvil
+## Credits
 
-**Tags**(Count) : List of NBT tag of this item
+-   **DutchMTC**: Author / Maintainer
+-   **ATE47**: Creator of the original "Advanced Creative Tab" mod.
 
-**[Y]** (can be changed) : Open this item in the giver
+## License
 
-**[N]** (can be changed) : Save this in your EE Menu
+This project is licensed under the **LGPL-3.0** License.
 
-# Menus
-
-![menu image](https://i.imgur.com/Vt2dpji.png)
-
-Mod Menu, can be get with [N] (can be changed) or in mods list with the config button
-
-**Left Click** : Open in the giver
-
-**Right Click** : Give in your inventory (you must be in creative)
-
-**Shift Left Click** : Copy
-
-**Shift Right Click** : Delete
-
-![giver image](https://i.imgur.com/mEoX2ci.png)
-
-Giver menu, can be get with [Y] (can be changed) or in the menu by clicking on an item
-
-**Give** : Give (you must be in creative)
-
-**Copy** : Copy give information in you clipboard
-
-**Item Editor** : open it in the item editor
-
-**Delete** (if you are from the menu) : Delete this from config
-
-**Save** (if you're not from the menu) : Save this in your config
-
-**Cancel** (if you are from the menu) : Don't save edit
-
-**Done** (if you are from the menu) : Save edit
-
-**Done** (if you're not from the menu) : Close the menu
-
-![item modifier image](https://i.imgur.com/uTAqvzW.png)
-
-Item editor, can be get with [H] (can be changed) or in the giver
-
-Here is a list of the changes made by the buttons : (type change Item's type ...)
-
-![tool tip](https://i.imgur.com/sjq28vq.png)
-
-You can add & to use color formatting in name and description. ([wiki](https://minecraft.fandom.com/wiki/Formatting_codes) or by doing the `/ee format` to get formatting info)
-
-![meta](https://i.imgur.com/JtbKZLD.png)
-
-Update the tag and the unbreakability of the item.
-
-## Modifiers
-
-From the item modifier, you can set data of the item.
-
-### Head
-
-You can update the link, the name or download the skin of player head.
-
-![head](https://i.imgur.com/opy6DGM.png)
-
-### Command block
-
-Update name and command of command block.
-
-![command block](https://i.imgur.com/KPuoGuO.png)
-
-Command Block editor (type = Normal/Repeating/Chain/Minecart)
-
-![command block give](https://i.imgur.com/lpoRZyV.png)
-
-### Fireworks
-
-![explosion list](https://i.imgur.com/J5dDN6i.png)
-
-Fireworks editor
-
-Firework star -> Change explosion
-
-![explosion](https://i.imgur.com/k8Y58eU.png)
-
-Explosion editor (See [Minecraft Wiki](https://www.curseforge.com/linkout?remoteUrl=https%253a%252f%252fminecraft.gamepedia.com%252fFirework_Rocket%2523Display_Properties) for more information)
-
-### Potion
-
-(+Tipped Arrow) Change effects, type and color
-
-![potion editor](https://i.imgur.com/hiVpxX1.png)
-
-**Duration** : in tick (1/20s)
-
-**Amplifier** : level - 1, for example Speed with an amplifier of 1 is Speed II
-
-**Ambient** : whether or not this is an effect provided by a beacon and therefore should be less intrusive on the screen. This tag is optional and defaults to 0. Due to a bug, it has no effect on splash potions.
-
-**Show Particules** : whether or not this effect produces particles. This tag is optional and defaults to 1. Due to a bug, it has no effect on splash potions.
-
-([Minecraft wiki](https://minecraft.fandom.com/wiki/Player.dat_format#Potion_Effects))
-
-### Color
-
-You can change the leather armor color, explosion color or the color of the potion.
-
-![picker](https://i.imgur.com/ap07jdV.png)
-
-![picker advanced](https://i.imgur.com/brXY5qo.png)
-
-### Inventory
-
-You can set the items in the inventory item
-
-![inventory modifier](https://i.imgur.com/LuGVy7c.png)
-
-# Edit Everything
-
-![act](https://i.imgur.com/nj4eXmb.png)
-
-This tab contain every non-findable items in creative
-
-GUI Dev mode: **CTRL + ALT + K**
-
-1.x versions depleted, please use for an 1.8 version [ATEHUD instead (1.8.9)](https://minecraft.curseforge.com/projects/atehud)
+![License Badge](https://img.shields.io/badge/license-LGPL--3.0-blue.svg)

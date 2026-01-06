@@ -258,11 +258,13 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
         }
         if (!forceGeneric && type == DataComponents.ENCHANTMENTS) {
             return new GuiEnchModifier(back, ItemUtils.getEnchantments(stack),
-                    list -> ItemUtils.setEnchantments(list, stack));
+                    list -> ItemUtils.setEnchantments(list, stack, false,
+                            getMinecraft().level != null ? getMinecraft().level.registryAccess() : null));
         }
         if (!forceGeneric && type == DataComponents.STORED_ENCHANTMENTS) {
             return new GuiEnchModifier(back, ItemUtils.getEnchantments(stack, true),
-                    list -> ItemUtils.setEnchantments(list, stack, true));
+                    list -> ItemUtils.setEnchantments(list, stack, true,
+                            getMinecraft().level != null ? getMinecraft().level.registryAccess() : null));
         }
 
         Object value = ItemUtils.getComponent(stack, (DataComponentType<Object>) type);

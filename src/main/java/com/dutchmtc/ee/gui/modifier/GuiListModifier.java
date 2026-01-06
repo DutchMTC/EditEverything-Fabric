@@ -213,6 +213,8 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                 } else {
                     if (GuiUtils.isHover(tf, (int) mouseX, (int) mouseY)) {
                         tf.setFocused(true);
+                    } else {
+                        tf.setFocused(false);
                     }
                     tf.mouseClicked(event, doubleClick);
                 }

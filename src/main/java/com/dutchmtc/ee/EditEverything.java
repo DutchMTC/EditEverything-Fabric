@@ -85,7 +85,7 @@ public class EditEverything {
 
     public void register() {
         tab = FabricItemGroup.builder()
-                .title(Component.translatable("itemGroup.act"))
+                .title(Component.translatable("itemGroup.ee"))
                 .icon(this::makeIcon)
                 .displayItems(this::accept)
                 .build();

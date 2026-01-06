@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "refmap": "ee.refmap.json",
+  "package": "com.dutchmtc.ee.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "GameModeIconAccessor",
+    "GameModeSwitcherScreenInvoker",
+    "GameModeSwitcherScreenMixin",
+    "KeyboardHandlerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

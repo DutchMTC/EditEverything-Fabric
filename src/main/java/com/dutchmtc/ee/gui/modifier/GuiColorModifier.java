@@ -5,6 +5,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.dutchmtc.ee.EEMod;
 import com.dutchmtc.ee.gui.components.EEButton;
+import com.dutchmtc.ee.utils.ColorMath;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import net.minecraft.util.Util;
@@ -38,90 +39,85 @@ import java.util.function.Consumer;
 public class GuiColorModifier extends GuiModifier<OptionalInt> {
 
     private enum DragState {
-        HL, S, NONE
+        SV, H, NONE
     }
 
-    private static final int PICKER_SIZE_Y = 200;
-    private static final int PICKER_S_SIZE_X = 20;
-    private static final int PICKER_HL_SIZE_X = 200;
-    private static final Identifier PICKER_S_RESOURCE = Identifier.fromNamespaceAndPath(EEMod.MOD_ID, "picker_hl");
-    private static final Identifier PICKER_HL_RESOURCE = Identifier.fromNamespaceAndPath(EEMod.MOD_ID, "picker_s");
+    private static final int PICKER_SIZE = 200;
+    private static final int PICKER_HUE_WIDTH = 20;
+    private static final int PICKER_GAP = 4;
+    private static final Identifier PICKER_SV_RESOURCE = Identifier.fromNamespaceAndPath(EEMod.MOD_ID, "picker_sv");
+    private static final Identifier PICKER_H_RESOURCE = Identifier.fromNamespaceAndPath(EEMod.MOD_ID, "picker_h");
     
-    private DynamicTexture pickerImageS;
-    private DynamicTexture pickerImageHL;
+    private DynamicTexture pickerImageSV;
+    private DynamicTexture pickerImageH;
 
-    private static final ItemStack RANDOM_PICKER = new ItemStack(Items.POTION);
     private static final int RANDOM_PICKER_FREQUENCY = 3600;
 
     private static ItemStack updatePicker() {
-        ItemUtils.setGlobalColor(RANDOM_PICKER, GuiUtils.getTimeColor(RANDOM_PICKER_FREQUENCY, 100, 50));
-        return RANDOM_PICKER;
+        ItemStack stack = new ItemStack(Items.POTION);
+        ItemUtils.setGlobalColor(stack, GuiUtils.getTimeColor(RANDOM_PICKER_FREQUENCY, 100, 50));
+        return stack;
     }
 
     // Saved state for defaults
     private static int savedHue;
     private static int savedSaturation;
-    private static int savedLightness;
+    private static int savedValue;
 
     // Texture state
     private int texHue = -1;
-    private int texSaturation = -1;
-    private int texLightness = -1;
 
-    private void updatePickerTexture(int hue, int saturation, int lightness) {
-        if (pickerImageS == null || pickerImageHL == null) {
+    private void updatePickerTexture(int hue) {
+        if (pickerImageSV == null || pickerImageH == null) {
             initTextures();
         }
-        // regen PICKER_IMAGE_S
-        if (!(hue == texHue && lightness == texLightness)) {
+
+        // regen PICKER_IMAGE_SV if hue changed
+        if (hue != texHue) {
             texHue = hue;
-            texLightness = lightness;
-
-            var pixels = Objects.requireNonNull(pickerImageS.getPixels());
-
-            for (var y = 0; y < pixels.getHeight(); y++) { // saturation
-                var color = GuiUtils.fromHSL(hue, y * 100 / pixels.getHeight(), lightness);
-                for (var x = 0; x < pixels.getWidth(); x++)
+            var pixels = Objects.requireNonNull(pickerImageSV.getPixels());
+            for (var x = 0; x < pixels.getWidth(); x++) {
+                for (var y = 0; y < pixels.getHeight(); y++) {
+                    // x is saturation (0-100), y is value (100-0)
+                    int s = x * 100 / pixels.getWidth();
+                    int v = 100 - (y * 100 / pixels.getHeight());
+                    var color = ColorMath.fromHsv(hue, s, v) | 0xFF000000;
                     pixels.setPixelABGR(x, y, GuiUtils.blueToRed(color));
+                }
             }
-
-            pickerImageS.upload();
+            pickerImageSV.upload();
         }
-
-        // regen PICKER_IMAGE_HL
-        if (saturation != texSaturation) {
-            texSaturation = saturation;
-
-            var pixels = Objects.requireNonNull(pickerImageHL.getPixels());
-
-            for (var x = 0; x < pixels.getWidth(); x++) // hue
-                for (var y = 0; y < pixels.getHeight(); y++) // lightness
-                    pixels.setPixelABGR(x, y, GuiUtils.blueToRed(
-                            GuiUtils.fromHSL(x * 360 / pixels.getWidth(), saturation, y * 100 / pixels.getHeight())));
-
-            pickerImageHL.upload();
-        }
-
+        
+        // PICKER_IMAGE_H is static (rainbow), but we generate it once
+        // Actually we can generate it once in initTextures
     }
 
     public void initTextures() {
-        if (pickerImageS != null) pickerImageS.close();
-        if (pickerImageHL != null) pickerImageHL.close();
+        if (pickerImageSV != null) pickerImageSV.close();
+        if (pickerImageH != null) pickerImageH.close();
 
-        pickerImageS = new DynamicTexture(() -> EEMod.MOD_ID + "_picker_s",
-                new NativeImage(NativeImage.Format.RGBA, PICKER_S_SIZE_X, PICKER_SIZE_Y, false));
-        pickerImageHL = new DynamicTexture(() -> EEMod.MOD_ID + "_picker_hl",
-                new NativeImage(NativeImage.Format.RGBA, PICKER_HL_SIZE_X, PICKER_SIZE_Y, false));
+        pickerImageSV = new DynamicTexture(() -> EEMod.MOD_ID + "_picker_sv",
+                new NativeImage(NativeImage.Format.RGBA, PICKER_SIZE, PICKER_SIZE, false));
+        pickerImageH = new DynamicTexture(() -> EEMod.MOD_ID + "_picker_h",
+                new NativeImage(NativeImage.Format.RGBA, PICKER_HUE_WIDTH, PICKER_SIZE, false));
+
+        // Generate Hue texture
+        var pixels = Objects.requireNonNull(pickerImageH.getPixels());
+        for (var y = 0; y < pixels.getHeight(); y++) {
+            int h = y * 360 / pixels.getHeight();
+            var color = ColorMath.fromHsv(h, 100, 100) | 0xFF000000;
+            for (var x = 0; x < pixels.getWidth(); x++) {
+                pixels.setPixelABGR(x, y, GuiUtils.blueToRed(color));
+            }
+        }
+        pickerImageH.upload();
 
         TextureManager tm = Minecraft.getInstance().getTextureManager();
         // Reset state to force update
         texHue = -1;
-        texSaturation = -1;
-        texLightness = -1;
-        updatePickerTexture(localHue, localSaturation, localLightness);
         
-        tm.register(PICKER_S_RESOURCE, pickerImageS);
-        tm.register(PICKER_HL_RESOURCE, pickerImageHL);
+        tm.register(PICKER_SV_RESOURCE, pickerImageSV);
+        tm.register(PICKER_H_RESOURCE, pickerImageH);
     }
 
     private int oldAlphaLayer;
@@ -130,11 +126,11 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     private DragState drag = DragState.NONE;
     private boolean advanced = false;
     private Button advButton;
-    private EditBox tfr, tfg, tfb, tfh, tfs, tfl, intColor, hexColor;
+    private EditBox tfr, tfg, tfb, tfh, tfs, tfv, intColor, hexColor;
     private final int defaultColor;
     private int localHue;
     private int localSaturation;
-    private int localLightness;
+    private int localValue;
     private boolean isUpdating = false;
     private final int originalColor;
 
@@ -170,11 +166,16 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         this.originalColor = this.color;
         this.defaultColor = defaultColor;
         this.transparentAsDefault = transparentAsDefault;
-        var hsl = GuiUtils.hslFromRGBA(rgba, savedHue, savedSaturation);
-        var fullblack = (rgba & 0xFFFFFF) == 0;
-        localHue = hsl.hue();
-        localSaturation = fullblack ? 100 : hsl.saturation();
-        localLightness = hsl.lightness();
+        
+        var hsv = ColorMath.toHsv(this.color);
+        localHue = hsv[0];
+        localSaturation = hsv[1];
+        localValue = hsv[2];
+        
+        // If color is black/white/gray, hue is undefined (0), but we might want to keep saved hue
+        if (localSaturation == 0) {
+            localHue = savedHue;
+        }
     }
 
     @Override
@@ -184,7 +185,6 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
 
     @Override
     public void tick() {
-        // Removed tick calls
         super.tick();
     }
 
@@ -196,57 +196,58 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         // allow multiple color modifiers
-        updatePickerTexture(localHue, localSaturation, localLightness);
+        updatePickerTexture(localHue);
 
         super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        super.render(graphics, mouseX, mouseY, partialTicks);
+
+        int centerX = width / 2;
+        int centerY = height / 2;
+        int totalWidth = PICKER_SIZE + PICKER_GAP + PICKER_HUE_WIDTH;
+        int pickerX = centerX - totalWidth / 2;
+        int pickerY = centerY - 100;
+        int hueX = pickerX + PICKER_SIZE + PICKER_GAP;
+        int hueY = pickerY;
 
         if (!advanced) {
-            // S PICKER
-            graphics.blit(RenderPipelines.GUI_TEXTURED, PICKER_S_RESOURCE,
-                    width / 2 + 180, height / 2 - 76,
+            // SV PICKER
+            graphics.blit(RenderPipelines.GUI_TEXTURED, PICKER_SV_RESOURCE,
+                    pickerX, pickerY,
                     0.0F, 0.0F,
-                    PICKER_S_SIZE_X, PICKER_SIZE_Y,
-                    PICKER_S_SIZE_X, PICKER_SIZE_Y);
+                    PICKER_SIZE, PICKER_SIZE,
+                    PICKER_SIZE, PICKER_SIZE);
 
+            // SV Index
+            int sX = pickerX + (localSaturation * PICKER_SIZE / 100);
+            int vY = pickerY + PICKER_SIZE - (localValue * PICKER_SIZE / 100);
+            
+            GuiUtils.drawRect(graphics, sX - 2, vY - 2, sX + 2, vY + 2, 0xff222222);
+            GuiUtils.drawRect(graphics, sX - 1, vY - 1, sX + 1, vY + 1, 0xffcccccc);
 
-            // - S Index
-            var saturationDelta = texSaturation * 76 * 2 / 100;
-            GuiUtils.drawRect(graphics, width / 2 + 178, height / 2 - 76 + saturationDelta - 2, width / 2 + 178 + 22,
-                    height / 2 - 76 + saturationDelta + 2, 0xff222222);
-            GuiUtils.drawRect(graphics, width / 2 + 180, height / 2 - 76 + saturationDelta - 1, width / 2 + 180 + 20,
-                    height / 2 - 76 + saturationDelta + 1, 0xff999999);
-
-            // HL Picker
-            graphics.blit(RenderPipelines.GUI_TEXTURED, PICKER_HL_RESOURCE,
-                    width / 2 - 158, height / 2 - 76,
+            // Hue Picker
+            graphics.blit(RenderPipelines.GUI_TEXTURED, PICKER_H_RESOURCE,
+                    hueX, hueY,
                     0.0F, 0.0F,
-                    158 + 176, 76 * 2,
-                    PICKER_HL_SIZE_X, PICKER_SIZE_Y);
+                    PICKER_HUE_WIDTH, PICKER_SIZE,
+                    PICKER_HUE_WIDTH, PICKER_SIZE);
 
-            // - HL Index
-            var hueDelta = texHue * (158 + 176) / 360;
-            var lightnessDelta = texLightness * (76 * 2) / 100;
-            GuiUtils.drawRect(graphics, width / 2 - 158 + hueDelta - 5, height / 2 - 76 + lightnessDelta - 2,
-                    width / 2 - 158 + hueDelta - 5 + 10, height / 2 - 76 + lightnessDelta - 2 + 4, 0xff222222);
-            GuiUtils.drawRect(graphics, width / 2 - 158 + hueDelta - 2, height / 2 - 76 + lightnessDelta - 5,
-                    width / 2 - 158 + hueDelta - 2 + 4, height / 2 - 76 + lightnessDelta - 5 + 10, 0xff222222);
+            // Hue Index
+            int hY = hueY + (localHue * PICKER_SIZE / 360);
+            GuiUtils.drawRect(graphics, hueX - 2, hY - 2, hueX + PICKER_HUE_WIDTH + 2, hY + 2, 0xff222222);
+            GuiUtils.drawRect(graphics, hueX - 1, hY - 1, hueX + PICKER_HUE_WIDTH + 1, hY + 1, 0xffcccccc);
 
-            GuiUtils.drawRect(graphics, width / 2 - 158 + hueDelta - 4, height / 2 - 76 + lightnessDelta - 1,
-                    width / 2 - 158 + hueDelta - 4 + 8, height / 2 - 76 + lightnessDelta - 1 + 2, 0xff999999);
-            GuiUtils.drawRect(graphics, width / 2 - 158 + hueDelta - 1, height / 2 - 76 + lightnessDelta - 4,
-                    width / 2 - 158 + hueDelta - 1 + 2, height / 2 - 76 + lightnessDelta - 4 + 8, 0xff999999);
         } else {
-            GuiUtils.drawRect(graphics, width / 2 - 158, height / 2 - 76, width / 2 + 200, height / 2 + 76,
-                    0x88000000);
+            graphics.pose().pushMatrix();
+            GuiUtils.drawRect(graphics, centerX - 100, pickerY, centerX + 130, pickerY + PICKER_SIZE,
+                    0xE0000000);
+            graphics.pose().popMatrix();
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.red") + ": ", tfr, 0xffffffff);
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.green") + ": ", tfg, 0xffffffff);
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.blue") + ": ", tfb, 0xffffffff);
 
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.hue") + ": ", tfh, 0xffffffff);
-            GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.lightness") + ": ", tfl,
-                    0xffffffff);
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.saturation") + ": ", tfs,
+                    0xffffffff);
+            GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.value") + ": ", tfv,
                     0xffffffff);
 
             GuiUtils.drawString(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.intColor") + ":", intColor.getX(),
@@ -254,16 +255,31 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
             GuiUtils.drawString(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.hexColor") + ":", hexColor.getX(),
                     hexColor.getY() - 4 - 10, 0xffffffff, 10);
         }
+        
+        // Current color preview
         if ((color & 0xFF000000) == 0)
-            GuiUtils.drawRect(graphics, width / 2 - 158, height / 2 - 100, width / 2 + 176, height / 2 - 80,
+            GuiUtils.drawRect(graphics, pickerX, pickerY - 24, hueX + PICKER_HUE_WIDTH, pickerY - 4,
                     color | 0xff000000);
+
+        if (Minecraft.getInstance().player != null) {
+            ItemStack stack = Minecraft.getInstance().player.getMainHandItem().copy();
+            if (ItemUtils.canGlobalColorIt(stack)) {
+                ItemUtils.setGlobalColor(stack, color);
+                int previewX = pickerX + (hueX + PICKER_HUE_WIDTH - pickerX) / 2 - 8;
+                int previewY = pickerY - 24 + (20 - 16) / 2;
+                GuiUtils.drawItemStack(graphics, stack, previewX, previewY);
+            }
+        }
 
         Runnable show = () -> {
         };
+        
+        // Dye colors
         for (var i = 0; i < DyeColor.values().length; ++i) {
             var color = DyeColor.values()[i];
-            var x = width / 2 - 200 + (i % 2) * 19;
-            var y = height / 2 - 76 + (i / 2) * 19;
+            var x = pickerX - 40 + (i % 2) * 19;
+            var y = pickerY + (i / 2) * 19;
+            
             GuiUtils.drawRect(graphics, x, y, x + 19, y + 19, 0xff000000 | color.getFireworkColor());
             if (GuiUtils.isHover(x, y, 19, 19, mouseX, mouseY)) {
                 show = () -> GuiUtils.drawTextBox(graphics, font, mouseX, mouseY, width, height, getZLevel(),
@@ -274,19 +290,26 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         }
 
         // random
-        GuiUtils.drawHoverableRect(graphics, width / 2 - 200, height / 2 - 100, width / 2 - 162, height / 2 - 80,
+        int randX = pickerX;
+        int randY = pickerY + PICKER_SIZE + 10;
+        GuiUtils.drawHoverableRect(graphics, randX, randY, randX + 38, randY + 20,
                 0xFF444444, GuiUtils.getTimeColor(RANDOM_PICKER_FREQUENCY, 50, 15), mouseX, mouseY);
-        GuiUtils.drawItemStack(graphics, updatePicker(), width / 2 - 200 + 38 / 2 - 16 / 2,
-                height / 2 - 100 + 20 / 2 - 16 / 2);
-        if (GuiUtils.isHover(width / 2 - 200, height / 2 - 100, 38, 20, mouseX, mouseY)) {
+        GuiUtils.drawItemStack(graphics, updatePicker(), randX + 38 / 2 - 16 / 2,
+                randY + 20 / 2 - 16 / 2);
+        if (GuiUtils.isHover(randX, randY, 38, 20, mouseX, mouseY)) {
             show = () -> GuiUtils.drawTextBox(graphics, font, mouseX, mouseY, width, height, getZLevel(),
                     I18n.get("gui.ee.modifier.meta.setColor.random"));
         }
 
         // delete
-        GuiUtils.drawHoverableRect(graphics, width / 2 + 180, height / 2 - 100, width / 2 + 200, height / 2 - 80,
+        int delWidth = 40;
+        int delX = hueX + PICKER_HUE_WIDTH - delWidth;
+        int delY = randY;
+        GuiUtils.drawHoverableRect(graphics, delX, delY, delX + delWidth, delY + 20,
                 0xFFDD4444, 0xFFFF4444, mouseX, mouseY);
-        GuiUtils.drawCenterString(graphics, font, "x", width / 2 + 190, height / 2 - 100, 0xFFFFFFFF, 20);
+        GuiUtils.drawCenterString(graphics, font, "Undo", delX + delWidth / 2, delY, 0xFFFFFFFF, 20);
+
+        super.render(graphics, mouseX, mouseY, partialTicks);
 
         setZLever(getZLevel() + 75);
         show.run();
@@ -301,41 +324,54 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     public void init() {
         initTextures();
 
+        int centerX = width / 2;
+        int centerY = height / 2;
+        int pickerY = centerY - 100;
+        int btnY = pickerY + PICKER_SIZE + 40;
+        
+        int btnWidth = 80;
+        int btnGap = 5;
+        int totalBtnWidth = 3 * btnWidth + 2 * btnGap;
+        int btnStartX = centerX - totalBtnWidth / 2;
+
         addRenderableWidget(
-                new EEButton(width / 2 - 200, height / 2 + 80, 130, 20, Component.translatable("gui.done"), b -> {
+                new EEButton(btnStartX, btnY, btnWidth, 20, Component.translatable("gui.done"), b -> {
                     complete();
                     getMinecraft().setScreen(parent);
                 }));
-        advButton = addRenderableWidget(new EEButton(width / 2 - 66, height / 2 + 80, 132, 20,
+        advButton = addRenderableWidget(new EEButton(btnStartX + btnWidth + btnGap, btnY, btnWidth, 20,
                 Component.translatable("gui.ee.advanced"), b -> {
             advanced ^= true;
             advButton.setMessage(Component.translatable(
                     advanced ? "gui.ee.modifier.meta.setColor.picker" : "gui.ee.advanced"));
+            updateControlsVisibility();
         }));
         addRenderableWidget(
-                new EEButton(width / 2 + 70, height / 2 + 80, 130, 20, Component.translatable("gui.ee.cancel"), b -> onCancel()));
+                new EEButton(btnStartX + 2 * (btnWidth + btnGap), btnY, btnWidth, 20, Component.translatable("gui.ee.cancel"), b -> onCancel()));
 
-        var advWidth = 158 + 200;
-        var midAdv = width / 2 + (-158 + 200) / 2;
-        tfr = new EditBox(font, midAdv - 56, height / 2 - 54, 56, 18, Component.literal(""));
-        tfg = new EditBox(font, midAdv - 56, height / 2 - 26, 56, 18, Component.literal(""));
-        tfb = new EditBox(font, midAdv - 56, height / 2 + 2, 56, 18, Component.literal(""));
+        // Advanced fields
+        int rgbBoxX = centerX - 40;
+        int hsvBoxX = centerX + 75;
+        int boxWidth = 45;
+        
+        tfr = new EditBox(font, rgbBoxX, centerY - 54, boxWidth, 18, Component.literal(""));
+        tfg = new EditBox(font, rgbBoxX, centerY - 26, boxWidth, 18, Component.literal(""));
+        tfb = new EditBox(font, rgbBoxX, centerY + 2, boxWidth, 18, Component.literal(""));
 
-        var rightAdv = width / 2 + 200;
-        tfh = new EditBox(font, rightAdv - 56, height / 2 - 54, 56, 18, Component.literal(""));
-        tfl = new EditBox(font, rightAdv - 56, height / 2 - 26, 56, 18, Component.literal(""));
-        tfs = new EditBox(font, rightAdv - 56, height / 2 + 2, 56, 18, Component.literal(""));
+        tfh = new EditBox(font, hsvBoxX, centerY - 54, boxWidth, 18, Component.literal(""));
+        tfs = new EditBox(font, hsvBoxX, centerY - 26, boxWidth, 18, Component.literal(""));
+        tfv = new EditBox(font, hsvBoxX, centerY + 2, boxWidth, 18, Component.literal(""));
 
-        var intHexWidth = (advWidth - 4 - 4) / 2;
-        intColor = new EditBox(font, midAdv - intHexWidth, height / 2 + 40, intHexWidth, 18, Component.literal(""));
-        hexColor = new EditBox(font, midAdv + 4, height / 2 + 40, intHexWidth, 18, Component.literal(""));
+        int intHexWidth = 85;
+        intColor = new EditBox(font, centerX - 90, centerY + 40, intHexWidth, 18, Component.literal(""));
+        hexColor = new EditBox(font, centerX + 5, centerY + 40, intHexWidth, 18, Component.literal(""));
 
         tfr.setMaxLength(4);
         tfg.setMaxLength(4);
         tfb.setMaxLength(4);
         tfh.setMaxLength(4);
-        tfl.setMaxLength(4);
         tfs.setMaxLength(4);
+        tfv.setMaxLength(4);
 
         tfr.setResponder(s -> {
             try {
@@ -367,9 +403,9 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
             } catch (NumberFormatException e) {
             }
         });
-        tfl.setResponder(s -> {
+        tfv.setResponder(s -> {
             try {
-                updateLightness(s.isEmpty() ? 0 : Integer.parseInt(s));
+                updateValue(s.isEmpty() ? 0 : Integer.parseInt(s));
             } catch (NumberFormatException e) {
             }
         });
@@ -391,19 +427,31 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         addRenderableWidget(tfg);
         addRenderableWidget(tfb);
         addRenderableWidget(tfh);
-        addRenderableWidget(tfl);
         addRenderableWidget(tfs);
+        addRenderableWidget(tfv);
         addRenderableWidget(intColor);
         addRenderableWidget(hexColor);
 
+        updateControlsVisibility();
         updateColor(color); // sync picker color
         super.init();
     }
 
+    private void updateControlsVisibility() {
+        tfr.visible = advanced;
+        tfg.visible = advanced;
+        tfb.visible = advanced;
+        tfh.visible = advanced;
+        tfs.visible = advanced;
+        tfv.visible = advanced;
+        intColor.visible = advanced;
+        hexColor.visible = advanced;
+    }
+
     @Override
     public void removed() {
-        if (pickerImageS != null) pickerImageS.close();
-        if (pickerImageHL != null) pickerImageHL.close();
+        if (pickerImageSV != null) pickerImageSV.close();
+        if (pickerImageH != null) pickerImageH.close();
         super.removed();
     }
 
@@ -422,6 +470,15 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         double mouseX = event.x();
         double mouseY = event.y();
         int mouseButton = event.button();
+        
+        int centerX = width / 2;
+        int centerY = height / 2;
+        int totalWidth = PICKER_SIZE + PICKER_GAP + PICKER_HUE_WIDTH;
+        int pickerX = centerX - totalWidth / 2;
+        int pickerY = centerY - 100;
+        int hueX = pickerX + PICKER_SIZE + PICKER_GAP;
+        int hueY = pickerY;
+
         if (advanced) {
             if (mouseButton == 1) {
                 if (GuiUtils.isHover(tfr, (int) mouseX, (int) mouseY)) {
@@ -436,8 +493,8 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
                 } else if (GuiUtils.isHover(tfh, (int) mouseX, (int) mouseY)) {
                     tfh.setValue("");
                     return true;
-                } else if (GuiUtils.isHover(tfl, (int) mouseX, (int) mouseY)) {
-                    tfl.setValue("");
+                } else if (GuiUtils.isHover(tfv, (int) mouseX, (int) mouseY)) {
+                    tfv.setValue("");
                     return true;
                 } else if (GuiUtils.isHover(tfs, (int) mouseX, (int) mouseY)) {
                     tfs.setValue("");
@@ -453,33 +510,44 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         }
         drag = DragState.NONE;
         if (mouseButton == 0) {
-            if (!advanced && GuiUtils.isHover(width / 2 - 158, height / 2 - 76, 158 + 176, 76 * 2, (int) mouseX,
-                    (int) mouseY)) {
-                setColor((int) mouseX, (int) mouseY, DragState.HL);
-            } else if (!advanced
-                    && GuiUtils.isHover(width / 2 + 180, height / 2 - 76, 20, 76 * 2, (int) mouseX, (int) mouseY)) {
-                setColor((int) mouseX, (int) mouseY, DragState.S);
-            } else if (GuiUtils.isHover(width / 2 + 180, height / 2 - 100, 20, 20, (int) mouseX, (int) mouseY)) {
-                if (transparentAsDefault) {
-                    color |= 0xFF000000;
-                } else {
-                    oldAlphaLayer = defaultColor & 0xFF000000;
-                    updateColor(defaultColor & 0xFFFFFF);
-                }
-                playClick();
-                return true;
-            } else if (GuiUtils.isHover(width / 2 - 200, height / 2 - 100, 38, 20, (int) mouseX, (int) mouseY)) {
-                updateColor(GuiUtils.getRandomColor() & 0xffffff);
-                playClick();
-                return true;
-            } else
-                for (int i = 0; i < DyeColor.values().length; ++i)
-                    if (GuiUtils.isHover(width / 2 - 200 + (i % 2) * 19, height / 2 - 76 + (i / 2) * 19, 19, 19,
-                            (int) mouseX, (int) mouseY)) {
-                        updateColor(DyeColor.values()[i].getFireworkColor());
-                        playClick();
-                        return true;
+            if (!advanced && GuiUtils.isHover(pickerX, pickerY, PICKER_SIZE, PICKER_SIZE, (int) mouseX, (int) mouseY)) {
+                setColor((int) mouseX, (int) mouseY, DragState.SV);
+            } else if (!advanced && GuiUtils.isHover(hueX, hueY, PICKER_HUE_WIDTH, PICKER_SIZE, (int) mouseX, (int) mouseY)) {
+                setColor((int) mouseX, (int) mouseY, DragState.H);
+            } else {
+                // Random and Delete buttons
+                int randX = pickerX;
+                int randY = pickerY + PICKER_SIZE + 10;
+                int delWidth = 40;
+                int delX = hueX + PICKER_HUE_WIDTH - delWidth;
+                int delY = randY;
+
+                if (GuiUtils.isHover(delX, delY, delWidth, 20, (int) mouseX, (int) mouseY)) {
+                    if (transparentAsDefault) {
+                        color |= 0xFF000000;
+                    } else {
+                        oldAlphaLayer = defaultColor & 0xFF000000;
+                        updateColor(defaultColor & 0xFFFFFF);
                     }
+                    playClick();
+                    return true;
+                } else if (GuiUtils.isHover(randX, randY, 38, 20, (int) mouseX, (int) mouseY)) {
+                    updateColor(GuiUtils.getRandomColor() & 0xffffff);
+                    playClick();
+                    return true;
+                } else {
+                    // Dye colors
+                    for (int i = 0; i < DyeColor.values().length; ++i) {
+                        int x = pickerX - 40 + (i % 2) * 19;
+                        int y = pickerY + (i / 2) * 19;
+                        if (GuiUtils.isHover(x, y, 19, 19, (int) mouseX, (int) mouseY)) {
+                            updateColor(DyeColor.values()[i].getFireworkColor());
+                            playClick();
+                            return true;
+                        }
+                    }
+                }
+            }
         }
         return super.mouseClicked(event, doubleClick);
     }
@@ -490,31 +558,31 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         return super.mouseDragged(event, dx, dy);
     }
 
-    private void updateColor(int h, int s, int l) {
-        updateColor(h % 360, s, l, GuiUtils.fromHSL(h % 360, s, l));
+    private void updateColor(int h, int s, int v) {
+        updateColor(h % 360, s, v, ColorMath.fromHsv(h % 360, s, v));
     }
 
     private void updateColor(int rgba) {
-        var hsl = GuiUtils.hslFromRGBA(rgba, localHue, localSaturation);
-        updateColor(hsl.hue(), hsl.saturation(), hsl.lightness(), rgba);
+        var hsv = ColorMath.toHsv(rgba);
+        updateColor(hsv[0], hsv[1], hsv[2], rgba);
     }
 
-    private void updateColor(int h, int s, int l, int rgba) {
+    private void updateColor(int h, int s, int v, int rgba) {
         if (isUpdating) return;
         isUpdating = true;
         localHue = h;
         localSaturation = s;
-        localLightness = l;
+        localValue = v;
         
         // Update saved defaults
         savedHue = h;
         savedSaturation = s;
-        savedLightness = l;
+        savedValue = v;
 
         tfh.setValue("" + localHue);
         tfs.setValue("" + localSaturation);
-        tfl.setValue("" + localLightness);
-        updatePickerTexture(localHue, localSaturation, localLightness);
+        tfv.setValue("" + localValue);
+        updatePickerTexture(localHue);
 
         color = rgba & 0xffffff;
         tfr.setValue("" + (color >> 16 & 0xFF));
@@ -530,17 +598,26 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         if (drag == DragState.NONE)
             return;
 
+        int centerX = width / 2;
+        int centerY = height / 2;
+        int totalWidth = PICKER_SIZE + PICKER_GAP + PICKER_HUE_WIDTH;
+        int pickerX = centerX - totalWidth / 2;
+        int pickerY = centerY - 100;
+        int hueX = pickerX + PICKER_SIZE + PICKER_GAP;
+        int hueY = pickerY;
+
         switch (drag) {
-            case HL -> {
-                // hue
-                var hue = GuiUtils.clamp(mouseX - (width / 2 - 158), 0, 158 + 176) * 360 / (158 + 176 + 1);
-                // lightness
-                var lightness = GuiUtils.clamp(mouseY - (height / 2 - 76), 0, 76 * 2) * 100 / (76 * 2);
-                updateColor(hue, texSaturation, lightness);
+            case SV -> {
+                // Saturation (x)
+                var s = GuiUtils.clamp(mouseX - pickerX, 0, PICKER_SIZE) * 100 / PICKER_SIZE;
+                // Value (y) - inverted (top is 100, bottom is 0)
+                var v = 100 - (GuiUtils.clamp(mouseY - pickerY, 0, PICKER_SIZE) * 100 / PICKER_SIZE);
+                updateColor(localHue, s, v);
             }
-            case S -> {
-                var saturation = GuiUtils.clamp(mouseY - (height / 2 - 76), 0, 76 * 2) * 100 / (76 * 2);
-                updateColor(texHue, saturation, texLightness);
+            case H -> {
+                // Hue (y)
+                var h = GuiUtils.clamp(mouseY - hueY, 0, PICKER_SIZE) * 360 / PICKER_SIZE;
+                updateColor(h, localSaturation, localValue);
             }
         }
     }
@@ -561,23 +638,23 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         v %= 360;
         if (v < 0)
             v += 360;
-        updateColor(v, texSaturation, texLightness);
+        updateColor(v, localSaturation, localValue);
     }
 
     private void updateSaturation(int v) {
         v = GuiUtils.clamp(v, 0, 100);
-        updateColor(texHue, v, texLightness);
+        updateColor(localHue, v, localValue);
     }
 
-    private void updateLightness(int v) {
+    private void updateValue(int v) {
         v = GuiUtils.clamp(v, 0, 100);
-        updateColor(texHue, texSaturation, v);
+        updateColor(localHue, localSaturation, v);
     }
 
     @Override
     protected void generateDev(List<ACTDevInfo> entries, int mouseX, int mouseY) {
         entries.add(devInfo("HEX", "#" + Integer.toHexString((color & 0xFFFFFF) | 0xF000000).substring(1)));
-        entries.add(devInfo("HSL", texHue + "/" + texSaturation + "/" + texLightness));
+        entries.add(devInfo("HSV", localHue + "/" + localSaturation + "/" + localValue));
         var res = GuiUtils.rgbaFromRGBA(color);
         entries.add(devInfo("RGB", res.red() + "/" + res.green() + "/" + res.blue()));
         super.generateDev(entries, mouseX, mouseY);

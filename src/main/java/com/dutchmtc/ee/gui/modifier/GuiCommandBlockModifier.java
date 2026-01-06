@@ -20,6 +20,9 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.component.TypedEntityData;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
@@ -38,16 +41,36 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
     }
 
     private void setData() {
-        CompoundTag tag = ItemUtils.getOrCreateTagElement(stack, "BlockEntityTag");
         ItemUtils.setComponent(stack, DataComponents.CUSTOM_NAME, Component.literal(name.getValue().isEmpty() ? "@"
                 : name.getValue().replaceAll("&", "" + ChatUtils.MODIFIER) + ChatFormatting.RESET));
-        ItemUtils.putString(tag, "Command", command.getValue().replaceAll("&", "" + ChatUtils.MODIFIER));
-        ItemUtils.putByte(tag, "auto", (byte) (autoValue ? 1 : 0));
-        ItemUtils.setTag(stack, ItemUtils.getTag(stack)); // Save back
+
+        if (stack.getItem() == Items.COMMAND_BLOCK_MINECART) {
+            TypedEntityData<EntityType<?>> data = ItemUtils.getComponent(stack, DataComponents.ENTITY_DATA);
+            CompoundTag tag = data != null ? data.copyTagWithoutId() : new CompoundTag();
+            ItemUtils.putString(tag, "Command", command.getValue().replaceAll("&", "" + ChatUtils.MODIFIER));
+            ItemUtils.putByte(tag, "auto", (byte) (autoValue ? 1 : 0));
+            EntityType<?> type = data != null ? data.type() : EntityType.COMMAND_BLOCK_MINECART;
+            ItemUtils.setComponent(stack, DataComponents.ENTITY_DATA, TypedEntityData.of(type, tag));
+        } else {
+            TypedEntityData<BlockEntityType<?>> data = ItemUtils.getComponent(stack, DataComponents.BLOCK_ENTITY_DATA);
+            CompoundTag tag = data != null ? data.copyTagWithoutId() : new CompoundTag();
+            ItemUtils.putString(tag, "Command", command.getValue().replaceAll("&", "" + ChatUtils.MODIFIER));
+            ItemUtils.putByte(tag, "auto", (byte) (autoValue ? 1 : 0));
+            BlockEntityType<?> type = data != null ? data.type() : BlockEntityType.COMMAND_BLOCK;
+            ItemUtils.setComponent(stack, DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(type, tag));
+        }
     }
 
     private void loadData() {
-        CompoundTag tag = ItemUtils.getOrCreateTagElement(stack, "BlockEntityTag");
+        CompoundTag tag;
+        if (stack.getItem() == Items.COMMAND_BLOCK_MINECART) {
+            TypedEntityData<EntityType<?>> data = ItemUtils.getComponent(stack, DataComponents.ENTITY_DATA);
+            tag = data != null ? data.copyTagWithoutId() : new CompoundTag();
+        } else {
+            TypedEntityData<BlockEntityType<?>> data = ItemUtils.getComponent(stack, DataComponents.BLOCK_ENTITY_DATA);
+            tag = data != null ? data.copyTagWithoutId() : new CompoundTag();
+        }
+
         name.setValue((ItemUtils.getComponent(stack, DataComponents.CUSTOM_NAME) != null ? stack.getHoverName().getString() : "@")
                 .replaceAll("" + ChatUtils.MODIFIER, "&"));
         command.setValue(

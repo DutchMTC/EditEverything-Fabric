@@ -93,6 +93,8 @@ public class GuiEnchModifier extends GuiListModifier<List<Tuple<Enchantment, Int
             int mouseButton = event.button();
             if (GuiUtils.isHover(textField, (int) mouseX, (int) mouseY)) {
                 textField.setFocused(true);
+            } else {
+                textField.setFocused(false);
             }
             textField.mouseClicked(event, doubleClick);
             if (mouseButton == 1 && GuiUtils.isHover(textField, (int) mouseX, (int) mouseY))

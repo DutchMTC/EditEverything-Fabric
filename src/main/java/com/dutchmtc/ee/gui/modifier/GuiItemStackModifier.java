@@ -80,7 +80,8 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2 - 21, 100, 20,
                 Component.translatable("gui.ee.modifier.ench"), b -> getMinecraft().setScreen(
                 new GuiEnchModifier(GuiItemStackModifier.this, ItemUtils.getEnchantments(currentItemStack),
-                        list -> ItemUtils.setEnchantments(list, currentItemStack)))));
+                        list -> ItemUtils.setEnchantments(list, currentItemStack, false,
+                                getMinecraft().level != null ? getMinecraft().level.registryAccess() : null)))));
         addRenderableWidget(new EEButton(width / 2 + 1, height / 2 - 21, 99, 20,
                 Component.translatable("gui.ee.modifier.attr"), b -> getMinecraft().setScreen(new GuiAttributeModifier(GuiItemStackModifier.this,
                 ItemUtils.getAttributes(currentItemStack),
@@ -109,7 +110,8 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                             .append(Items.ENCHANTED_BOOK.getName()).append(")"),
                     b -> getMinecraft().setScreen(new GuiEnchModifier(GuiItemStackModifier.this,
                             ItemUtils.getEnchantments(currentItemStack, true),
-                            list -> ItemUtils.setEnchantments(list, currentItemStack, true)))));
+                            list -> ItemUtils.setEnchantments(list, currentItemStack, true,
+                                    getMinecraft().level != null ? getMinecraft().level.registryAccess() : null)))));
         else if (currentItemStack.getItem().equals(Items.POTION)
                 || currentItemStack.getItem().equals(Items.SPLASH_POTION)
                 || currentItemStack.getItem().equals(Items.LINGERING_POTION)

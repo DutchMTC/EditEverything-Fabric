@@ -19,6 +19,13 @@ repositories {
 	maven { url "https://maven.terraformersmc.com/releases/" }
 }
 
+loom {
+	mixin {
+		useLegacyMixinAp = true
+		defaultRefmapName = "ee.refmap.json"
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -31,6 +38,9 @@ dependencies {
 	
 	// Mod Menu
 	modImplementation "com.terraformersmc:modmenu:11.0.3"
+
+	annotationProcessor "net.fabricmc:sponge-mixin:0.17.0+mixin.0.8.7"
+	annotationProcessor "net.fabricmc:fabric-mixin-compile-extensions:0.6.0"
 }
 
 processResources {

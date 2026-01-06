@@ -74,6 +74,8 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
             int mouseButton = event.button();
             if (GuiUtils.isHover(flight, (int) mouseX, (int) mouseY)) {
                 flight.setFocused(true);
+            } else {
+                flight.setFocused(false);
             }
             flight.mouseClicked(event, doubleClick);
             if (GuiUtils.isHover(flight, (int) mouseX, (int) mouseY) && mouseButton == 1)

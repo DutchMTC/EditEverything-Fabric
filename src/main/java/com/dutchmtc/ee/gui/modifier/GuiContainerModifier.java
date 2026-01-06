@@ -52,7 +52,6 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         super.renderBackground(graphics, mouseX, mouseY, delta);
-        super.render(graphics, mouseX, mouseY, delta);
         var size = data.size();
         var stacks = data.stacks();
         var cy = height / 2 - size.sizeY() * 18 / 2;
@@ -84,6 +83,7 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
             }
             cy += 18;
         }
+        super.render(graphics, mouseX, mouseY, delta);
         if (hoverStack != null) {
                 if (hoverStack.getItem() != Items.AIR) {
                     graphics.pose().pushMatrix();

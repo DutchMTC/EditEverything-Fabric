@@ -154,6 +154,8 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
             int mouseButton = event.button();
             if (GuiUtils.isHover(amount, (int) mouseX, (int) mouseY)) {
                 amount.setFocused(true);
+            } else {
+                amount.setFocused(false);
             }
             amount.mouseClicked(event, doubleClick);
             if (mouseButton == 1) {

@@ -1,4 +1,4 @@
-# Advanced Creative Tab
+# Edit Everything
 
 > This mod is fully client side! You only need to be in creative to use the give/modifier action, some features/fixes can be missing if you're not using the latest version of the mod for the latest Minecraft version.
 
@@ -17,26 +17,26 @@
 
 ## Spectator
 
-- `/act sptp <username>` - Teleport to `username` using the spectator game mode.
+- `/ee sptp <username>` - Teleport to `username` using the spectator game mode.
 
 # Commands
 
-- `/act [help]` - show all commands
-- `/act edit` - Edit your inhand item
-- `/act head [name=you]` - Give a head by a name
-- `/act rename <name>` - Rename your inhand item
-- `/act rfw` - Get a random (legit seems) fireworks
-- `/act enchant [enchant] [level]` - Enchant the inhand item
-- `/act format [format]` - Get formatting help
-- `/act info` - Get mod information
-- `/act unbreakable [true|false]` - Set the inhand item unbreakable
-- `/act color` - Color command
-  - `/act color picker` - Set the color of the inhand item using the picker
-  - `/act color remove` - Remove the color of the inhand item
-  - `/act color set <color>` - Set the color of the inhand item
-  - `/act color set rgb <red> <green> <blue>` - Set with RGB (0-255,0-255,0-255)
-  - `/act color set hsl <hue> <saturation> <lightness>` - Set with HSL (0-355,0-100,0-100)
-  - `/act color set hex <hexcode>` - Set with hex code, example: FF0000 is red
+- `/ee [help]` - show all commands
+- `/ee edit` - Edit your inhand item
+- `/ee head [name=you]` - Give a head by a name
+- `/ee rename <name>` - Rename your inhand item
+- `/ee rfw` - Get a random (legit seems) fireworks
+- `/ee enchant [enchant] [level]` - Enchant the inhand item
+- `/ee format [format]` - Get formatting help
+- `/ee info` - Get mod information
+- `/ee unbreakable [true|false]` - Set the inhand item unbreakable
+- `/ee color` - Color command
+  - `/ee color picker` - Set the color of the inhand item using the picker
+  - `/ee color remove` - Remove the color of the inhand item
+  - `/ee color set <color>` - Set the color of the inhand item
+  - `/ee color set rgb <red> <green> <blue>` - Set with RGB (0-255,0-255,0-255)
+  - `/ee color set hsl <hue> <saturation> <lightness>` - Set with HSL (0-355,0-100,0-100)
+  - `/ee color set hex <hexcode>` - Set with hex code, example: FF0000 is red
 - `/gm [mode]` - `/gamemode [mode]`
 - `/gms` - `/gamemode survival`
 - `/gmc` - `/gamemode creative`
@@ -45,7 +45,7 @@
 
 The [Spectator Teleporter mod](https://www.curseforge.com/minecraft/mc-mods/gm3-teleporter) is integrated with the command
 
-- `/act sptp <username>` - Teleport using the gamemode spectator, you need to be in spectator mode or be able to do the /gamemode spectator command
+- `/ee sptp <username>` - Teleport using the gamemode spectator, you need to be in spectator mode or be able to do the /gamemode spectator command
 
 # Inventory item viewer
 
@@ -71,7 +71,7 @@ By Shifting when you looking at an item in you inventory you can get some inform
 
 **[Y]** (can be changed) : Open this item in the giver
 
-**[N]** (can be changed) : Save this in your ACT Menu
+**[N]** (can be changed) : Save this in your EE Menu
 
 # Menus
 
@@ -115,7 +115,7 @@ Here is a list of the changes made by the buttons : (type change Item's type ...
 
 ![tool tip](https://i.imgur.com/sjq28vq.png)
 
-You can add & to use color formatting in name and description. ([wiki](https://minecraft.fandom.com/wiki/Formatting_codes) or by doing the `/act format` to get formatting info)
+You can add & to use color formatting in name and description. ([wiki](https://minecraft.fandom.com/wiki/Formatting_codes) or by doing the `/ee format` to get formatting info)
 
 ![meta](https://i.imgur.com/JtbKZLD.png)
 
@@ -183,7 +183,7 @@ You can set the items in the inventory item
 
 ![inventory modifier](https://i.imgur.com/LuGVy7c.png)
 
-# Advanced Creative Tab
+# Edit Everything
 
 ![act](https://i.imgur.com/nj4eXmb.png)
 

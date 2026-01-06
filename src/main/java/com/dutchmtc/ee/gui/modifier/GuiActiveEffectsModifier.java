@@ -1,0 +1,233 @@
+package com.dutchmtc.ee.gui.modifier;
+
+import com.dutchmtc.ee.gui.components.EEButton;
+import com.dutchmtc.ee.gui.selector.GuiButtonListSelector;
+import com.dutchmtc.ee.utils.GuiUtils;
+import com.dutchmtc.ee.utils.ItemUtils;
+import com.dutchmtc.ee.utils.Tuple;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Holder;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>> {
+
+    static class ActiveEffectListElement extends ListElement {
+        private final EditBox duration;
+        private final EditBox amplifier;
+        private MobEffect potion;
+        private int durationTime, amplifierValue;
+        private boolean ambient;
+        private boolean showParticles;
+        private boolean showIcon;
+        private boolean errDur = false, errAmp = false;
+        private final Button type;
+
+        public ActiveEffectListElement(GuiActiveEffectsModifier parent, CompoundTag tag) {
+            super(400, 50);
+            
+            // Parse Tag
+            if (ItemUtils.hasTag(tag, "id", 8)) { // String
+                 var id = Identifier.tryParse(ItemUtils.getString(tag, "id"));
+                 this.potion = id != null ? BuiltInRegistries.MOB_EFFECT.get(id).map(Holder.Reference::value).orElse(null) : null;
+            } else if (ItemUtils.hasTag(tag, "Id", 3)) { // Int (Legacy)
+                 this.potion = BuiltInRegistries.MOB_EFFECT.byId(ItemUtils.getInt(tag, "Id"));
+            }
+            
+            if (this.potion == null) {
+                this.potion = MobEffects.SPEED.value();
+            }
+
+            this.amplifierValue = ItemUtils.getByte(tag, "Amplifier");
+            this.durationTime = ItemUtils.getInt(tag, "Duration");
+            this.ambient = ItemUtils.getBoolean(tag, "Ambient");
+            this.showParticles = ItemUtils.hasTag(tag, "ShowParticles", 1) ? ItemUtils.getBoolean(tag, "ShowParticles") : true;
+            this.showIcon = ItemUtils.hasTag(tag, "ShowIcon", 1) ? ItemUtils.getBoolean(tag, "ShowIcon") : true;
+
+            int l = 5 + Math.max(font.width(I18n.get("gui.ee.modifier.meta.potion.duration") + " : "),
+                    font.width(I18n.get("gui.ee.modifier.meta.potion.amplifier") + " : "));
+
+            duration = new EditBox(font, l, 1, 150 - l, 18, Component.literal(""));
+            duration.setValue(String.valueOf(durationTime));
+            amplifier = new EditBox(font, l, 22, 150 - l, 18, Component.literal(""));
+            amplifier.setValue(String.valueOf(amplifierValue));
+
+            buttonList.add(type = new EEButton(153, 0, 200, 20,
+                    Component.translatable("gui.ee.modifier.meta.potion.type"), b -> {
+                List<Tuple<String, MobEffect>> pots = new ArrayList<>();
+                BuiltInRegistries.MOB_EFFECT.forEach(pot -> {
+                    Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(pot);
+                    String desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+                    pots.add(new Tuple<>(I18n.get(desc), pot));
+                });
+                mc.setScreen(new GuiButtonListSelector<>(parent,
+                        Component.translatable("gui.ee.modifier.meta.potion.type"), pots, pot -> {
+                    potion = pot;
+                    setButtonText();
+                    return null;
+                }));
+            }));
+            
+            buttonList.add(new GuiBooleanButton(153, 21, 100, 20,
+                    Component.translatable("gui.ee.modifier.meta.potion.ambient"), b -> ambient = b,
+                    () -> ambient));
+            buttonList.add(new GuiBooleanButton(255, 21, 99, 20,
+                    Component.translatable("gui.ee.modifier.meta.potion.showParticles"), b -> showParticles = b,
+                    () -> showParticles));
+            
+            buttonList.add(new RemoveElementButton(parent, 355, 0, 20, 20, this));
+            buttonList.add(new AddElementButton(parent, 377, 0, 20, 20, this, parent.supplier));
+            buttonList.add(new AddElementButton(parent, 355, 21, 43, 20, Component.translatable("gui.ee.give.copy"),
+                    this, () -> new ActiveEffectListElement(parent, getData())));
+            
+            setButtonText();
+        }
+
+        private void setButtonText() {
+            String desc = "null";
+            if (potion != null) {
+                Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
+                desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+            }
+            type.setMessage(Component.translatable("gui.ee.modifier.meta.potion.type").append(" (").append(
+                            potion == null ? Component.literal("null") : Component.translatable(desc))
+                    .append(")"));
+        }
+
+        @Override
+        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+            GuiUtils.drawRelative(graphics, amplifier, offsetX, offsetY, mouseX, mouseY, partialTicks);
+            GuiUtils.drawRelative(graphics, duration, offsetX, offsetY, mouseX, mouseY, partialTicks);
+            GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.meta.potion.duration") + " : ", duration,
+                    (errDur ? Color.RED : Color.WHITE).getRGB(), offsetX, offsetY);
+            GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.meta.potion.amplifier") + " : ", amplifier,
+                    (errAmp ? Color.RED : Color.WHITE).getRGB(), offsetX, offsetY);
+            super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
+        }
+
+        @Override
+        public void init() {
+            amplifier.setFocused(false);
+            duration.setFocused(false);
+            super.init();
+        }
+
+        @Override
+        public boolean isFocused() {
+            return amplifier.isFocused() || duration.isFocused();
+        }
+
+        @Override
+        public boolean charTyped(CharacterEvent event) {
+            return amplifier.charTyped(event) || duration.charTyped(event)
+                    || super.charTyped(event);
+        }
+
+        @Override
+        public boolean keyPressed(KeyEvent event) {
+            return amplifier.keyPressed(event) || duration.keyPressed(event)
+                    || super.keyPressed(event);
+        }
+
+        @Override
+        public boolean match(String search) {
+            if (potion == null) return "".contains(search.toLowerCase());
+            Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
+            String desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
+            return I18n.get(desc).toLowerCase().contains(search.toLowerCase());
+        }
+
+        @Override
+        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+            if (GuiUtils.isHover(amplifier, (int) mouseX, (int) mouseY)) {
+                amplifier.setFocused(true);
+                duration.setFocused(false);
+            }
+            if (GuiUtils.isHover(duration, (int) mouseX, (int) mouseY)) {
+                duration.setFocused(true);
+                amplifier.setFocused(false);
+            }
+            amplifier.mouseClicked(event, doubleClick);
+            duration.mouseClicked(event, doubleClick);
+            super.mouseClicked(event, doubleClick);
+        }
+
+        @Override
+        public void update() {
+            try {
+                durationTime = Integer.parseInt(duration.getValue());
+                errDur = false;
+            } catch (Exception e) {
+                errDur = true;
+            }
+            try {
+                int i = Integer.parseInt(amplifier.getValue());
+                if (!(errAmp = i < -128 || i > 127))
+                    amplifierValue = i;
+            } catch (Exception e) {
+                errAmp = true;
+            }
+            super.update();
+        }
+
+        public CompoundTag getData() {
+            CompoundTag tag = new CompoundTag();
+            Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
+            if (id != null) {
+                tag.putString("id", id.toString());
+            }
+            tag.putByte("Amplifier", (byte) amplifierValue);
+            tag.putInt("Duration", durationTime);
+            tag.putBoolean("Ambient", ambient);
+            tag.putBoolean("ShowParticles", showParticles);
+            tag.putBoolean("ShowIcon", showIcon);
+            return tag;
+        }
+    }
+
+    private final Supplier<ListElement> supplier = () -> {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("id", BuiltInRegistries.MOB_EFFECT.getKey(MobEffects.SPEED.value()).toString());
+        tag.putByte("Amplifier", (byte) 0);
+        tag.putInt("Duration", 200);
+        tag.putBoolean("Ambient", false);
+        tag.putBoolean("ShowParticles", true);
+        tag.putBoolean("ShowIcon", true);
+        return new ActiveEffectListElement(this, tag);
+    };
+
+    @SuppressWarnings("unchecked")
+    public GuiActiveEffectsModifier(Screen parent, List<CompoundTag> effects, Consumer<List<CompoundTag>> setter) {
+        super(parent, Component.translatable("gui.ee.modifier.meta.potion"), new ArrayList<>(), setter, new Tuple[0]);
+        effects.forEach(effect -> addListElement(new ActiveEffectListElement(this, effect)));
+        addListElement(new AddElementList(this, supplier));
+    }
+
+    @Override
+    protected List<CompoundTag> get() {
+        List<CompoundTag> result = new ArrayList<>();
+        getElements().stream().filter(le -> le instanceof ActiveEffectListElement).map(le -> (ActiveEffectListElement) le)
+                .forEach(ale -> result.add(ale.getData()));
+        return result;
+    }
+}

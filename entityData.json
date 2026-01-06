@@ -1,0 +1,1029 @@
+{
+  "Allay": [
+    {
+      "name": "CanDuplicate",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the allay can duplicate itself."
+    },
+    {
+      "name": "DuplicationCooldown",
+      "type": "Long",
+      "description": "The number of ticks until the allay can duplicate itself again."
+    },
+    {
+      "name": "Inventory",
+      "type": "List",
+      "description": "The item the allay is holding."
+    }
+  ],
+  "Armadillo": [
+    {
+      "name": "state",
+      "type": "String",
+      "description": "Current animation state: 'idle', 'rolling', 'scared', 'unrolling'."
+    },
+    {
+      "name": "scute_time",
+      "type": "Int",
+      "description": "Ticks until the armadillo drops a scute."
+    }
+  ],
+  "Axolotl": [
+    {
+      "name": "Variant",
+      "type": "Int",
+      "description": "0: Lucy (Pink), 1: Wild (Brown), 2: Gold, 3: Cyan, 4: Blue."
+    },
+    {
+      "name": "FromBucket",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the axolotl was placed from a bucket."
+    }
+  ],
+  "Bat": [
+    {
+      "name": "BatFlags",
+      "type": "Byte",
+      "description": "Bit mask. 1 (0x01): Is hanging."
+    }
+  ],
+  "Bee": [
+    {
+      "name": "HivePos",
+      "type": "Compound",
+      "description": "Coordinates of the home hive."
+    },
+    {
+      "name": "FlowerPos",
+      "type": "Compound",
+      "description": "Coordinates of the flower the bee is circling."
+    },
+    {
+      "name": "HasNectar",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the bee has nectar."
+    },
+    {
+      "name": "HasStung",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the bee has stung."
+    },
+    {
+      "name": "TicksSincePollination",
+      "type": "Int",
+      "description": "Ticks since the bee last pollinated a crop."
+    },
+    {
+      "name": "CropsGrownSincePollination",
+      "type": "Int",
+      "description": "Number of crops grown since last pollination."
+    },
+    {
+      "name": "Anger",
+      "type": "Int",
+      "description": "Ticks until the bee stops being angry."
+    },
+    {
+      "name": "HurtBy",
+      "type": "String",
+      "description": "UUID of the entity that hurt the bee."
+    }
+  ],
+  "Blaze": [],
+  "Bogged": [
+    {
+      "name": "Sheared",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the mushrooms have been sheared off."
+    }
+  ],
+  "Breeze": [],
+  "Camel": [
+    {
+      "name": "IsSitting",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the camel is sitting."
+    },
+    {
+      "name": "LastPoseTick",
+      "type": "Long",
+      "description": "The tick when the camel last changed its pose."
+    }
+  ],
+  "Camel Husk": [
+    {
+      "name": "IsSitting",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the camel husk is sitting."
+    },
+    {
+      "name": "LastPoseTick",
+      "type": "Long",
+      "description": "The tick when the camel last changed its pose."
+    },
+    {
+      "name": "SaddleItem",
+      "type": "Compound",
+      "description": "The saddle item equipped on the camel husk."
+    },
+    {
+      "name": "Tame",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the camel husk is tamed."
+    }
+  ],
+  "Cat": [
+    {
+      "name": "variant",
+      "type": "String",
+      "description": "The texture variant of the cat."
+    },
+    {
+      "name": "CollarColor",
+      "type": "Byte",
+      "description": "The ID of the color of the collar."
+    }
+  ],
+  "Cave Spider": [],
+  "Chicken": [
+    {
+      "name": "IsChickenJockey",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if this chicken is a jockey mount."
+    },
+    {
+      "name": "EggLayTime",
+      "type": "Int",
+      "description": "Ticks until the next egg is laid."
+    }
+  ],
+  "Cod": [
+    {
+      "name": "FromBucket",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if placed from a bucket."
+    }
+  ],
+  "Cow": [],
+  "Creaking": [
+    {
+      "name": "home_pos",
+      "type": "Compound",
+      "description": "The X, Y, Z coordinates of the linked Creaking Heart."
+    },
+    {
+      "name": "active",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the creaking is currently active/linked to a heart."
+    },
+    {
+      "name": "unrooted",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the creaking is not linked to a heart."
+    },
+    {
+      "name": "crumbling",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the creaking is currently crumbling."
+    }
+  ],
+  "Creeper": [
+    {
+      "name": "powered",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if charged by lightning."
+    },
+    {
+      "name": "Fuse",
+      "type": "Short",
+      "description": "Ticks until explosion (default 30)."
+    },
+    {
+      "name": "ExplosionRadius",
+      "type": "Byte",
+      "description": "Radius of the explosion (default 3)."
+    },
+    {
+      "name": "ignited",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the flint and steel was used."
+    }
+  ],
+  "Dolphin": [
+    {
+      "name": "TreasurePos",
+      "type": "Compound",
+      "description": "Coordinates of the treasure the dolphin is leading to."
+    },
+    {
+      "name": "CanFindTreasure",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "GotFish",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the dolphin has been fed fish."
+    }
+  ],
+  "Donkey": [
+    {
+      "name": "ChestedHorse",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the donkey has a chest."
+    },
+    {
+      "name": "Items",
+      "type": "List",
+      "description": "Items in the donkey's chest."
+    }
+  ],
+  "Drowned": [
+    {
+      "name": "IsBaby",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "CanBreakDoors",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    }
+  ],
+  "Elder Guardian": [],
+  "Ender Dragon": [
+    {
+      "name": "DragonPhase",
+      "type": "Int",
+      "description": "Current phase (0: Holding pattern, 1: Strafing, 2: Landing, 3: Taking off, etc.)."
+    }
+  ],
+  "Enderman": [
+    {
+      "name": "carriedBlockState",
+      "type": "Compound",
+      "description": "The block state of the block the enderman is carrying."
+    },
+    {
+      "name": "AngerTime",
+      "type": "Int",
+      "description": "Ticks until the enderman stops being angry."
+    },
+    {
+      "name": "AngryAt",
+      "type": "String",
+      "description": "UUID of the entity the enderman is angry at."
+    }
+  ],
+  "Endermite": [
+    {
+      "name": "Lifetime",
+      "type": "Int",
+      "description": "Ticks the endermite has existed (despawns at 2400)."
+    },
+    {
+      "name": "PlayerSpawned",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if spawned by a player pearl."
+    }
+  ],
+  "Evoker": [
+    {
+      "name": "SpellTicks",
+      "type": "Int",
+      "description": "Ticks until the current spell cast is finished."
+    }
+  ],
+  "Fox": [
+    {
+      "name": "Type",
+      "type": "String",
+      "description": "'red' or 'snow'."
+    },
+    {
+      "name": "Trusted",
+      "type": "List",
+      "description": "List of UUIDs of players trusted by the fox."
+    },
+    {
+      "name": "Sleeping",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "Sitting",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "Crouching",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    }
+  ],
+  "Frog": [
+    {
+      "name": "variant",
+      "type": "String",
+      "description": "'minecraft:temperate', 'minecraft:warm', or 'minecraft:cold'."
+    }
+  ],
+  "Ghast": [
+    {
+      "name": "ExplosionPower",
+      "type": "Int",
+      "description": "Power of the fireball explosion (default 1)."
+    }
+  ],
+  "Glow Squid": [
+    {
+      "name": "DarkTicksRemaining",
+      "type": "Int",
+      "description": "Ticks until the squid stops glowing after being attacked."
+    }
+  ],
+  "Goat": [
+    {
+      "name": "IsScreamingGoat",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the goat is a screaming goat."
+    },
+    {
+      "name": "HasLeftHorn",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "HasRightHorn",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    }
+  ],
+  "Guardian": [],
+  "Hoglin": [
+    {
+      "name": "IsBaby",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "CannotBeHunted",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if piglins won't hunt it."
+    },
+    {
+      "name": "TimeInOverworld",
+      "type": "Int",
+      "description": "Ticks spent in the Overworld (converts to Zoglin at 300)."
+    }
+  ],
+  "Horse": [
+    {
+      "name": "Variant",
+      "type": "Int",
+      "description": "A bitmask representing the color and markings."
+    },
+    {
+      "name": "ArmorItem",
+      "type": "Compound",
+      "description": "The horse armor item."
+    },
+    {
+      "name": "SaddleItem",
+      "type": "Compound",
+      "description": "The saddle item."
+    },
+    {
+      "name": "Temper",
+      "type": "Int",
+      "description": "Higher values make taming easier."
+    }
+  ],
+  "Husk": [
+    {
+      "name": "IsBaby",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "CanBreakDoors",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "DrownedConversionTime",
+      "type": "Int",
+      "description": "Ticks until conversion to Zombie (in water)."
+    }
+  ],
+  "Iron Golem": [
+    {
+      "name": "PlayerCreated",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if built by a player (avoids attacking players)."
+    },
+    {
+      "name": "AngerTime",
+      "type": "Int",
+      "description": "Ticks until the golem stops being angry."
+    },
+    {
+      "name": "AngryAt",
+      "type": "String",
+      "description": "UUID of the entity the golem is angry at."
+    }
+  ],
+  "Killer Bunny": [
+    {
+      "name": "RabbitType",
+      "type": "Int",
+      "description": "Always 99 for The Killer Bunny."
+    }
+  ],
+  "Llama": [
+    {
+      "name": "Strength",
+      "type": "Int",
+      "description": "1 to 5 - Determines carry capacity."
+    },
+    {
+      "name": "DecorItem",
+      "type": "Compound",
+      "description": "The carpet item equipping the llama."
+    },
+    {
+      "name": "Variant",
+      "type": "Int",
+      "description": "0: Creamy, 1: White, 2: Brown, 3: Gray."
+    }
+  ],
+  "Magma Cube": [
+    {
+      "name": "Size",
+      "type": "Int",
+      "description": "Size of the cube (1, 2, or 4)."
+    }
+  ],
+  "Mooshroom": [
+    {
+      "name": "Type",
+      "type": "String",
+      "description": "'red' or 'brown'."
+    },
+    {
+      "name": "EffectId",
+      "type": "Byte",
+      "description": "The effect given when milked with a bowl (Suspicious Stew)."
+    },
+    {
+      "name": "EffectDuration",
+      "type": "Int",
+      "description": "Duration of the effect."
+    }
+  ],
+  "Mule": [
+    {
+      "name": "ChestedHorse",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the mule has a chest."
+    },
+    {
+      "name": "Items",
+      "type": "List",
+      "description": "Items in the mule's chest."
+    }
+  ],
+  "Nautilus": [
+    {
+      "name": "SaddleItem",
+      "type": "Compound",
+      "description": "The saddle item equipped on the nautilus."
+    },
+    {
+      "name": "ArmorItem",
+      "type": "Compound",
+      "description": "The armor item equipped on the nautilus."
+    },
+    {
+      "name": "Tame",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the nautilus is tamed."
+    },
+    {
+      "name": "Owner",
+      "type": "String",
+      "description": "UUID of the player who owns the nautilus."
+    }
+  ],
+  "Ocelot": [
+    {
+      "name": "Trusting",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the ocelot trusts the player."
+    }
+  ],
+  "Panda": [
+    {
+      "name": "MainGene",
+      "type": "String",
+      "description": "Gene ID (normal, lazy, worried, playful, brown, weak, aggressive)."
+    },
+    {
+      "name": "HiddenGene",
+      "type": "String",
+      "description": "Gene ID (recessive gene)."
+    },
+    {
+      "name": "SneezeTime",
+      "type": "Int",
+      "description": "Ticks until the panda sneezes."
+    },
+    {
+      "name": "EatTicks",
+      "type": "Int",
+      "description": "Ticks the panda has been eating."
+    }
+  ],
+  "Parched": [],
+  "Parrot": [
+    {
+      "name": "Variant",
+      "type": "Int",
+      "description": "0: Red, 1: Blue, 2: Green, 3: Cyan, 4: Gray."
+    }
+  ],
+  "Phantom": [
+    {
+      "name": "Size",
+      "type": "Int",
+      "description": "Size of the phantom (default 0)."
+    },
+    {
+      "name": "AX",
+      "type": "Int",
+      "description": "Anchor X coordinate."
+    },
+    {
+      "name": "AY",
+      "type": "Int",
+      "description": "Anchor Y coordinate."
+    },
+    {
+      "name": "AZ",
+      "type": "Int",
+      "description": "Anchor Z coordinate."
+    }
+  ],
+  "Pig": [
+    {
+      "name": "Saddle",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the pig has a saddle."
+    }
+  ],
+  "Piglin": [
+    {
+      "name": "IsBaby",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "CannotHunt",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the piglin will not hunt hoglins."
+    },
+    {
+      "name": "Inventory",
+      "type": "List",
+      "description": "Items in the piglin's inventory (bartered items)."
+    }
+  ],
+  "Piglin Brute": [],
+  "Pillager": [
+    {
+      "name": "Inventory",
+      "type": "List",
+      "description": "Items in the pillager's inventory."
+    }
+  ],
+  "Polar Bear": [
+    {
+      "name": "AngerTime",
+      "type": "Int",
+      "description": "Ticks until the bear stops being angry."
+    },
+    {
+      "name": "AngryAt",
+      "type": "String",
+      "description": "UUID of the entity the bear is angry at."
+    }
+  ],
+  "Pufferfish": [
+    {
+      "name": "PuffState",
+      "type": "Int",
+      "description": "0: Deflated, 1: Half-puffed, 2: Puffed."
+    }
+  ],
+  "Rabbit": [
+    {
+      "name": "RabbitType",
+      "type": "Int",
+      "description": "0: Brown, 1: White, 2: Black, 3: Black & White, 4: Gold, 5: Salt & Pepper, 99: The Killer Bunny."
+    },
+    {
+      "name": "MoreCarrotTicks",
+      "type": "Int",
+      "description": "Ticks until the rabbit eats more carrots."
+    }
+  ],
+  "Ravager": [
+    {
+      "name": "AttackTick",
+      "type": "Int",
+      "description": "Ticks remaining in the attack animation."
+    },
+    {
+      "name": "StunTick",
+      "type": "Int",
+      "description": "Ticks remaining while stunned."
+    },
+    {
+      "name": "RoarTick",
+      "type": "Int",
+      "description": "Ticks remaining in the roar animation."
+    }
+  ],
+  "Salmon": [
+    {
+      "name": "FromBucket",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    },
+    {
+      "name": "type",
+      "type": "String",
+      "description": "Size variant: 'small', 'medium', 'large'."
+    }
+  ],
+  "Sheep": [
+    {
+      "name": "Sheared",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the sheep has been sheared."
+    },
+    {
+      "name": "Color",
+      "type": "Byte",
+      "description": "The ID of the wool color (0-15)."
+    }
+  ],
+  "Shulker": [
+    {
+      "name": "Peek",
+      "type": "Byte",
+      "description": "Height of the shell opening (0-100)."
+    },
+    {
+      "name": "AttachFace",
+      "type": "Byte",
+      "description": "Direction the shulker is attached to."
+    },
+    {
+      "name": "Color",
+      "type": "Byte",
+      "description": "Color ID of the shell (16 for default/purple)."
+    },
+    {
+      "name": "APX",
+      "type": "Int",
+      "description": "Attachment X coordinate."
+    },
+    {
+      "name": "APY",
+      "type": "Int",
+      "description": "Attachment Y coordinate."
+    },
+    {
+      "name": "APZ",
+      "type": "Int",
+      "description": "Attachment Z coordinate."
+    }
+  ],
+  "Silverfish": [],
+  "Skeleton": [],
+  "Skeleton Horse": [
+    {
+      "name": "SkeletonTrap",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if this horse was spawned by a trap."
+    },
+    {
+      "name": "SkeletonTrapTime",
+      "type": "Int",
+      "description": "Ticks the trap has existed."
+    }
+  ],
+  "Slime": [
+    {
+      "name": "Size",
+      "type": "Int",
+      "description": "Size of the slime (1, 2, 4)."
+    },
+    {
+      "name": "wasOnGround",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    }
+  ],
+  "Sniffer": [
+    {
+      "name": "State",
+      "type": "String",
+      "description": "'idling', 'feeling_happy', 'scenting', 'sniffing', 'searching', 'digging', 'rising'."
+    },
+    {
+      "name": "DropSeedAt",
+      "type": "Int",
+      "description": "Tick timestamp for seed drop."
+    }
+  ],
+  "Snow Golem": [
+    {
+      "name": "Pumpkin",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the golem has a pumpkin."
+    }
+  ],
+  "Spider": [],
+  "Squid": [],
+  "Stray": [],
+  "Strider": [
+    {
+      "name": "Saddle",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the strider has a saddle."
+    }
+  ],
+  "Tadpole": [
+    {
+      "name": "FromBucket",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    }
+  ],
+  "Trader Llama": [
+    {
+      "name": "DespawnDelay",
+      "type": "Int",
+      "description": "Ticks until the llama despawns (if not leashed)."
+    }
+  ],
+  "Tropical Fish": [
+    {
+      "name": "Variant",
+      "type": "Int",
+      "description": "Packed integer containing size, pattern, body color, and pattern color."
+    }
+  ],
+  "Turtle": [
+    {
+      "name": "HasEgg",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the turtle is carrying an egg."
+    },
+    {
+      "name": "HomePosX",
+      "type": "Int",
+      "description": "X coordinate of home beach."
+    },
+    {
+      "name": "HomePosY",
+      "type": "Int",
+      "description": "Y coordinate of home beach."
+    },
+    {
+      "name": "HomePosZ",
+      "type": "Int",
+      "description": "Z coordinate of home beach."
+    },
+    {
+      "name": "TravelPosX",
+      "type": "Int",
+      "description": "X coordinate of travel target."
+    },
+    {
+      "name": "TravelPosY",
+      "type": "Int",
+      "description": "Y coordinate of travel target."
+    },
+    {
+      "name": "TravelPosZ",
+      "type": "Int",
+      "description": "Z coordinate of travel target."
+    }
+  ],
+  "Vex": [
+    {
+      "name": "BoundX",
+      "type": "Int",
+      "description": "Bound X coordinate."
+    },
+    {
+      "name": "BoundY",
+      "type": "Int",
+      "description": "Bound Y coordinate."
+    },
+    {
+      "name": "BoundZ",
+      "type": "Int",
+      "description": "Bound Z coordinate."
+    },
+    {
+      "name": "LifeTicks",
+      "type": "Int",
+      "description": "Ticks the vex has existed (starts dying after a limit)."
+    }
+  ],
+  "Villager": [
+    {
+      "name": "VillagerData",
+      "type": "Compound",
+      "description": "Contains 'level', 'profession', and 'type'."
+    },
+    {
+      "name": "Offers",
+      "type": "Compound",
+      "description": "List of trade offers."
+    },
+    {
+      "name": "Gossips",
+      "type": "List",
+      "description": "List of gossip data about players."
+    },
+    {
+      "name": "LastRestock",
+      "type": "Long",
+      "description": "Game time tick when the villager last restocked."
+    }
+  ],
+  "Vindicator": [
+    {
+      "name": "Johnny",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if named 'Johnny' (attacks everything)."
+    }
+  ],
+  "Wandering Trader": [
+    {
+      "name": "DespawnDelay",
+      "type": "Int",
+      "description": "Ticks until the trader despawns."
+    },
+    {
+      "name": "Offers",
+      "type": "Compound",
+      "description": "List of trade offers."
+    },
+    {
+      "name": "WanderTarget",
+      "type": "Compound",
+      "description": "Coordinates of where the trader is wandering to."
+    }
+  ],
+  "Warden": [
+    {
+      "name": "anger",
+      "type": "Int",
+      "description": "The level of anger (0-150)."
+    },
+    {
+      "name": "suspects",
+      "type": "List",
+      "description": "List of suspects that have angered the warden."
+    }
+  ],
+  "Witch": [
+    {
+      "name": "Potion",
+      "type": "Compound",
+      "description": "The potion the witch is currently drinking."
+    }
+  ],
+  "Wither": [
+    {
+      "name": "Invul",
+      "type": "Int",
+      "description": "Ticks of invulnerability after spawning (shields up)."
+    }
+  ],
+  "Wither Skeleton": [],
+  "Wolf": [
+    {
+      "name": "Angry",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the wolf is angry."
+    },
+    {
+      "name": "CollarColor",
+      "type": "Byte",
+      "description": "ID of the collar color."
+    },
+    {
+      "name": "variant",
+      "type": "String",
+      "description": "The biome variant of the wolf."
+    }
+  ],
+  "Zoglin": [],
+  "Zombie": [
+    {
+      "name": "CanBreakDoors",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the zombie can break doors."
+    },
+    {
+      "name": "DrownedConversionTime",
+      "type": "Int",
+      "description": "Ticks until conversion to drowned (default -1)."
+    },
+    {
+      "name": "InWaterTime",
+      "type": "Int",
+      "description": "Ticks the zombie has been underwater."
+    },
+    {
+      "name": "IsBaby",
+      "type": "Byte",
+      "description": "1 or 0 (true/false)."
+    }
+  ],
+  "Zombie Horse": [
+    {
+      "name": "Tame",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the zombie horse is tamed."
+    },
+    {
+      "name": "SaddleItem",
+      "type": "Compound",
+      "description": "The saddle item equipped."
+    },
+    {
+      "name": "Temper",
+      "type": "Int",
+      "description": "Higher values make taming easier."
+    },
+    {
+      "name": "IsBaby",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if it is a foal."
+    }
+  ],
+  "Zombie Nautilus": [
+    {
+      "name": "SaddleItem",
+      "type": "Compound",
+      "description": "The saddle item equipped on the zombie nautilus."
+    },
+    {
+      "name": "Tame",
+      "type": "Byte",
+      "description": "1 or 0 (true/false) - true if the zombie nautilus is tamed."
+    },
+    {
+      "name": "Owner",
+      "type": "String",
+      "description": "UUID of the player who owns the zombie nautilus."
+    }
+  ],
+  "Zombie Villager": [
+    {
+      "name": "VillagerData",
+      "type": "Compound",
+      "description": "Profession and level data."
+    },
+    {
+      "name": "ConversionTime",
+      "type": "Int",
+      "description": "Ticks remaining for curing conversion (-1 if not converting)."
+    },
+    {
+      "name": "ConversionPlayer",
+      "type": "String",
+      "description": "UUID of the player who cured the zombie."
+    }
+  ],
+  "Zombified Piglin": [
+    {
+      "name": "AngerTime",
+      "type": "Int",
+      "description": "Ticks until the pigman stops being angry."
+    },
+    {
+      "name": "AngryAt",
+      "type": "String",
+      "description": "UUID of the entity the pigman is angry at."
+    }
+  ]
+}

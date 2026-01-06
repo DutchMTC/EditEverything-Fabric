@@ -3,6 +3,8 @@ package fr.atesab.act.utils;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import java.util.UUID;
 import java.nio.charset.StandardCharsets;
 
@@ -229,6 +231,27 @@ public class ItemUtils {
         } catch (Throwable t) {
             stack.applyComponents(DataComponentPatch.builder().set(type, value).build());
         }
+    }
+
+    /**
+     * Encode a data component value to NBT using the component's own persistence codec.
+     * <p>
+     * This is the foundation for a generic "edit any component" GUI: encode to a {@link Tag},
+     * edit the tag, then decode back to the component's value type.
+     */
+    public static <T> DataResult<Tag> encodeComponentToNbt(net.minecraft.core.HolderLookup.Provider registryAccess,
+                                                           DataComponentType<T> type, T value) {
+        Codec<T> codec = type.codec();
+        return codec.encodeStart(registryAccess.createSerializationContext(NbtOps.INSTANCE), value);
+    }
+
+    /**
+     * Decode a data component value from NBT using the component's own persistence codec.
+     */
+    public static <T> DataResult<T> decodeComponentFromNbt(net.minecraft.core.HolderLookup.Provider registryAccess,
+                                                           DataComponentType<T> type, Tag tag) {
+        Codec<T> codec = type.codec();
+        return codec.parse(registryAccess.createSerializationContext(NbtOps.INSTANCE), tag);
     }
 
     // Helper for NBT migration

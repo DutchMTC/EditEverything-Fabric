@@ -36,6 +36,7 @@ import net.minecraft.world.item.component.TypedEntityData;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -135,14 +136,14 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
     }
     
     private void initGeneral(int centerX, int currentY, int spacing) {
-        // Entity Type Selector
+        // Spawn Egg Item Selector
         addRenderableWidget(new ACTButton(centerX - 100, currentY, 200, 20,
-                Component.literal("Set entity"), b -> {
+                Component.literal("Set Spawn Egg Item"), b -> {
             List<Tuple<String, SpawnEggItem>> eggs = new ArrayList<>();
             SpawnEggItem.eggs()
                     .forEach(egg -> eggs.add(new Tuple<>(egg.getName(new ItemStack(egg)).getString(), egg)));
             getMinecraft().setScreen(new GuiButtonListSelector<>(GuiSpawnEggModifier.this,
-                    Component.literal("Set entity"), eggs, egg -> {
+                    Component.literal("Set Spawn Egg Item"), eggs, egg -> {
                 ItemStack newStack = new ItemStack(egg);
                 TypedEntityData<EntityType<?>> oldData = ItemUtils.getComponent(currentItemStack, DataComponents.ENTITY_DATA);
                 CompoundTag newTag = oldData != null ? oldData.copyTagWithoutId() : new CompoundTag();
@@ -159,31 +160,36 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         }));
         currentY += spacing;
 
-        // Name
-        EditBox nameBox = new EditBox(font, centerX - 100, currentY, 200, 20, Component.literal("Name"));
-        nameBox.setMaxLength(256);
-        String currentName = "";
-        Component currentNameComponent = readEntityCustomName(getEntityTag());
-        if (!currentNameComponent.getString().isEmpty()) {
-            currentName = currentNameComponent.getString();
-        }
-        nameBox.setValue(currentName);
-        nameBox.setResponder(val -> updateEntityTag(tag -> {
-            if (val.isEmpty()) {
-                ItemUtils.remove(tag, "custom_name");
-                ItemUtils.remove(tag, "CustomName");
-            } else {
-                Component component = parseLegacyFormatting(val);
-                Tag nbt = toComponentNbt(component);
-                if (nbt != null) {
-                    tag.put("CustomName", nbt);
-                } else {
-                    tag.put("CustomName", StringTag.valueOf(val));
-                }
-                ItemUtils.remove(tag, "custom_name");
-            }
+        // Entity Type Selector
+        addRenderableWidget(new ACTButton(centerX - 100, currentY, 200, 20,
+                Component.literal("Set Entity Type"), b -> {
+            List<Tuple<String, EntityType<?>>> entities = new ArrayList<>();
+            BuiltInRegistries.ENTITY_TYPE.stream()
+                    .filter(EntityType::canSummon)
+                    .sorted(Comparator.comparing(t -> t.getDescription().getString()))
+                    .forEach(type -> entities.add(new Tuple<>(type.getDescription().getString(), type)));
+            
+            getMinecraft().setScreen(new GuiButtonListSelector<>(GuiSpawnEggModifier.this,
+                    Component.literal("Set Entity Type"), entities, type -> {
+                TypedEntityData<EntityType<?>> oldData = ItemUtils.getComponent(currentItemStack, DataComponents.ENTITY_DATA);
+                CompoundTag newTag = oldData != null ? oldData.copyTagWithoutId() : new CompoundTag();
+                ItemUtils.setComponent(currentItemStack, DataComponents.ENTITY_DATA, TypedEntityData.of(type, newTag));
+                return null;
+            }));
         }));
-        addRenderableWidget(nameBox);
+        currentY += spacing;
+
+        EntityType<?> type = getCurrentEntityType(currentItemStack);
+        Identifier id = getEntityRegistry().getKey(type);
+        String idStr = id.toString();
+
+        if (idStr.contains("mannequin")) {
+            initMannequin(centerX, currentY, spacing);
+            return;
+        }
+
+        // Name
+        addNameInput(centerX, currentY);
         currentY += spacing;
 
         // CustomNameVisible
@@ -198,10 +204,6 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         currentY += spacing;
 
         // Specific Properties
-        EntityType<?> type = getCurrentEntityType(currentItemStack);
-        Identifier id = getEntityRegistry().getKey(type);
-        String idStr = id.toString();
-
         if (idStr.contains("zombie") || idStr.contains("piglin") || idStr.contains("hoglin") || idStr.contains("zoglin")) {
              addRenderableWidget(new GuiBooleanButton(centerX - 100, currentY, 200, 20,
                     Component.literal("Is Baby"), 
@@ -826,5 +828,288 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
             return mc.level.registryAccess().lookupOrThrow(Registries.ENTITY_TYPE);
         }
         return BuiltInRegistries.ENTITY_TYPE;
+    }
+
+    private void initMannequin(int centerX, int currentY, int spacing) {
+        // Row 1: Profile
+        addLabel(centerX, currentY, "Profile");
+        addStringInput(centerX, currentY, "profile");
+        currentY += spacing;
+
+        // Row 2: Main Hand | Pose
+        addCombinedCycleButton(centerX - 100, currentY, 98, "Main Hand", "main_hand", Arrays.asList("right", "left"), "right");
+        addCombinedCycleButton(centerX + 2, currentY, 98, "Pose", "pose", Arrays.asList("standing", "crouching", "swimming", "fall_flying", "sleeping"), "standing");
+        currentY += spacing;
+
+        // Row 3: Immovable | Hide Description
+        addRenderableWidget(new GuiBooleanButton(centerX - 100, currentY, 98, 20,
+                Component.literal("Immovable"), 
+                val -> updateEntityTag(tag -> ItemUtils.putBoolean(tag, "immovable", val)),
+                () -> ItemUtils.getBoolean(getEntityTag(), "immovable")
+        ));
+        addRenderableWidget(new GuiBooleanButton(centerX + 2, currentY, 98, 20,
+                Component.literal("Hide Desc."), 
+                val -> updateEntityTag(tag -> ItemUtils.putBoolean(tag, "hide_description", val)),
+                () -> ItemUtils.getBoolean(getEntityTag(), "hide_description")
+        ));
+        currentY += spacing;
+
+        // Row 4: Description
+        addLabel(centerX, currentY, "Description");
+        addStringInput(centerX, currentY, "description");
+        currentY += spacing;
+
+        // Row 5: Name
+        addNameInput(centerX, currentY);
+        currentY += spacing;
+
+        // Row 6: Show Name | Hidden Layers
+        addRenderableWidget(new GuiBooleanButton(centerX - 100, currentY, 98, 20,
+                Component.literal("Show Name"),
+                val -> updateEntityTag(tag -> {
+                    ItemUtils.putBoolean(tag, "CustomNameVisible", val);
+                    ItemUtils.remove(tag, "custom_name_visible");
+                }),
+                () -> ItemUtils.getBoolean(getEntityTag(), "CustomNameVisible") || ItemUtils.getBoolean(getEntityTag(), "custom_name_visible")
+        ));
+        
+        addRenderableWidget(new ACTButton(centerX + 2, currentY, 98, 20, Component.literal("Hidden Layers"), b -> {
+            getMinecraft().setScreen(new GuiMannequinLayers(this, getEntityTag(), newTag -> updateEntityTag(t -> {
+                if (newTag.contains("hidden_layers")) t.put("hidden_layers", newTag.get("hidden_layers"));
+                else ItemUtils.remove(t, "hidden_layers");
+            })));
+        }));
+        currentY += spacing;
+
+        // Row 7: Advanced Options
+        addRenderableWidget(new ACTButton(centerX - 100, currentY, 200, 20, Component.literal("Advanced Options"), b -> {
+            getMinecraft().setScreen(new GuiMannequinAdvanced(this, getEntityTag(), newTag -> updateEntityTag(t -> {
+                if (newTag.contains("texture")) t.put("texture", newTag.get("texture")); else ItemUtils.remove(t, "texture");
+                if (newTag.contains("cape")) t.put("cape", newTag.get("cape")); else ItemUtils.remove(t, "cape");
+                if (newTag.contains("elytra")) t.put("elytra", newTag.get("elytra")); else ItemUtils.remove(t, "elytra");
+                if (newTag.contains("model")) t.put("model", newTag.get("model")); else ItemUtils.remove(t, "model");
+            })));
+        }));
+    }
+
+    private void addNameInput(int centerX, int y) {
+        EditBox nameBox = new EditBox(font, centerX - 100, y, 200, 20, Component.literal("Name"));
+        nameBox.setMaxLength(256);
+        String currentName = "";
+        Component currentNameComponent = readEntityCustomName(getEntityTag());
+        if (!currentNameComponent.getString().isEmpty()) {
+            currentName = currentNameComponent.getString();
+        }
+        nameBox.setValue(currentName);
+        nameBox.setResponder(val -> updateEntityTag(tag -> {
+            if (val.isEmpty()) {
+                ItemUtils.remove(tag, "custom_name");
+                ItemUtils.remove(tag, "CustomName");
+            } else {
+                Component component = parseLegacyFormatting(val);
+                Tag nbt = toComponentNbt(component);
+                if (nbt != null) {
+                    tag.put("CustomName", nbt);
+                } else {
+                    tag.put("CustomName", StringTag.valueOf(val));
+                }
+                ItemUtils.remove(tag, "custom_name");
+            }
+        }));
+        addRenderableWidget(nameBox);
+    }
+
+    private void addCombinedCycleButton(int x, int y, int width, String label, String nbtKey, List<String> values, String defaultValue) {
+        String current = ItemUtils.getString(getEntityTag(), nbtKey);
+        if (current.isEmpty()) current = defaultValue;
+        
+        final String finalCurrent = current;
+        
+        addRenderableWidget(new ACTButton(x, y, width, 20, Component.literal(label + ": " + finalCurrent), b -> {
+            String val = ItemUtils.getString(getEntityTag(), nbtKey);
+            if (val.isEmpty()) val = defaultValue;
+            int index = values.indexOf(val);
+            if (index == -1) index = 0;
+            index = (index + 1) % values.size();
+            String next = values.get(index);
+            
+            updateEntityTag(tag -> tag.putString(nbtKey, next));
+            b.setMessage(Component.literal(label + ": " + next));
+        }));
+    }
+
+    private void addLabel(int centerX, int y, String label) {
+        ACTButton labelBtn = new ACTButton(centerX - 100, y, 100, 20, Component.literal(label), b -> {});
+        labelBtn.active = false;
+        addRenderableWidget(labelBtn);
+    }
+
+    private void addStringInput(int centerX, int y, String nbtKey) {
+        EditBox editBox = new EditBox(font, centerX + 2, y, 95, 20, Component.literal(nbtKey));
+        editBox.setMaxLength(256);
+        editBox.setValue(ItemUtils.getString(getEntityTag(), nbtKey));
+        editBox.setResponder(val -> updateEntityTag(tag -> {
+            if (val.isEmpty()) ItemUtils.remove(tag, nbtKey);
+            else tag.putString(nbtKey, val);
+        }));
+        addRenderableWidget(editBox);
+    }
+    
+    private void addCycleButton(int centerX, int y, String nbtKey, List<String> values, String defaultValue) {
+        String current = ItemUtils.getString(getEntityTag(), nbtKey);
+        if (current.isEmpty()) current = defaultValue;
+        
+        final String finalCurrent = current;
+        
+        addRenderableWidget(new ACTButton(centerX + 2, y, 95, 20, Component.literal(finalCurrent), b -> {
+            String val = ItemUtils.getString(getEntityTag(), nbtKey);
+            if (val.isEmpty()) val = defaultValue;
+            int index = values.indexOf(val);
+            if (index == -1) index = 0;
+            index = (index + 1) % values.size();
+            String next = values.get(index);
+            
+            updateEntityTag(tag -> tag.putString(nbtKey, next));
+            b.setMessage(Component.literal(next));
+        }));
+    }
+
+    private static class GuiMannequinLayers extends GuiModifier<CompoundTag> {
+        private final CompoundTag tag;
+        private static final String[] LAYERS = {"cape", "jacket", "left_sleeve", "right_sleeve", "left_pants_leg", "right_pants_leg", "hat"};
+
+        public GuiMannequinLayers(Screen parent, CompoundTag tag, Consumer<CompoundTag> setter) {
+            super(parent, Component.literal("Hidden Layers"), setter);
+            this.tag = tag;
+        }
+
+        @Override
+        public void init() {
+            super.init();
+            int centerX = width / 2;
+            int y = 40;
+            
+            ListTag list = ItemUtils.getList(tag, "hidden_layers", 8);
+            List<String> currentLayers = new ArrayList<>();
+            for (int i = 0; i < list.size(); i++) {
+                currentLayers.add(list.getString(i).orElse(""));
+            }
+
+            for (String layer : LAYERS) {
+                addRenderableWidget(new GuiBooleanButton(centerX - 100, y, 200, 20, Component.literal(layer), val -> {
+                    if (val) {
+                        if (!currentLayers.contains(layer)) currentLayers.add(layer);
+                    } else {
+                        currentLayers.remove(layer);
+                    }
+                    ListTag newList = new ListTag();
+                    currentLayers.forEach(s -> newList.add(StringTag.valueOf(s)));
+                    tag.put("hidden_layers", newList);
+                    set(tag);
+                }, () -> currentLayers.contains(layer)));
+                y += 24;
+            }
+            
+            addRenderableWidget(new ACTButton(centerX - 100, height - 25, 200, 20, Component.translatable("gui.done"), b -> getMinecraft().setScreen(parent)));
+        }
+        
+        @Override
+        public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+             // do nothing
+        }
+        
+        @Override
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+            GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
+            super.render(graphics, mouseX, mouseY, partialTicks);
+            GuiUtils.drawCenterString(graphics, font, getStringTitle(), width / 2, 10, 0xFFFFFFFF);
+        }
+    }
+
+    private static class GuiMannequinAdvanced extends GuiModifier<CompoundTag> {
+        private final CompoundTag tag;
+
+        public GuiMannequinAdvanced(Screen parent, CompoundTag tag, Consumer<CompoundTag> setter) {
+            super(parent, Component.literal("Advanced Options"), setter);
+            this.tag = tag;
+        }
+
+        @Override
+        public void init() {
+            super.init();
+            int centerX = width / 2;
+            int y = 40;
+            int spacing = 24;
+
+            addLabel(centerX, y, "Texture");
+            addStringInput(centerX, y, "texture");
+            y += spacing;
+
+            addLabel(centerX, y, "Cape");
+            addStringInput(centerX, y, "cape");
+            y += spacing;
+
+            addLabel(centerX, y, "Elytra");
+            addStringInput(centerX, y, "elytra");
+            y += spacing;
+
+            addLabel(centerX, y, "Model");
+            addCycleButton(centerX, y, "model", Arrays.asList("wide", "slim"), "wide");
+            y += spacing;
+            
+            addRenderableWidget(new ACTButton(centerX - 100, height - 25, 200, 20, Component.translatable("gui.done"), b -> getMinecraft().setScreen(parent)));
+        }
+
+        private void addLabel(int centerX, int y, String label) {
+            ACTButton labelBtn = new ACTButton(centerX - 100, y, 100, 20, Component.literal(label), b -> {});
+            labelBtn.active = false;
+            addRenderableWidget(labelBtn);
+        }
+
+        private void addStringInput(int centerX, int y, String nbtKey) {
+            EditBox editBox = new EditBox(font, centerX + 2, y, 95, 20, Component.literal(nbtKey));
+            editBox.setMaxLength(256);
+            editBox.setValue(ItemUtils.getString(tag, nbtKey));
+            editBox.setResponder(val -> {
+                if (val.isEmpty()) ItemUtils.remove(tag, nbtKey);
+                else tag.putString(nbtKey, val);
+                set(tag);
+            });
+            addRenderableWidget(editBox);
+        }
+        
+        private void addCycleButton(int centerX, int y, String nbtKey, List<String> values, String defaultValue) {
+            String current = ItemUtils.getString(tag, nbtKey);
+            if (current.isEmpty()) current = defaultValue;
+            
+            final String finalCurrent = current;
+            
+            addRenderableWidget(new ACTButton(centerX + 2, y, 95, 20, Component.literal(finalCurrent), b -> {
+                String val = ItemUtils.getString(tag, nbtKey);
+                if (val.isEmpty()) val = defaultValue;
+                int index = values.indexOf(val);
+                if (index == -1) index = 0;
+                index = (index + 1) % values.size();
+                String next = values.get(index);
+                
+                tag.putString(nbtKey, next);
+                set(tag);
+                b.setMessage(Component.literal(next));
+            }));
+        }
+        
+        @Override
+        public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+             // do nothing
+        }
+        
+        @Override
+        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+            super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+            GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
+            super.render(graphics, mouseX, mouseY, partialTicks);
+            GuiUtils.drawCenterString(graphics, font, getStringTitle(), width / 2, 10, 0xFFFFFFFF);
+        }
     }
 }

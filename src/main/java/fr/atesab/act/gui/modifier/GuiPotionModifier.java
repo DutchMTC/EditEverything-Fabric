@@ -140,9 +140,11 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
             double mouseY = event.y();
             if (GuiUtils.isHover(amplifier, (int) mouseX, (int) mouseY)) {
                 amplifier.setFocused(true);
+                duration.setFocused(false);
             }
             if (GuiUtils.isHover(duration, (int) mouseX, (int) mouseY)) {
                 duration.setFocused(true);
+                amplifier.setFocused(false);
             }
             amplifier.mouseClicked(event, doubleClick);
             duration.mouseClicked(event, doubleClick);

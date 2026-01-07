@@ -1,14 +1,19 @@
 package com.dutchmtc.ee.network;
 
 import com.dutchmtc.ee.EEMod;
+import com.dutchmtc.ee.utils.ArmorStandEditorUtils;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ArmorStand;
 
 public final class EENetworking {
     private EENetworking() {
@@ -21,6 +26,13 @@ public final class EENetworking {
         PayloadTypeRegistry.playS2C().register(OpenColorPickerPayload.TYPE, OpenColorPickerPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(InstantClickPayload.TYPE, InstantClickPayload.STREAM_CODEC);
         PayloadTypeRegistry.playS2C().register(InstantPlacePayload.TYPE, InstantPlacePayload.STREAM_CODEC);
+        PayloadTypeRegistry.playS2C().register(OpenArmorStandEditorPayload.TYPE, OpenArmorStandEditorPayload.STREAM_CODEC);
+
+        PayloadTypeRegistry.playC2S().register(ApplyArmorStandEditsPayload.TYPE, ApplyArmorStandEditsPayload.STREAM_CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(ApplyArmorStandEditsPayload.TYPE, (payload, context) -> {
+            context.server().execute(() -> applyArmorStandEdits(payload, context.player()));
+        });
     }
 
     public static void sendOpenGiver(ServerPlayer player, String giveCode) {
@@ -37,6 +49,10 @@ public final class EENetworking {
 
     public static void sendOpenColorPicker(ServerPlayer player) {
         ServerPlayNetworking.send(player, new OpenColorPickerPayload());
+    }
+
+    public static void sendOpenArmorStandEditor(ServerPlayer player, int entityId) {
+        ServerPlayNetworking.send(player, new OpenArmorStandEditorPayload(entityId));
     }
 
     public static void sendToggleInstantClick(ServerPlayer player) {
@@ -97,6 +113,33 @@ public final class EENetworking {
         }
     }
 
+    public record OpenArmorStandEditorPayload(int entityId) implements CustomPacketPayload {
+        public static final Type<OpenArmorStandEditorPayload> TYPE = new Type<>(
+                Identifier.fromNamespaceAndPath(EEMod.MOD_ID, "open_armor_stand_editor"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, OpenArmorStandEditorPayload> STREAM_CODEC =
+                StreamCodec.composite(ByteBufCodecs.INT, OpenArmorStandEditorPayload::entityId, OpenArmorStandEditorPayload::new);
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    public record ApplyArmorStandEditsPayload(int entityId, CompoundTag state) implements CustomPacketPayload {
+        public static final Type<ApplyArmorStandEditsPayload> TYPE = new Type<>(
+                Identifier.fromNamespaceAndPath(EEMod.MOD_ID, "apply_armor_stand_edits"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, ApplyArmorStandEditsPayload> STREAM_CODEC =
+                StreamCodec.composite(
+                        ByteBufCodecs.INT, ApplyArmorStandEditsPayload::entityId,
+                        ByteBufCodecs.COMPOUND_TAG, ApplyArmorStandEditsPayload::state,
+                        ApplyArmorStandEditsPayload::new);
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     public record InstantClickPayload(byte mode, boolean value) implements CustomPacketPayload {
         public static final Type<InstantClickPayload> TYPE = new Type<>(Identifier.fromNamespaceAndPath(EEMod.MOD_ID, "instant_click"));
         public static final StreamCodec<RegistryFriendlyByteBuf, InstantClickPayload> STREAM_CODEC =
@@ -117,5 +160,26 @@ public final class EENetworking {
         public Type<? extends CustomPacketPayload> type() {
             return TYPE;
         }
+    }
+
+    private static void applyArmorStandEdits(ApplyArmorStandEditsPayload payload, ServerPlayer player) {
+        if (player == null || player.level() == null) {
+            return;
+        }
+        if (!player.createCommandSourceStack().permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            return;
+        }
+
+        Entity entity = player.level().getEntity(payload.entityId());
+        if (!(entity instanceof ArmorStand stand)) {
+            return;
+        }
+
+        CompoundTag state = payload.state();
+        if (state == null) {
+            return;
+        }
+
+        ArmorStandEditorUtils.applyState(stand, state, player.level().registryAccess());
     }
 }

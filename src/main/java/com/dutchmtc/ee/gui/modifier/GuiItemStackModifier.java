@@ -140,6 +140,11 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
             addRenderableWidget(
                     new EEButton(width / 2 - 100, height / 2 + 21, 200, 20, Items.PLAYER_HEAD.getName(), b -> getMinecraft().setScreen(new GuiHeadModifier(GuiItemStackModifier.this,
                             is -> currentItemStack = is, currentItemStack))));
+        else if (currentItemStack.getItem().equals(Items.ARMOR_STAND))
+            addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
+                    Component.translatable("gui.ee.modifier.meta.armorstand"),
+                    b -> getMinecraft().setScreen(new com.dutchmtc.ee.gui.GuiArmorStandItemEditor(GuiItemStackModifier.this, currentItemStack.copy(),
+                            is -> currentItemStack = is))));
         else if (currentItemStack.getItem().equals(Items.COMMAND_BLOCK_MINECART)
                 || currentItemStack.getItem().equals(Blocks.COMMAND_BLOCK.asItem())
                 || currentItemStack.getItem().equals(Blocks.CHAIN_COMMAND_BLOCK.asItem())

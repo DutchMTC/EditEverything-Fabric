@@ -27,9 +27,17 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.Holder;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -88,6 +96,9 @@ public class ClientCommands {
             // /ee palette
             registerPalette(ee);
             
+            // /ee armorstand | /ee as (server-side)
+            registerArmorStand(ee);
+
             // /ee spectatortp | /ee sptp
             registerSpTp(ee);
 
@@ -370,6 +381,63 @@ public class ClientCommands {
                 }));
     }
 
+    private static void registerArmorStand(LiteralArgumentBuilder<FabricClientCommandSource> root) {
+        var armorStand = ClientCommandManager.literal("armorstand")
+                .executes(c -> {
+                    // Don't forward via sendCommand("ee ..."): Fabric client commands will intercept it and recurse.
+                    // Instead, do the raytrace client-side and open the GUI directly.
+                    var mc = Minecraft.getInstance();
+                    Player player = mc.player;
+                    if (player == null) {
+                        return 0;
+                    }
+
+                    ArmorStand stand = null;
+                    HitResult hitResult = mc.hitResult;
+                    if (hitResult instanceof EntityHitResult ehr) {
+                        Entity hitEntity = ehr.getEntity();
+                        if (hitEntity instanceof ArmorStand as) {
+                            stand = as;
+                        }
+                    }
+                    if (stand == null) {
+                        stand = findLookedAtArmorStand(player, 6.0D);
+                    }
+                    if (stand == null) {
+                        c.getSource().sendError(Component.translatable("cmd.ee.armorstand.no_target")
+                                .withStyle(ChatFormatting.RED));
+                        return 0;
+                    }
+
+                    int entityId = stand.getId();
+                    mc.execute(() -> {
+                        Screen parent = mc.screen;
+                        mc.setScreen(new com.dutchmtc.ee.gui.GuiArmorStandEditor(parent, entityId, true));
+                    });
+                    return 1;
+                });
+
+        LiteralCommandNode<FabricClientCommandSource> armorStandNode = armorStand.build();
+        root.then(armorStand);
+
+        // Alias /ee as
+        root.then(ClientCommandManager.literal("as").redirect(armorStandNode));
+    }
+
+    private static ArmorStand findLookedAtArmorStand(Player player, double reach) {
+        Vec3 start = player.getEyePosition();
+        Vec3 look = player.getViewVector(1.0F);
+        Vec3 end = start.add(look.scale(reach));
+
+        AABB box = player.getBoundingBox().expandTowards(look.scale(reach)).inflate(1.0D);
+        EntityHitResult hit = ProjectileUtil.getEntityHitResult(player.level(), player, start, end, box,
+                e -> e instanceof ArmorStand, (float) reach);
+        if (hit == null) {
+            return null;
+        }
+        return hit.getEntity() instanceof ArmorStand a ? a : null;
+    }
+
     private static void registerSpTp(LiteralArgumentBuilder<FabricClientCommandSource> root) {
         var sptp = ClientCommandManager.literal("spectatortp")
                 .then(ClientCommandManager.argument("player", StringArgumentType.word())
@@ -551,6 +619,7 @@ public class ClientCommands {
         commands.add("info");
         commands.add("format");
         commands.add("palette");
+        commands.add("armorstand");
         commands.add("spectatortp");
 
         for (String cmd : commands) {

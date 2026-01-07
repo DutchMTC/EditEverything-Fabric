@@ -2,6 +2,7 @@ package com.dutchmtc.ee.network;
 
 import com.dutchmtc.ee.EEMod;
 import com.dutchmtc.ee.EEModClient;
+import com.dutchmtc.ee.gui.GuiArmorStandEditor;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ItemUtilsClient;
 import net.fabricmc.api.EnvType;
@@ -9,6 +10,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.nbt.CompoundTag;
 
 @Environment(EnvType.CLIENT)
 public final class EEClientNetworking {
@@ -92,5 +94,21 @@ public final class EEClientNetworking {
                 }
             });
         });
+
+        ClientPlayNetworking.registerGlobalReceiver(EENetworking.OpenArmorStandEditorPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                var mc = Minecraft.getInstance();
+                Screen parent = mc.screen;
+                // This screen is currently only opened via the /ee armorstand command.
+                mc.setScreen(new GuiArmorStandEditor(parent, payload.entityId(), true));
+            });
+        });
+    }
+
+    public static void sendApplyArmorStandEdits(int entityId, CompoundTag state) {
+        if (state == null) {
+            state = new CompoundTag();
+        }
+        ClientPlayNetworking.send(new EENetworking.ApplyArmorStandEditsPayload(entityId, state));
     }
 }

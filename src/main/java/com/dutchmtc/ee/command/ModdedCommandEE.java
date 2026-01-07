@@ -21,6 +21,7 @@ public class ModdedCommandEE extends ModdedCommand {
     public final ModdedCommandPalette SC_PALETTE;
     public final ModdedCommandInstantClick SC_INSTANT_CLICK;
     public final ModdedCommandInstantPlace SC_INSTANT_PLACE;
+    public final ModdedCommandArmorStand SC_ARMOR_STAND;
 
     public ModdedCommandEE() {
         super(EEMod.MOD_ID);
@@ -43,5 +44,6 @@ public class ModdedCommandEE extends ModdedCommand {
         registerSubCommand(SC_PALETTE = new ModdedCommandPalette());
         registerSubCommand(SC_INSTANT_CLICK = new ModdedCommandInstantClick());
         registerSubCommand(SC_INSTANT_PLACE = new ModdedCommandInstantPlace());
+        registerSubCommand(SC_ARMOR_STAND = new ModdedCommandArmorStand());
     }
 }

@@ -1,8 +1,6 @@
-# Edit Everything
+![Logo](https://cdn.modrinth.com/data/cached_images/28c59c57ce8075c46b6bd3032e4e6a5767346837.png)
 
-![Logo](src/main/resources/logo.png)
-
-**Edit Everything** is a comprehensive Minecraft Fabric mod designed to enhance your Creative Mode experience. Based on the "Advanced Creative Tab" by ATE47, this mod provides a suite of powerful tools for editing items, managing inventories, and utilizing useful commands to streamline your creative workflow.
+**Edit Everything** is a comprehensive Minecraft Fabric mod designed to enhance your Creative Mode experience. Based on the "[Advanced Creative Tab](https://modrinth.com/mod/act)" Mod by ATE47, this mod provides a suite of powerful tools for editing items, managing inventories, and utilizing useful commands to streamline your creative workflow.
 
 Whether you are a map maker, a server admin, or just someone who loves to experiment with custom items, Edit Everything gives you the control you need.
 
@@ -11,14 +9,16 @@ Whether you are a map maker, a server admin, or just someone who loves to experi
 ### 🛠️ Advanced Item Editor
 Modify every aspect of your items with an intuitive GUI.
 
+![General Item Editor Menu](https://cdn.modrinth.com/data/cached_images/a45b3a1bc70dcae5b64253516c3f5cfc9cab580f.png)
+
 #### Meta & Data Components
 The Meta tab serves as a hub for advanced item properties.
 - **Unbreakable:** Toggle the unbreakable tag.
-- **Data Components:** Add, edit, or remove modern data components (1.20.5+).
+- **Data Components:** Add, edit, or remove modern data components
 - **NBT Editor:** Edit raw NBT data directly with a tree-view editor.
 
-![Meta Editor Screenshot](path/to/meta_editor_screenshot.png)
-![Data Component Editor Screenshot](path/to/datacomponent_editor_screenshot.png)
+![Meta Editor](https://cdn.modrinth.com/data/cached_images/3e288c481aaa0ec5a6c401915edfdcd5e1ee4d11.png)
+![Data Component Editor](https://cdn.modrinth.com/data/cached_images/4fd00c6cc51bd2a395a3eb6815efb25305781369_0.webp)
 
 #### Adventure Mode (Can Place / Can Break)
 Easily configure the `CanPlaceOn` and `CanDestroy` tags for Adventure mode map making. Select blocks from a list to define where items can be used.
@@ -26,53 +26,51 @@ Easily configure the `CanPlaceOn` and `CanDestroy` tags for Adventure mode map m
 
 #### Container Editor
 Edit the contents of containers (Chests, Shulker Boxes, Barrels, etc.) directly without placing them.
-![Container Editor Screenshot](path/to/container_editor_screenshot.png)
+![Chest Editor](https://cdn.modrinth.com/data/cached_images/d0f2b2792d971098332ea38e71af9172324d5151.png)
 
 #### Command Block Editor
 Edit Command Block items (Command, Name, Auto-Execute) directly in your inventory.
-![Command Block Editor Screenshot](path/to/commandblock_editor_screenshot.png)
+![Command Block Editor](https://cdn.modrinth.com/data/cached_images/0c3869b31261eba61f8ee2114fca90efb406449c.png)
 
 #### Attributes
 Customize attack damage, attack speed, max health, movement speed, and other attributes.
-![Attributes Editor Screenshot](path/to/attributes_editor_screenshot.png)
+![Attributes Editor](https://cdn.modrinth.com/data/cached_images/84e519991df3833e7c2b51f559768373770712bc_0.webp)
 
 #### Enchantments
 Add any enchantment at any level, even those not normally compatible.
-![Enchantments Editor Screenshot](path/to/enchantments_editor_screenshot.png)
+![Enchantments Editor](https://cdn.modrinth.com/data/cached_images/2ef28ae353a12fc76acadeb8ff00b67f273701f8_0.webp)
 
 #### Potion Effects
 Create custom potions with specific effects, durations, amplifiers, and custom colors.
-![Potion Editor Screenshot](path/to/potion_editor_screenshot.png)
+![Potion Editor](https://cdn.modrinth.com/data/cached_images/b1b1394bbe9f3cadc7004bd0a383e3748c97603e_0.webp)
 
 #### Fireworks
 Design custom firework rockets with multiple explosions, colors, and fade effects.
-![Fireworks Editor Screenshot](path/to/fireworks_editor_screenshot.png)
+![Firework Editor](https://cdn.modrinth.com/data/cached_images/d6186a71d9491bd8a185e7f0034171c33c79dbae_0.webp)
 
 #### Player Heads
 Get heads with specific textures or player names.
-![Head Editor Screenshot](path/to/head_editor_screenshot.png)
+![Player Head Editor](https://cdn.modrinth.com/data/cached_images/72256d8b04d1e3efb9398963df816a98831659b0.png)
 
-#### Spawn Eggs
+#### Entity Editor
 Customize spawn egg entities and their equipment.
-![Spawn Egg Editor Screenshot](path/to/spawnegg_editor_screenshot.png)
+![Entity Editor](https://cdn.modrinth.com/data/cached_images/3d37c45e3a13727492fda81405c7a494c3fc9dca.png)
 
 ### 📦 Item Giver
 A powerful alternative to the standard Creative Inventory.
 - Search and filter items easily.
 - Access custom items and saved palettes.
+![Giver Menu](https://cdn.modrinth.com/data/cached_images/877a7b535a766a2246f2ed31e7fd3bdb78c2318d_0.webp)
 
-![Item Giver Screenshot](path/to/giver_screenshot.png)
-
-### ⚡ Instant Tools
-- **Instant Click:** Instantly mine blocks without delay.
-- **Instant Place:** Place blocks instantly for rapid building.
+### 📑 Creative Tab
+Save items you made to a Creative Tab
+![Creative Tab](https://cdn.modrinth.com/data/cached_images/447b116df2cb203cd708c350053e1b62530d7af5_0.webp)
 
 ### 🎨 Color & Formatting
 - **Color Modifier:** Change the color of leather armor, potions, and more with a visual picker.
 - **Chat Formatting:** Built-in reference for chat color codes (`/ee format`).
 - **Palette:** Copy-paste color codes easily (`/ee palette`).
-
-![Color Modifier Screenshot](path/to/color_modifier_screenshot.png)
+![Color Picker](https://cdn.modrinth.com/data/cached_images/73a056771202b7eaf4b441891089d4f666456323.png)
 
 ### 🎮 Enhanced Gamemode Switcher (F3 + F4)
 Edit Everything enhances the vanilla F3 + F4 gamemode switcher. It allows you to use this shortcut to switch gamemodes even if you don't have standard permission for the vanilla gamemode commands, provided the server supports the switch (or if you are in a singleplayer world where the mod handles the logic).
@@ -110,7 +108,7 @@ Quickly switch gamemodes with these commands:
 
 ## Installation
 
-1.  Install **Minecraft** (Version 1.21 - 1.21.11).
+1.  Install **Minecraft** (Version 1.21.10 - 1.21.11).
 2.  Install **Fabric Loader**.
 3.  Download **Edit Everything** and place the `.jar` file into your `mods` folder.
 4.  Ensure you have the **Fabric API** installed.

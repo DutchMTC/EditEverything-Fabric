@@ -56,6 +56,15 @@ Get heads with specific textures or player names.
 Customize spawn egg entities and their equipment.
 ![Entity Editor](https://cdn.modrinth.com/data/cached_images/3d37c45e3a13727492fda81405c7a494c3fc9dca.png)
 
+#### Armor Stand Editor
+Edit Armor Stand items directly in your inventory. Configure the pose, equipment, and properties *before* you place it.
+- **Pose:** Adjust the pose of every body part (Head, Body, Arms, Legs) with precision sliders.
+- **Equipment:** Set the armor and held items.
+- **Properties:** Toggle flags like Invisible, Glowing, Small, Show Arms, No Base Plate, and more.
+- **Locks:** Configure interaction locks to prevent players from taking or swapping items.
+
+*Note: You can also use `/ee armorstand` on placed armor stands to copy them as an item. Applying changes directly to the entity requires server permissions.*
+
 ### 📦 Item Giver
 A powerful alternative to the standard Creative Inventory.
 - Search and filter items easily.
@@ -92,6 +101,7 @@ The main command is `/ee` (or `/editeverything`).
 | `/ee rename <name>` | | Renames the held item. Supports `&` for color codes. |
 | `/ee unbreakable [bool]` | | Toggles the Unbreakable tag on the held item. |
 | `/ee head <name>` | | Gives you the head of the specified player. |
+| `/ee armorstand` | `/ee as` | Opens the Armor Stand Editor for the target. |
 | `/ee randomfireworks` | `/ee rfw` | Gives a randomly generated firework rocket. |
 | `/ee info` | | Displays mod version, authors, and license info. |
 | `/ee format` | | Shows a list of chat formatting codes. |

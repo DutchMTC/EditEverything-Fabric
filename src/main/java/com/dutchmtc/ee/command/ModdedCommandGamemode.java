@@ -3,11 +3,11 @@ package com.dutchmtc.ee.command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.dutchmtc.ee.command.ModdedCommandHelp.CommandClickOption;
+import com.dutchmtc.ee.utils.PermissionCompat;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.GameType;
 
 public class ModdedCommandGamemode extends ModdedCommand {
@@ -28,7 +28,7 @@ public class ModdedCommandGamemode extends ModdedCommand {
     @Override
     protected LiteralArgumentBuilder<CommandSourceStack> onArgument(
             LiteralArgumentBuilder<CommandSourceStack> command, CommandBuildContext context) {
-        command.requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER));
+        command.requires(PermissionCompat::hasGamemasterPermissions);
         // /gm <gamemode>
         for (GameType gametype : GameType.values())
             command.then(Commands.literal(gametype.getName()).executes(c -> {

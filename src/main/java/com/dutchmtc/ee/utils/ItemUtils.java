@@ -212,7 +212,7 @@ public class ItemUtils {
     }
 
     public static void remove(CompoundTag tag, String key) {
-        tag.remove(key);
+        NbtCompat.remove(tag, key);
     }
 
     public static Tag saveStack(ItemStack stack, net.minecraft.core.HolderLookup.Provider registryAccess) {

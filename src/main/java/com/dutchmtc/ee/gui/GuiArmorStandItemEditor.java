@@ -8,14 +8,17 @@ import com.dutchmtc.ee.utils.ArmorStandItemUtils;
 import com.dutchmtc.ee.utils.ChatUtils;
 import com.dutchmtc.ee.utils.GuiEntityPreviewUtils;
 import com.dutchmtc.ee.utils.GuiUtils;
+import com.dutchmtc.ee.utils.VersionCompat;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.InputWithModifiers;
@@ -737,7 +740,8 @@ public class GuiArmorStandItemEditor extends Screen {
 
         private ItemSlotButton(int x, int y, Component tooltip, java.util.function.Supplier<ItemStack> getter,
                 Consumer<ItemStack> setter) {
-            super(x, y, 18, 18, tooltip);
+            super(x, y, 18, 18, VersionCompat.is12111OrNewer() ? tooltip : Component.empty());
+            setTooltip(Tooltip.create(tooltip));
             this.getter = getter;
             this.setter = setter;
         }
@@ -776,6 +780,9 @@ public class GuiArmorStandItemEditor extends Screen {
 
         @Override
         protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            if (!VersionCompat.is12111OrNewer()) {
+                return;
+            }
             ItemStack stack = getter.get();
             if (stack == null) stack = ItemStack.EMPTY;
 
@@ -794,6 +801,48 @@ public class GuiArmorStandItemEditor extends Screen {
                     GuiUtils.renderTooltip(graphics, Objects.requireNonNull(minecraft).font,
                             List.of(getMessage()), Optional.empty(), mouseX, mouseY);
                 }
+            }
+        }
+
+        // 1.21.10: AbstractButton renders the label via renderString(...) instead of renderContents(...).
+        @SuppressWarnings("unused")
+        protected void renderString(GuiGraphics graphics, Font font, int color) {
+            if (VersionCompat.is12111OrNewer()) {
+                return;
+            }
+            renderSlotOnly(graphics);
+        }
+
+        @SuppressWarnings("unused")
+        protected void renderString(GuiGraphics graphics, Font font, int x, int y, int color) {
+            if (VersionCompat.is12111OrNewer()) {
+                return;
+            }
+            renderSlotOnly(graphics);
+        }
+
+        @SuppressWarnings("unused")
+        protected void renderString(GuiGraphics graphics, int x, int y, int color) {
+            if (VersionCompat.is12111OrNewer()) {
+                return;
+            }
+            renderSlotOnly(graphics);
+        }
+
+        private void renderSlotOnly(GuiGraphics graphics) {
+            ItemStack stack = getter.get();
+            if (stack == null) {
+                stack = ItemStack.EMPTY;
+            }
+
+            GuiUtils.drawRect(graphics, getX(), getY(), getX() + 18, getY() + 18, 0xFF5A5A5A);
+            GuiUtils.drawRect(graphics, getX() + 1, getY() + 1, getX() + 17, getY() + 17, 0xFF202020);
+
+            if (!stack.isEmpty()) {
+                GuiUtils.drawItemStack(graphics, stack, getX() + 1, getY() + 1);
+            }
+            if (isHoveredOrFocused()) {
+                GuiUtils.drawRect(graphics, getX(), getY(), getX() + 18, getY() + 18, 0x55FFFFFF);
             }
         }
 

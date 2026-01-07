@@ -6,6 +6,7 @@ import com.dutchmtc.ee.network.EENetworking;
 import com.dutchmtc.ee.utils.ItemReader;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ItemUtilsClient;
+import com.dutchmtc.ee.utils.VersionCompat;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -14,6 +15,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -39,14 +41,29 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import com.dutchmtc.ee.utils.Tuple;
 
 public class ClientCommands {
+    private static volatile boolean pickMethodSearched;
+    private static volatile Method pickMethod;
+    private static volatile boolean crosshairFieldSearched;
+    private static volatile List<Field> minecraftEntityFields;
+    private static volatile boolean tickHookRegistered;
+    private static volatile PendingArmorStandOpen pendingArmorStandOpen;
+
+    private record PendingArmorStandOpen(int entityId, boolean showGetAsItemButton) {
+    }
 
     public static void register() {
+        if (!tickHookRegistered) {
+            tickHookRegistered = true;
+            ClientTickEvents.END_CLIENT_TICK.register(ClientCommands::onEndClientTick);
+        }
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             // /ee
             LiteralArgumentBuilder<FabricClientCommandSource> ee = ClientCommandManager.literal("ee");
@@ -96,7 +113,7 @@ public class ClientCommands {
             // /ee palette
             registerPalette(ee);
             
-            // /ee armorstand | /ee as (server-side)
+            // /ee armorstand | /ee as
             registerArmorStand(ee);
 
             // /ee spectatortp | /ee sptp
@@ -393,6 +410,7 @@ public class ClientCommands {
                     }
 
                     ArmorStand stand = null;
+                    refreshClientHitResult(mc, 6.0D);
                     HitResult hitResult = mc.hitResult;
                     if (hitResult instanceof EntityHitResult ehr) {
                         Entity hitEntity = ehr.getEntity();
@@ -404,16 +422,18 @@ public class ClientCommands {
                         stand = findLookedAtArmorStand(player, 6.0D);
                     }
                     if (stand == null) {
+                        stand = findCrosshairArmorStand(mc);
+                    }
+                    if (stand == null) {
                         c.getSource().sendError(Component.translatable("cmd.ee.armorstand.no_target")
                                 .withStyle(ChatFormatting.RED));
                         return 0;
                     }
 
                     int entityId = stand.getId();
-                    mc.execute(() -> {
-                        Screen parent = mc.screen;
-                        mc.setScreen(new com.dutchmtc.ee.gui.GuiArmorStandEditor(parent, entityId, true));
-                    });
+                    // Always defer opening to the end of the next client tick; otherwise the chat screen can close
+                    // after the command executes and overwrite setScreen() (observed on 1.21.10).
+                    pendingArmorStandOpen = new PendingArmorStandOpen(entityId, true);
                     return 1;
                 });
 
@@ -436,6 +456,85 @@ public class ClientCommands {
             return null;
         }
         return hit.getEntity() instanceof ArmorStand a ? a : null;
+    }
+
+    private static void onEndClientTick(Minecraft client) {
+        PendingArmorStandOpen pending = pendingArmorStandOpen;
+        if (pending == null) {
+            return;
+        }
+        pendingArmorStandOpen = null;
+
+        client.execute(() -> {
+            Screen parent = client.screen;
+            client.setScreen(new com.dutchmtc.ee.gui.GuiArmorStandEditor(parent, pending.entityId(), pending.showGetAsItemButton()));
+        });
+    }
+
+    private static void refreshClientHitResult(Minecraft mc, double reach) {
+        if (mc == null) {
+            return;
+        }
+        Method method = pickMethod;
+        if (!pickMethodSearched) {
+            pickMethodSearched = true;
+            method = findPickMethod(mc.getClass());
+            pickMethod = method;
+        }
+        if (method == null) {
+            return;
+        }
+        try {
+            method.invoke(mc, reach, 1.0F, false);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static Method findPickMethod(Class<?> mcClass) {
+        for (Method method : mcClass.getMethods()) {
+            if (!HitResult.class.isAssignableFrom(method.getReturnType())) {
+                continue;
+            }
+            Class<?>[] params = method.getParameterTypes();
+            if (params.length != 3 || params[0] != double.class || params[1] != float.class || params[2] != boolean.class) {
+                continue;
+            }
+            method.setAccessible(true);
+            return method;
+        }
+        return null;
+    }
+
+    private static ArmorStand findCrosshairArmorStand(Minecraft mc) {
+        if (mc == null) {
+            return null;
+        }
+        List<Field> fields = minecraftEntityFields;
+        if (!crosshairFieldSearched) {
+            crosshairFieldSearched = true;
+            fields = new ArrayList<>();
+            for (Field field : mc.getClass().getDeclaredFields()) {
+                if (!Entity.class.isAssignableFrom(field.getType())) {
+                    continue;
+                }
+                field.setAccessible(true);
+                fields.add(field);
+            }
+            minecraftEntityFields = fields;
+        }
+        if (fields == null) {
+            return null;
+        }
+        for (Field field : fields) {
+            try {
+                Object value = field.get(mc);
+                if (value instanceof ArmorStand as) {
+                    return as;
+                }
+            } catch (Throwable ignored) {
+            }
+        }
+        return null;
     }
 
     private static void registerSpTp(LiteralArgumentBuilder<FabricClientCommandSource> root) {

@@ -2,6 +2,7 @@ package com.dutchmtc.ee.network;
 
 import com.dutchmtc.ee.EEMod;
 import com.dutchmtc.ee.utils.ArmorStandEditorUtils;
+import com.dutchmtc.ee.utils.PermissionCompat;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -11,7 +12,6 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.decoration.ArmorStand;
 
@@ -166,7 +166,7 @@ public final class EENetworking {
         if (player == null || player.level() == null) {
             return;
         }
-        if (!player.createCommandSourceStack().permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+        if (!PermissionCompat.hasGamemasterPermissions(player.createCommandSourceStack())) {
             return;
         }
 

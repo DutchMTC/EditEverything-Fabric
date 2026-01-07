@@ -5,6 +5,7 @@ import net.minecraft.client.gui.screens.debug.GameModeSwitcherScreen;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.world.level.GameType;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,11 +21,12 @@ public class GameModeSwitcherScreenMixin {
     @Inject(method = "render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", at = @At("HEAD"))
     private void ee$closeAndApplyWhenDebugKeyReleased(GuiGraphics graphics, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft == null || minecraft.options == null) {
+        if (minecraft == null || minecraft.getWindow() == null) {
             return;
         }
 
-        if (minecraft.options.keyDebugModifier.isDown()) {
+        long windowHandle = minecraft.getWindow().handle();
+        if (GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_F3) == GLFW.GLFW_PRESS) {
             ee$seenDebugModifierDown = true;
             return;
         }

@@ -3,13 +3,13 @@ package com.dutchmtc.ee.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.dutchmtc.ee.command.ModdedCommandHelp.CommandClickOption;
+import com.dutchmtc.ee.utils.PermissionCompat;
 import com.dutchmtc.ee.network.EENetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.phys.AABB;
@@ -27,7 +27,7 @@ public class ModdedCommandArmorStand extends ModdedCommand {
     @Override
     protected LiteralArgumentBuilder<CommandSourceStack> onArgument(LiteralArgumentBuilder<CommandSourceStack> command,
             CommandBuildContext context) {
-        return command.requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER));
+        return command.requires(PermissionCompat::hasGamemasterPermissions);
     }
 
     @Override

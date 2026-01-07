@@ -22,21 +22,21 @@ public final class ArmorStandItemUtils {
         CompoundTag out = tag.copy();
 
         // Never persist runtime state / location into an item.
-        out.remove("Pos");
-        out.remove("Motion");
-        out.remove("Rotation");
-        out.remove("FallDistance");
-        out.remove("OnGround");
-        out.remove("Air");
-        out.remove("Fire");
-        out.remove("PortalCooldown");
-        out.remove("UUID");
-        out.remove("UUIDMost");
-        out.remove("UUIDLeast");
-        out.remove("Dimension");
+        NbtCompat.remove(out, "Pos");
+        NbtCompat.remove(out, "Motion");
+        NbtCompat.remove(out, "Rotation");
+        NbtCompat.remove(out, "FallDistance");
+        NbtCompat.remove(out, "OnGround");
+        NbtCompat.remove(out, "Air");
+        NbtCompat.remove(out, "Fire");
+        NbtCompat.remove(out, "PortalCooldown");
+        NbtCompat.remove(out, "UUID");
+        NbtCompat.remove(out, "UUIDMost");
+        NbtCompat.remove(out, "UUIDLeast");
+        NbtCompat.remove(out, "Dimension");
 
         // Also drop any leftover id, just in case.
-        out.remove("id");
+        NbtCompat.remove(out, "id");
 
         return out;
     }

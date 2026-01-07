@@ -3,6 +3,7 @@ package com.dutchmtc.ee.gui.selector;
 import com.dutchmtc.ee.gui.ItemStackButtonWidget;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.Tuple;
+import com.dutchmtc.ee.utils.VersionCompat;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;

@@ -1,16 +1,14 @@
 package com.dutchmtc.ee.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.dutchmtc.ee.utils.GuiUtils;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.input.InputWithModifiers;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.item.ItemStack;
 
-public class ItemStackButtonWidget extends AbstractButton {
+public class ItemStackButtonWidget extends AbstractWidget {
     @FunctionalInterface
     public interface IItemStackPressable {
         void onPress(ItemStackButtonWidget button);
@@ -21,7 +19,8 @@ public class ItemStackButtonWidget extends AbstractButton {
 
     public ItemStackButtonWidget(int x, int y, ItemStack stack,
                                  IItemStackPressable pressable) {
-        super(x, y, 18, 18, stack.getDisplayName());
+        // Fully transparent widget: only the item is rendered (no button background).
+        super(x, y, 18, 18, net.minecraft.network.chat.Component.empty());
         this.stack = stack;
         this.pressable = pressable;
     }
@@ -31,19 +30,22 @@ public class ItemStackButtonWidget extends AbstractButton {
     }
 
     @Override
-    public void onPress(InputWithModifiers event) {
+    public void onClick(MouseButtonEvent event, boolean doubleClick) {
         pressable.onPress(this);
     }
 
     @Override
-    protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        GuiUtils.drawItemStack(graphics, stack, getX() + 1, getY() + 1);
-        if (isHoveredOrFocused())
-            GuiUtils.drawRect(graphics, getX(), getY(), getX() + 18, getY() + 18, 0x55cccccc);
+    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (stack != null && !stack.isEmpty()) {
+            GuiUtils.drawItemStack(graphics, stack, getX() + 1, getY() + 1);
+        }
+        if (isHoveredOrFocused()) {
+            GuiUtils.drawRect(graphics, getX(), getY(), getX() + 18, getY() + 18, 0x55FFFFFF);
+        }
     }
 
     @Override
     protected void updateWidgetNarration(NarrationElementOutput out) {
-        this.defaultButtonNarrationText(out);
+        out.add(NarratedElementType.TITLE, stack.getDisplayName());
     }
 }

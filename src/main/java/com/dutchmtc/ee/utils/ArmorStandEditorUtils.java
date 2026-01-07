@@ -195,7 +195,7 @@ public final class ArmorStandEditorUtils {
 
     private static void putStack(CompoundTag equipment, String key, ItemStack stack, HolderLookup.Provider registryAccess) {
         if (stack == null || stack.isEmpty()) {
-            equipment.remove(key);
+            NbtCompat.remove(equipment, key);
             return;
         }
         Tag saved = ItemUtils.saveStack(stack, registryAccess);

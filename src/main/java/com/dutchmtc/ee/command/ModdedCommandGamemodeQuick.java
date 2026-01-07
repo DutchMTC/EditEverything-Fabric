@@ -2,9 +2,9 @@ package com.dutchmtc.ee.command;
 
 import com.mojang.brigadier.Command;
 import com.dutchmtc.ee.command.ModdedCommandHelp.CommandClickOption;
+import com.dutchmtc.ee.utils.PermissionCompat;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.level.GameType;
 
 public class ModdedCommandGamemodeQuick extends ModdedCommand {
@@ -24,7 +24,7 @@ public class ModdedCommandGamemodeQuick extends ModdedCommand {
     protected Command<CommandSourceStack> onNoArgument() {
         return c -> {
             var source = c.getSource();
-            if (!source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)) {
+            if (!PermissionCompat.hasGamemasterPermissions(source)) {
                 return 0;
             }
             var player = source.getPlayerOrException();

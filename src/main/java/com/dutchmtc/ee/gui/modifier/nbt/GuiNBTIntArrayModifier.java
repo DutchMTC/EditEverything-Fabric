@@ -16,10 +16,12 @@ import java.util.function.Consumer;
 @GuiNBTList
 public class GuiNBTIntArrayModifier extends GuiListModifier<IntArrayTag> {
     private final List<Integer> list;
+    private final IntArrayTag originalArray;
 
     @SuppressWarnings("unchecked")
     public GuiNBTIntArrayModifier(Component title, Screen parent, Consumer<IntArrayTag> setter, IntArrayTag array) {
         super(parent, title, new ArrayList<>(), setter, new Tuple[0]);
+        this.originalArray = array.copy();
         this.list = new ArrayList<>();
         String k = "...";
         for (int i : array.getAsIntArray()) {
@@ -30,6 +32,11 @@ public class GuiNBTIntArrayModifier extends GuiListModifier<IntArrayTag> {
         setPaddingLeft(5);
         setPaddingTop(13 + Minecraft.getInstance().font.lineHeight);
         setNoAdaptativeSize(true);
+    }
+
+    @Override
+    public boolean isModified() {
+        return !get().equals(originalArray);
     }
 
     @Override

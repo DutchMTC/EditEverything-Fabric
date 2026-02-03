@@ -32,6 +32,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
+    private record EffectSnapshot(Identifier id, int duration, int amplifier, boolean ambient, boolean showParticles,
+                                  boolean showIcon) {
+    }
+
     private static class CustomPotionListElement extends ListElement {
         private final EditBox duration;
         private final EditBox amplifier;
@@ -229,6 +233,10 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
 
     private Potion main;
 
+    private final OptionalInt originalCustomColor;
+    private final Potion originalMain;
+    private final List<EffectSnapshot> originalEffects;
+
     private final Supplier<ListElement> supplier = () -> new CustomPotionListElement(this,
             new MobEffectInstance(MobEffects.SPEED));
 
@@ -236,11 +244,43 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
     public GuiPotionModifier(Screen parent, Consumer<PotionInformation> setter, PotionInformation info) {
         super(parent, Component.translatable("gui.ee.modifier.meta.potion"), new ArrayList<>(), setter,
                 new Tuple[0]);
+        this.originalCustomColor = info.getCustomColor();
+        this.originalMain = info.getMain();
+        this.originalEffects = snapshotEffects(info.getCustomEffects());
         this.customColor = info.getCustomColor();
         this.main = info.getMain();
         addListElement(new MainPotionListElement(this));
         info.getCustomEffects().forEach(t -> addListElement(new CustomPotionListElement(this, t)));
         addListElement(new AddElementList(this, supplier));
+    }
+
+    @Override
+    public boolean isModified() {
+        PotionInformation current = get();
+        if (!optionalIntEquals(current.getCustomColor(), originalCustomColor)) {
+            return true;
+        }
+        if (current.getMain() != originalMain) {
+            return true;
+        }
+        return !snapshotEffects(current.getCustomEffects()).equals(originalEffects);
+    }
+
+    private static boolean optionalIntEquals(OptionalInt a, OptionalInt b) {
+        if (a.isPresent() != b.isPresent()) {
+            return false;
+        }
+        return !a.isPresent() || a.getAsInt() == b.getAsInt();
+    }
+
+    private static List<EffectSnapshot> snapshotEffects(List<MobEffectInstance> effects) {
+        List<EffectSnapshot> snapshots = new ArrayList<>(effects.size());
+        for (MobEffectInstance effect : effects) {
+            Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(effect.getEffect().value());
+            snapshots.add(new EffectSnapshot(id, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(),
+                    effect.isVisible(), effect.showIcon()));
+        }
+        return snapshots;
     }
 
     @Override

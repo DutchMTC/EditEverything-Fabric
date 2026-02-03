@@ -46,7 +46,7 @@ public class ModdedCommandOpenGiver extends ModdedCommand {
                         .withStyle(ChatFormatting.RED));
                 return 0;
             }
-            var code = ItemUtils.getGiveCode(player.getItemInHand(InteractionHand.MAIN_HAND));
+            var code = ItemUtils.getGiveCode(player.getItemInHand(InteractionHand.MAIN_HAND), player.level().registryAccess());
             EENetworking.sendOpenGiver(player, code);
             return 1;
         };

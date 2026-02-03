@@ -16,6 +16,8 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -31,13 +33,19 @@ public class GuiGiver extends GuiModifier<String> {
     private ItemStack currentItemStack;
     private Consumer<String> setter;
     private boolean deleteButton;
+    private String lastCodeValue;
+    private String originalCodeValue;
+
+    private HolderLookup.Provider registryAccess() {
+        return mc.level != null ? mc.level.registryAccess() : VanillaRegistries.createLookup();
+    }
 
     public GuiGiver(Screen parent) {
         super(parent, Component.translatable("gui.ee.give"), s -> {
         });
         if (mc.player != null) {
             this.currentItemStack = mc.player.getMainHandItem();
-            this.preText = ItemUtils.getGiveCode(this.currentItemStack);
+            this.preText = ItemUtils.getGiveCode(this.currentItemStack, registryAccess());
         }
     }
 
@@ -48,7 +56,7 @@ public class GuiGiver extends GuiModifier<String> {
     public GuiGiver(Screen parent, ItemStack itemStack, Consumer<String> setter, boolean deleteButton) {
         super(parent, Component.translatable("gui.ee.give"), s -> {
         });
-        this.preText = itemStack != null ? ItemUtils.getGiveCode(itemStack) : "";
+        this.preText = itemStack != null ? ItemUtils.getGiveCode(itemStack, registryAccess()) : "";
         this.currentItemStack = itemStack;
         this.setter = setter;
         this.deleteButton = deleteButton;
@@ -60,8 +68,11 @@ public class GuiGiver extends GuiModifier<String> {
     }
 
     public GuiGiver(Screen parent, String preText, Consumer<String> setter, boolean deleteButton) {
-        this(parent, preText != null && !preText.isEmpty() ? ItemUtils.getFromGiveCode(preText) : null);
+        // Don't parse the item stack here: use the client's active registry access in tick/init.
+        this(parent, (ItemStack) null);
         this.preText = preText;
+        this.setter = setter;
+        this.deleteButton = deleteButton;
     }
 
     @Override
@@ -93,6 +104,7 @@ public class GuiGiver extends GuiModifier<String> {
         code.setMaxLength(Integer.MAX_VALUE);
         if (preText != null)
             code.setValue(preText.replaceAll(String.valueOf(ChatUtils.MODIFIER), "&"));
+        originalCodeValue = code.getValue();
         addRenderableWidget(code);
         int s1 = deleteButton ? 120 : 180;
         int s2 = 120;
@@ -112,7 +124,7 @@ public class GuiGiver extends GuiModifier<String> {
         }));
         if (setter != null)
             addRenderableWidget(new EEButton(width / 2 - 58, height / 2 + 42, s2 - 2, 20,
-                    Component.translatable("gui.ee.cancel"), b -> getMinecraft().setScreen(parent)));
+                    Component.translatable("gui.ee.cancel"), b -> onCancel()));
         else
             saveButton = addRenderableWidget(new EEButton(width / 2 - 58, height / 2 + 42, s2 - 2, 20,
                     Component.translatable("gui.ee.save"), b -> {
@@ -132,25 +144,36 @@ public class GuiGiver extends GuiModifier<String> {
         tick();
     }
 
+    @Override
+    public boolean isModified() {
+        return code != null && originalCodeValue != null && !code.getValue().equals(originalCodeValue);
+    }
+
     private void setCurrent(ItemStack currentItemStack) {
-        preText = ItemUtils.getGiveCode(this.currentItemStack = currentItemStack);
+        preText = ItemUtils.getGiveCode(this.currentItemStack = currentItemStack, registryAccess());
     }
 
     public void setCurrentItemStack(ItemStack currentItemStack) {
         this.currentItemStack = currentItemStack;
-        this.preText = ItemUtils.getGiveCode(currentItemStack);
+        this.preText = ItemUtils.getGiveCode(currentItemStack, registryAccess());
     }
 
     public void setPreText(String preText) {
         this.preText = preText;
-        this.currentItemStack = preText != null && !preText.isEmpty() ? ItemUtils.getFromGiveCode(preText) : null;
+        this.currentItemStack = preText != null && !preText.isEmpty()
+                ? ItemUtils.getFromGiveCode(preText, registryAccess())
+                : null;
     }
 
     @Override
     public void tick() {
         // code.tick();
-        this.currentItemStack = ItemUtils
-                .getFromGiveCode(code.getValue().replaceAll("&", String.valueOf(ChatUtils.MODIFIER)));
+        String codeValue = code.getValue();
+        if (!codeValue.equals(lastCodeValue)) {
+            this.lastCodeValue = codeValue;
+            this.currentItemStack = ItemUtils
+                    .getFromGiveCode(ChatUtils.translateColorCodes(codeValue), registryAccess());
+        }
         this.giveButton.active = this.currentItemStack != null && getMinecraft().player != null
                 && getMinecraft().player.isCreative();
         this.doneButton.active = setter == null || this.currentItemStack != null;

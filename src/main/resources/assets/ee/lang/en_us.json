@@ -6,7 +6,7 @@
   "key.ee.edit": "Edit in-hand item",
 
   "key.ee": "Edit Everything",
-  "key.category.ee.key.ee": "Edit Everything",
+  "key.category.ee.key.act": "Edit Everything",
   "key.categories.ee.key.ee": "Edit Everything",
   "itemGroup.ee": "Edit Everything",
 
@@ -38,6 +38,11 @@
   "gui.ee.new": "New",
   "gui.ee.discard_changes_question": "Discard changes?",
   "gui.ee.discard": "Discard",
+  "gui.ee.confirmation": "Confirmation",
+  "gui.ee.inventory": "Item from Inventory",
+  "gui.ee.copy_components_question": "Copy data from the selected item?",
+  "gui.ee.keep_components": "Use existing data",
+  "gui.ee.copy_components": "Copy data",
 
   "gui.ee.armorstand.title": "Armor Stand Editor",
   "gui.ee.armorstand.tab.pose": "Pose",

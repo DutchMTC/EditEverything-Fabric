@@ -15,11 +15,13 @@ import java.util.function.Consumer;
 
 @GuiNBTList
 public class GuiNBTListModifier extends GuiListModifier<ListTag> {
+    private final ListTag originalList;
     private final ListTag list;
 
     @SuppressWarnings("unchecked")
     public GuiNBTListModifier(Component title, Screen parent, Consumer<ListTag> setter, ListTag list) {
         super(parent, title, new ArrayList<>(), setter, new Tuple[0]);
+        this.originalList = list.copy();
         this.list = list.copy();
         String k = "...";
         for (Tag base : list) {
@@ -38,6 +40,11 @@ public class GuiNBTListModifier extends GuiListModifier<ListTag> {
         setPaddingLeft(5);
         setPaddingTop(13 + Minecraft.getInstance().font.lineHeight);
         setNoAdaptativeSize(true);
+    }
+
+    @Override
+    public boolean isModified() {
+        return !get().equals(originalList);
     }
 
     @Override

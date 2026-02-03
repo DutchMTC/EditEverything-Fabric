@@ -217,7 +217,8 @@ public class ItemUtils {
 
     public static Tag saveStack(ItemStack stack, net.minecraft.core.HolderLookup.Provider registryAccess) {
         return ItemStack.CODEC.encodeStart(registryAccess.createSerializationContext(NbtOps.INSTANCE), stack)
-                .getOrThrow(IllegalStateException::new);
+                .resultOrPartial(error -> EEMod.LOGGER.error("Failed to save stack: {}", error))
+                .orElseGet(CompoundTag::new);
     }
 
     public static ItemStack parseStack(net.minecraft.core.HolderLookup.Provider registryAccess, CompoundTag tag) {
@@ -642,22 +643,39 @@ public class ItemUtils {
     }
 
     public static ItemStack getFromGiveCode(String code) {
+        return getFromGiveCode(code, null);
+    }
+
+    public static ItemStack getFromGiveCode(String code, @Nullable net.minecraft.core.HolderLookup.Provider registryAccess) {
         if (code == null || code.isEmpty()) {
             return null;
         }
-        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createLookup();
+        if (registryAccess == null) {
+            registryAccess = VanillaRegistries.createLookup();
+        }
         return new ItemReader(registryAccess).readItem(code);
     }
 
     public static String getGiveCode(ItemStack itemStack) {
-        return getGiveCode(itemStack, true);
+        return getGiveCode(itemStack, (net.minecraft.core.HolderLookup.Provider) null, true);
     }
 
     public static String getGiveCode(ItemStack itemStack, boolean showCount) {
+        return getGiveCode(itemStack, (net.minecraft.core.HolderLookup.Provider) null, showCount);
+    }
+
+    public static String getGiveCode(ItemStack itemStack, @Nullable net.minecraft.core.HolderLookup.Provider registryAccess) {
+        return getGiveCode(itemStack, registryAccess, true);
+    }
+
+    public static String getGiveCode(ItemStack itemStack, @Nullable net.minecraft.core.HolderLookup.Provider registryAccess,
+                                     boolean showCount) {
         if (itemStack.isEmpty()) {
             return "";
         }
-        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createLookup();
+        if (registryAccess == null) {
+            registryAccess = VanillaRegistries.createLookup();
+        }
 
         Identifier itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
         StringBuilder builder = new StringBuilder(itemId.toString());

@@ -201,6 +201,7 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
     }
 
     public static class GuiExplosionModifier extends GuiModifier<ExplosionInformation> {
+        private final CompoundTag originalTag;
         private final ExplosionInformation exp;
         private final ColorList colors;
         private final ColorList fadeColors;
@@ -208,11 +209,18 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
 
         public GuiExplosionModifier(Screen parent, Consumer<ExplosionInformation> setter, ExplosionInformation exp) {
             super(parent, Component.translatable("gui.ee.modifier.meta.fireworks"), setter);
+            this.originalTag = exp.getTag();
             this.exp = exp.clone();
             colors = new ColorList(this, 0, 0, 6, exp.getColors(), I18n.get("gui.ee.modifier.meta.explosion.color"),
                     24);
             fadeColors = new ColorList(this, 0, 0, 6, exp.getFadeColors(),
                     I18n.get("gui.ee.modifier.meta.explosion.fadeColor"), 24);
+        }
+
+        @Override
+        public boolean isModified() {
+            CompoundTag current = exp.clone().colors(colors.getColors()).fadeColors(fadeColors.getColors()).getTag();
+            return !current.equals(originalTag);
         }
 
         private void defineButton() {
@@ -242,13 +250,13 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
             addRenderableWidget(new GuiBooleanButton(width / 2 - 200, height / 2, 199, 20,
                     Component.translatable("item.minecraft.firework_star.flicker"), exp::flicker, exp::isFlicker));
 
+            addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 100, 20,
+                    Component.translatable("gui.ee.cancel"), b -> onCancel()));
             addRenderableWidget(
-                    new EEButton(width / 2 - 100, height / 2 + 21, 99, 20, Component.translatable("gui.done"), b -> {
+                    new EEButton(width / 2 + 1, height / 2 + 21, 99, 20, Component.translatable("gui.done"), b -> {
                         set(exp.colors(colors.getColors()).fadeColors(fadeColors.getColors()));
                         getMinecraft().setScreen(parent);
                     }));
-            addRenderableWidget(new EEButton(width / 2 - 200, height / 2 + 21, 99, 20,
-                    Component.translatable("gui.ee.cancel"), b -> getMinecraft().setScreen(parent)));
             defineButton();
             super.init();
         }
@@ -276,6 +284,7 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
         }
     }
 
+    private final CompoundTag originalTag;
     private final FireworkMainListElement main;
     private final Supplier<ListElement> builder = () -> new ExplosionListElement(this, null);
 
@@ -283,6 +292,7 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
     public GuiFireworksModifer(Screen parent, Consumer<CompoundTag> setter, CompoundTag tag) {
         super(parent, Component.translatable("gui.ee.modifier.meta.fireworks"), new ArrayList<>(), setter,
                 new Tuple[0]);
+        this.originalTag = normalizeOriginal(tag);
         addListElement(main = new FireworkMainListElement(tag.getInt("Flight").orElse(1)));
         tag.getList("Explosions").orElse(new ListTag())
                 .forEach(base -> {
@@ -302,6 +312,29 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
                 .forEach(le -> explosions.add(((ExplosionListElement) le).exp.getTag()));
         newTag.put(ItemUtils.NBT_CHILD_EXPLOSIONS, explosions);
         return newTag;
+    }
+
+    @Override
+    public boolean isModified() {
+        main.update(); // ensure latest flight value is parsed before comparing
+        return !get().equals(originalTag);
+    }
+
+    private static CompoundTag normalizeOriginal(CompoundTag tag) {
+        CompoundTag normalized = new CompoundTag();
+        int flight = tag != null ? tag.getInt("Flight").orElse(1) : 1;
+        normalized.putInt("Flight", flight);
+
+        ListTag explosions = new ListTag();
+        if (tag != null) {
+            tag.getList(ItemUtils.NBT_CHILD_EXPLOSIONS).orElse(new ListTag()).forEach(base -> {
+                if (base instanceof CompoundTag ct) {
+                    explosions.add(ItemUtils.getExplosionInformation(ct).getTag());
+                }
+            });
+        }
+        normalized.put(ItemUtils.NBT_CHILD_EXPLOSIONS, explosions);
+        return normalized;
     }
 
 }

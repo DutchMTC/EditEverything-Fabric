@@ -28,7 +28,7 @@ public class GuiStringModifier extends GuiModifier<String> {
     @Override
     public boolean isModified() {
         if (field == null) return false;
-        return !field.getValue().replaceAll("&", String.valueOf(ChatUtils.MODIFIER)).equals(originalValue);
+        return !ChatUtils.translateColorCodes(field.getValue()).equals(originalValue);
     }
 
     @Override
@@ -52,13 +52,13 @@ public class GuiStringModifier extends GuiModifier<String> {
         field.setFocused(true);
         field.setCanLoseFocus(false);
         addRenderableWidget(field);
-        addRenderableWidget(
-                new EEButton(width / 2 - 100, height / 2, 200, 20, Component.translatable("gui.done"), b -> {
-                    set(value = field.getValue().replaceAll("&", String.valueOf(ChatUtils.MODIFIER)));
-                    getMinecraft().setScreen(parent);
-                }));
-        addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
+        int btnY = height / 2 + 2;
+        addRenderableWidget(new EEButton(width / 2 - 100, btnY, 100, 20,
                 Component.translatable("gui.ee.cancel"), b -> onCancel()));
+        addRenderableWidget(new EEButton(width / 2 + 1, btnY, 99, 20, Component.translatable("gui.done"), b -> {
+            set(value = ChatUtils.translateColorCodes(field.getValue()));
+            getMinecraft().setScreen(parent);
+        }));
         super.init();
     }
 

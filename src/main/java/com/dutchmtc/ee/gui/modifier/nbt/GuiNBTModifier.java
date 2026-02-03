@@ -18,6 +18,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class GuiNBTModifier extends GuiListModifier<CompoundTag> {
+    private final CompoundTag originalTag;
 
     public static final BiConsumer<Integer, GuiListModifier<?>> ADD_ELEMENT = (i, lm) -> {
         final GuiStringModifier modifier = new GuiStringModifier(lm, Component.translatable("gui.ee.modifier.name"),
@@ -72,12 +73,18 @@ public class GuiNBTModifier extends GuiListModifier<CompoundTag> {
     @SuppressWarnings("unchecked")
     public GuiNBTModifier(Component title, Screen parent, Consumer<CompoundTag> setter, CompoundTag tag) {
         super(parent, title, new ArrayList<>(), setter, true, true, new Tuple[0]);
+        this.originalTag = tag.copy();
         addListElement(new ButtonElementList(200, 21, 200, 20, Component.literal("+").withStyle(ChatFormatting.GREEN),
                 () -> ADD_ELEMENT.accept(null, this), null));
         tag.forEach(this::addElement);
         setPaddingLeft(5);
         setPaddingTop(13 + Minecraft.getInstance().font.lineHeight);
         setNoAdaptativeSize(true);
+    }
+
+    @Override
+    public boolean isModified() {
+        return !get().equals(originalTag);
     }
 
     private void addElement(int i, String key, Tag base) {

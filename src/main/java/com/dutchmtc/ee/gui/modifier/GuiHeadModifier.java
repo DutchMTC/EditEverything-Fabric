@@ -38,6 +38,7 @@ import java.util.function.Consumer;
 
 public class GuiHeadModifier extends GuiModifier<ItemStack> {
     private final ItemStack stack;
+    private final ItemStack originalStack;
     private EditBox name;
     private EditBox uuid;
     private EditBox link;
@@ -49,6 +50,12 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
     public GuiHeadModifier(Screen parent, Consumer<ItemStack> setter, ItemStack stack) {
         super(parent, Component.translatable("gui.ee.modifier.head"), setter);
         this.stack = stack.copy();
+        this.originalStack = this.stack.copy();
+    }
+
+    @Override
+    public boolean isModified() {
+        return !ItemStack.matches(stack, originalStack);
     }
 
     @Override
@@ -251,7 +258,7 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
                 }));
         if (setter != null)
             addRenderableWidget(new EEButton(width / 2 - 180, height / 2 + 42, 180, 20,
-                    Component.translatable("gui.ee.cancel"), b -> getMinecraft().setScreen(parent)));
+                    Component.translatable("gui.ee.cancel"), b -> onCancel()));
         addRenderableWidget(
                 new EEButton(width / 2 + 1, height / 2 + 42, 179, 20, Component.translatable("gui.done"), b -> {
                     set(stack);

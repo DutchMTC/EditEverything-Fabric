@@ -15,6 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -43,6 +44,7 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     private static final int SLIDER_W = 128;
     private static final int AMOUNT_W = 56;
 
+    private final EquipmentData originalData;
     private final EquipmentData data;
     private final Component title;
     private final List<Component> slotNames;
@@ -54,9 +56,22 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     public GuiSpawnEggEquipmentModifier(Screen parent, Component title, Consumer<EquipmentData> setter,
             EquipmentData data, List<Component> slotNames) {
         super(parent, Component.literal("Equipment"), setter);
+        this.originalData = data.copy();
         this.data = data.copy();
         this.title = title;
         this.slotNames = slotNames;
+    }
+
+    @Override
+    public boolean isModified() {
+        if (!data.equipment().equals(originalData.equipment())) {
+            return true;
+        }
+        return !Arrays.equals(dropChancesOrEmpty(data.dropChances()), dropChancesOrEmpty(originalData.dropChances()));
+    }
+
+    private static float[] dropChancesOrEmpty(float[] dropChances) {
+        return dropChances != null ? dropChances : new float[0];
     }
 
     private int panelLeft() {
@@ -94,14 +109,14 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
         int left = panelLeft();
         int top = panelTop();
 
+        addRenderableWidget(new EEButton(width / 2 - 96, top + panelH - 26, 94, 20,
+                Component.translatable("gui.ee.cancel"), b -> onCancel()));
         addRenderableWidget(
-                new EEButton(width / 2 - 96, top + panelH - 26, 94, 20, Component.translatable("gui.done"), b -> {
+                new EEButton(width / 2 + 2, top + panelH - 26, 94, 20, Component.translatable("gui.done"), b -> {
                     applyAmountsFromFields();
                     set(data);
                     mc.setScreen(parent);
                 }));
-        addRenderableWidget(new EEButton(width / 2 + 2, top + panelH - 26, 94, 20,
-                Component.translatable("gui.cancel"), b -> mc.setScreen(parent)));
 
         for (int slot = 0; slot < 8; slot++) {
             int y = rowY(top, slot);

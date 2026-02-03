@@ -67,12 +67,12 @@ public class GuiMetaModifier extends GuiModifier<ItemStack> {
                 Component.translatable("gui.ee.modifier.tag.editor"), b -> getMinecraft().setScreen(new GuiNBTModifier(GuiMetaModifier.this, tag -> ItemUtils.setTag(stack, tag),
                 ItemUtils.getTag(stack) != null ? ItemUtils.getTag(stack) : new CompoundTag()))));
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2 - 71 + 21 * ++i, 100, 20,
+                Component.translatable("gui.ee.cancel"), b -> onCancel()));
+        addRenderableWidget(new EEButton(width / 2 + 1, height / 2 - 71 + 21 * i, 99, 20,
                 Component.translatable("gui.done"), b -> {
             set(stack);
             getMinecraft().setScreen(parent);
         }));
-        addRenderableWidget(new EEButton(width / 2 + 1, height / 2 - 71 + 21 * i, 99, 20,
-                Component.translatable("gui.ee.cancel"), b -> onCancel()));
         super.init();
     }
 

@@ -32,6 +32,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
@@ -231,7 +232,9 @@ public class EEModClient implements ClientModInitializer {
                 }
                 if (KeyBindingHelper.getBoundKeyOf(menu).getValue() != 0) {
                     if (isKeyDown(KeyBindingHelper.getBoundKeyOf(menu).getValue())) {
-                        String code = ItemUtils.getGiveCode(stack).replace(com.dutchmtc.ee.utils.ChatUtils.MODIFIER, '&');
+                        var registryAccess = mc.level != null ? mc.level.registryAccess() : VanillaRegistries.createLookup();
+                        String code = ItemUtils.getGiveCode(stack, registryAccess)
+                                .replace(com.dutchmtc.ee.utils.ChatUtils.MODIFIER, '&');
                         EEMod.saveItem(code);
                         mc.setScreen(new GuiMenu(mc.screen));
                     }
@@ -266,6 +269,10 @@ public class EEModClient implements ClientModInitializer {
     public static void openGiver() {
         Minecraft mc = Minecraft.getInstance();
         assert mc.player != null;
+        if (!mc.player.isCreative()) {
+            mc.player.displayClientMessage(Component.translatable("gui.ee.nocreative").withStyle(ChatFormatting.RED), false);
+            return;
+        }
         final int slot = mc.player.getInventory().getSelectedSlot();
         GuiUtils.displayScreen(new GuiItemStackModifier(null, mc.player.getMainHandItem().copy(),
                 is -> ItemUtilsClient.give(is, 36 + slot)));

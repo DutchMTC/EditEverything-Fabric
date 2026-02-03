@@ -122,6 +122,34 @@ public class ChatUtils {
         send(getPrefix().append(message));
     }
 
+    /**
+     * Translate & to § only if it is followed by a valid color code
+     * @param text the text to translate
+     * @return the translated text
+     */
+    public static String translateColorCodes(String text) {
+        if (text == null) return null;
+        StringBuilder b = new StringBuilder();
+        char[] chars = text.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            if (c == '&' && i + 1 < chars.length) {
+                char next = chars[i + 1];
+                if ((next >= '0' && next <= '9') || (next >= 'a' && next <= 'f') || (next >= 'k' && next <= 'o') || next == 'r') {
+                    b.append(MODIFIER);
+                } else if ((next >= 'A' && next <= 'F') || (next >= 'K' && next <= 'O') || next == 'R') {
+                    b.append(MODIFIER);
+                    chars[i+1] = Character.toLowerCase(next);
+                } else {
+                    b.append(c);
+                }
+            } else {
+                b.append(c);
+            }
+        }
+        return b.toString();
+    }
+
     private ChatUtils() {
     }
 }

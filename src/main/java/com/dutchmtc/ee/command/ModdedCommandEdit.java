@@ -24,6 +24,11 @@ public class ModdedCommandEdit extends ModdedCommand {
                         .withStyle(ChatFormatting.RED));
                 return 0;
             }
+            if (!player.isCreative()) {
+                source.sendFailure(Component.translatable("gui.ee.nocreative")
+                        .withStyle(ChatFormatting.RED));
+                return 0;
+            }
             EENetworking.sendOpenEditor(player);
             return 1;
         };

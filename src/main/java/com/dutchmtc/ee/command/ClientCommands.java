@@ -318,7 +318,7 @@ public class ClientCommands {
                             ItemStack item = mc.player.getMainHandItem();
                             if (item.isEmpty()) return 0;
                             
-                            String coloredName = name.replace('&', '\u00a7');
+                            String coloredName = com.dutchmtc.ee.utils.ChatUtils.translateColorCodes(name);
                             item.set(DataComponents.CUSTOM_NAME, Component.literal(coloredName));
                             int slot = 36 + mc.player.getInventory().getSelectedSlot();
                             ItemUtilsClient.give(item, slot);
@@ -652,10 +652,7 @@ public class ClientCommands {
         var gm = ClientCommandManager.literal("gm");
         
         for (GameType gametype : GameType.values()) {
-            gm.then(ClientCommandManager.literal(gametype.getName()).executes(c -> {
-                sendGamemodeCommand(gametype.getName());
-                return 1;
-            }));
+            gm.then(clientGamemodeLiteral(gametype.getName(), gametype.getName()));
         }
         
         // /gm <int>
@@ -665,36 +662,65 @@ public class ClientCommands {
                     GameType type = GameType.byId(id);
                     sendGamemodeCommand(type.getName());
                     return 1;
-                }));
+                })
+                .then(ClientCommandManager.argument("player", StringArgumentType.word()).executes(c -> {
+                    int id = IntegerArgumentType.getInteger(c, "gamemodeid");
+                    GameType type = GameType.byId(id);
+                    String player = StringArgumentType.getString(c, "player");
+                    sendGamemodeCommand(type.getName(), player);
+                    return 1;
+                })));
                 
         // Shortcuts: gmc, gms, gma, gmsp
-        dispatcher.register(ClientCommandManager.literal("gmc").executes(c -> { sendGamemodeCommand("creative"); return 1; }));
-        dispatcher.register(ClientCommandManager.literal("gms").executes(c -> { sendGamemodeCommand("survival"); return 1; }));
-        dispatcher.register(ClientCommandManager.literal("gma").executes(c -> { sendGamemodeCommand("adventure"); return 1; }));
-        dispatcher.register(ClientCommandManager.literal("gmsp").executes(c -> { sendGamemodeCommand("spectator"); return 1; }));
+        dispatcher.register(clientGamemodeLiteral("gmc", "creative"));
+        dispatcher.register(clientGamemodeLiteral("gms", "survival"));
+        dispatcher.register(clientGamemodeLiteral("gma", "adventure"));
+        dispatcher.register(clientGamemodeLiteral("gmsp", "spectator"));
         
         // Aliases for /gm <gamemode>
-        gm.then(ClientCommandManager.literal("c").executes(c -> { sendGamemodeCommand("creative"); return 1; }));
-        gm.then(ClientCommandManager.literal("1").executes(c -> { sendGamemodeCommand("creative"); return 1; }));
-        gm.then(ClientCommandManager.literal("creative").executes(c -> { sendGamemodeCommand("creative"); return 1; }));
+        gm.then(clientGamemodeLiteral("c", "creative"));
+        gm.then(clientGamemodeLiteral("1", "creative"));
+        gm.then(clientGamemodeLiteral("creative", "creative"));
         
-        gm.then(ClientCommandManager.literal("s").executes(c -> { sendGamemodeCommand("survival"); return 1; }));
-        gm.then(ClientCommandManager.literal("0").executes(c -> { sendGamemodeCommand("survival"); return 1; }));
-        gm.then(ClientCommandManager.literal("survival").executes(c -> { sendGamemodeCommand("survival"); return 1; }));
+        gm.then(clientGamemodeLiteral("s", "survival"));
+        gm.then(clientGamemodeLiteral("0", "survival"));
+        gm.then(clientGamemodeLiteral("survival", "survival"));
         
-        gm.then(ClientCommandManager.literal("a").executes(c -> { sendGamemodeCommand("adventure"); return 1; }));
-        gm.then(ClientCommandManager.literal("2").executes(c -> { sendGamemodeCommand("adventure"); return 1; }));
-        gm.then(ClientCommandManager.literal("adventure").executes(c -> { sendGamemodeCommand("adventure"); return 1; }));
+        gm.then(clientGamemodeLiteral("a", "adventure"));
+        gm.then(clientGamemodeLiteral("2", "adventure"));
+        gm.then(clientGamemodeLiteral("adventure", "adventure"));
         
-        gm.then(ClientCommandManager.literal("sp").executes(c -> { sendGamemodeCommand("spectator"); return 1; }));
-        gm.then(ClientCommandManager.literal("3").executes(c -> { sendGamemodeCommand("spectator"); return 1; }));
-        gm.then(ClientCommandManager.literal("spectator").executes(c -> { sendGamemodeCommand("spectator"); return 1; }));
+        gm.then(clientGamemodeLiteral("sp", "spectator"));
+        gm.then(clientGamemodeLiteral("3", "spectator"));
+        gm.then(clientGamemodeLiteral("spectator", "spectator"));
 
         dispatcher.register(gm);
     }
     
     private static void sendGamemodeCommand(String gamemode) {
-        Minecraft.getInstance().getConnection().sendCommand("gamemode " + gamemode);
+        sendGamemodeCommand(gamemode, null);
+    }
+
+    private static void sendGamemodeCommand(String gamemode, String player) {
+        String command = "gamemode " + gamemode;
+        if (player != null && !player.isBlank()) {
+            command += " " + player;
+        }
+        Minecraft.getInstance().getConnection().sendCommand(command);
+    }
+
+    private static LiteralArgumentBuilder<FabricClientCommandSource> clientGamemodeLiteral(String literal,
+                                                                                           String gamemode) {
+        return ClientCommandManager.literal(literal)
+                .executes(c -> {
+                    sendGamemodeCommand(gamemode);
+                    return 1;
+                })
+                .then(ClientCommandManager.argument("player", StringArgumentType.word()).executes(c -> {
+                    String player = StringArgumentType.getString(c, "player");
+                    sendGamemodeCommand(gamemode, player);
+                    return 1;
+                }));
     }
 
     private static void showHelp(FabricClientCommandSource source) {

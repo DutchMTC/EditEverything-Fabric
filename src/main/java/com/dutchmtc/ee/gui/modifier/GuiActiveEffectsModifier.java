@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>> {
+    private final List<CompoundTag> originalEffects;
 
     static class ActiveEffectListElement extends ListElement {
         private final EditBox duration;
@@ -221,8 +222,60 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
     @SuppressWarnings("unchecked")
     public GuiActiveEffectsModifier(Screen parent, List<CompoundTag> effects, Consumer<List<CompoundTag>> setter) {
         super(parent, Component.translatable("gui.ee.modifier.meta.potion"), new ArrayList<>(), setter, new Tuple[0]);
+        this.originalEffects = normalizeOriginal(effects);
         effects.forEach(effect -> addListElement(new ActiveEffectListElement(this, effect)));
         addListElement(new AddElementList(this, supplier));
+    }
+
+    @Override
+    public boolean isModified() {
+        List<CompoundTag> current = get();
+        if (current.size() != originalEffects.size()) {
+            return true;
+        }
+        for (int i = 0; i < current.size(); i++) {
+            if (!current.get(i).equals(originalEffects.get(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<CompoundTag> normalizeOriginal(List<CompoundTag> effects) {
+        List<CompoundTag> normalized = new ArrayList<>();
+        for (CompoundTag tag : effects) {
+            normalized.add(normalizeEffectTag(tag));
+        }
+        return normalized;
+    }
+
+    private static CompoundTag normalizeEffectTag(CompoundTag tag) {
+        MobEffect potion = null;
+
+        if (ItemUtils.hasTag(tag, "id", 8)) { // String
+            var id = Identifier.tryParse(ItemUtils.getString(tag, "id"));
+            potion = id != null ? BuiltInRegistries.MOB_EFFECT.get(id).map(Holder.Reference::value).orElse(null) : null;
+        } else if (ItemUtils.hasTag(tag, "Id", 3)) { // Int (Legacy)
+            potion = BuiltInRegistries.MOB_EFFECT.byId(ItemUtils.getInt(tag, "Id"));
+        }
+
+        if (potion == null) {
+            potion = MobEffects.SPEED.value();
+        }
+
+        CompoundTag normalized = new CompoundTag();
+        Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
+        if (id != null) {
+            normalized.putString("id", id.toString());
+        }
+        normalized.putByte("Amplifier", (byte) ItemUtils.getByte(tag, "Amplifier"));
+        normalized.putInt("Duration", ItemUtils.getInt(tag, "Duration"));
+        normalized.putBoolean("Ambient", ItemUtils.getBoolean(tag, "Ambient"));
+        boolean showParticles = ItemUtils.hasTag(tag, "ShowParticles", 1) ? ItemUtils.getBoolean(tag, "ShowParticles") : true;
+        boolean showIcon = ItemUtils.hasTag(tag, "ShowIcon", 1) ? ItemUtils.getBoolean(tag, "ShowIcon") : true;
+        normalized.putBoolean("ShowParticles", showParticles);
+        normalized.putBoolean("ShowIcon", showIcon);
+        return normalized;
     }
 
     @Override

@@ -37,7 +37,7 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	
 	// Mod Menu
-	modImplementation "com.terraformersmc:modmenu:11.0.3"
+	modCompileOnly "com.terraformersmc:modmenu:11.0.3"
 
 	annotationProcessor "net.fabricmc:sponge-mixin:0.17.0+mixin.0.8.7"
 	annotationProcessor "net.fabricmc:fabric-mixin-compile-extensions:0.6.0"
@@ -63,6 +63,11 @@ java {
 
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
+}
+
+tasks.named("sourcesJar", Jar).configure {
+	// Prevent the sources JAR from being picked up as a Fabric mod if it ends up in a mods folder.
+	exclude("fabric.mod.json")
 }
 
 jar {

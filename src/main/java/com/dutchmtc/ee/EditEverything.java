@@ -77,7 +77,7 @@ public class EditEverything {
     private void accept(CreativeModeTab.ItemDisplayParameters params, CreativeModeTab.Output output) {
         output.acceptAll(subItems);
         EEMod.getCustomItems().stream()
-                .map(s -> s.replaceAll("&", "" + EEMod.FORMAT_CHAR))
+                .map(com.dutchmtc.ee.utils.ChatUtils::translateColorCodes)
                 .map(ItemUtils::getFromGiveCode)
                 .peek(s -> s.setCount(1))
                 .forEach(output::accept);

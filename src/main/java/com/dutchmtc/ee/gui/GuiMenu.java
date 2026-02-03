@@ -18,6 +18,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.data.registries.VanillaRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
@@ -27,6 +29,10 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class GuiMenu extends GuiListModifier<Object> {
+    private HolderLookup.Provider registryAccess() {
+        return mc.level != null ? mc.level.registryAccess() : VanillaRegistries.createLookup();
+    }
+
     private static class MenuListElement extends ListElement {
         private final GuiMenu parent;
         private ItemStack stack;
@@ -76,7 +82,7 @@ public class GuiMenu extends GuiListModifier<Object> {
                         parent.addListElement(i, new MenuListElement(parent, stack.copy()));
                     } else
                         mc.setScreen(new GuiGiver(parent, stack, s -> {
-                            ItemStack is = ItemUtils.getFromGiveCode(s);
+                            ItemStack is = ItemUtils.getFromGiveCode(s, parent.registryAccess());
                             if (is != null)
                                 stack = is;
                             else
@@ -92,8 +98,9 @@ public class GuiMenu extends GuiListModifier<Object> {
         }
     }
 
+    private boolean initialized = false;
     private final Consumer<String> ADD_STACK = i -> {
-        ItemStack is = ItemUtils.getFromGiveCode(i.replaceAll("&", String.valueOf(ChatUtils.MODIFIER)));
+        ItemStack is = ItemUtils.getFromGiveCode(ChatUtils.translateColorCodes(i), registryAccess());
         if (is != null)
             addListElement(getElements().size() - 1, new MenuListElement(this, is));
         else
@@ -131,6 +138,25 @@ public class GuiMenu extends GuiListModifier<Object> {
         addListElement(new ButtonElementList(24, 24, 20, 20, Component.literal("+").withStyle(ChatFormatting.GREEN),
                 ADD, null));
         EEMod.getCustomItems().forEach(ADD_STACK);
+        initialized = true;
+    }
+
+    @Override
+    public void addListElement(int i, ListElement elem) {
+        super.addListElement(i, elem);
+        if (initialized) get();
+    }
+
+    @Override
+    public void addListElement(ListElement elem) {
+        super.addListElement(elem);
+        if (initialized) get();
+    }
+
+    @Override
+    public void removeListElement(ListElement elem) {
+        super.removeListElement(elem);
+        if (initialized) get();
     }
 
     @Override
@@ -139,7 +165,7 @@ public class GuiMenu extends GuiListModifier<Object> {
             lst.clear();
             for (ListElement element : getElements()) {
                 if (element instanceof MenuListElement m) {
-                    lst.add(ItemUtils.getGiveCode(m.stack));
+                    lst.add(ItemUtils.getGiveCode(m.stack, registryAccess()));
                 }
             }
         });

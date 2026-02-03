@@ -31,30 +31,38 @@ import java.util.function.Consumer;
 
 public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
     private ItemStack stack;
+    private final ItemStack originalStack;
     private EditBox command, name;
     private Button auto;
     private boolean autoValue;
 
     public GuiCommandBlockModifier(Screen parent, Consumer<ItemStack> setter, ItemStack stack) {
         super(parent, Component.translatable("gui.ee.modifier.meta.command"), setter);
+        this.originalStack = stack;
         this.stack = stack.copy();
+    }
+
+    @Override
+    public boolean isModified() {
+        setData(); // Ensure stack is updated with current UI values before comparing
+        return !ItemStack.matches(stack, originalStack);
     }
 
     private void setData() {
         ItemUtils.setComponent(stack, DataComponents.CUSTOM_NAME, Component.literal(name.getValue().isEmpty() ? "@"
-                : name.getValue().replaceAll("&", "" + ChatUtils.MODIFIER) + ChatFormatting.RESET));
+                : ChatUtils.translateColorCodes(name.getValue()) + ChatFormatting.RESET));
 
         if (stack.getItem() == Items.COMMAND_BLOCK_MINECART) {
             TypedEntityData<EntityType<?>> data = ItemUtils.getComponent(stack, DataComponents.ENTITY_DATA);
             CompoundTag tag = data != null ? data.copyTagWithoutId() : new CompoundTag();
-            ItemUtils.putString(tag, "Command", command.getValue().replaceAll("&", "" + ChatUtils.MODIFIER));
+            ItemUtils.putString(tag, "Command", ChatUtils.translateColorCodes(command.getValue()));
             ItemUtils.putByte(tag, "auto", (byte) (autoValue ? 1 : 0));
             EntityType<?> type = data != null ? data.type() : EntityType.COMMAND_BLOCK_MINECART;
             ItemUtils.setComponent(stack, DataComponents.ENTITY_DATA, TypedEntityData.of(type, tag));
         } else {
             TypedEntityData<BlockEntityType<?>> data = ItemUtils.getComponent(stack, DataComponents.BLOCK_ENTITY_DATA);
             CompoundTag tag = data != null ? data.copyTagWithoutId() : new CompoundTag();
-            ItemUtils.putString(tag, "Command", command.getValue().replaceAll("&", "" + ChatUtils.MODIFIER));
+            ItemUtils.putString(tag, "Command", ChatUtils.translateColorCodes(command.getValue()));
             ItemUtils.putByte(tag, "auto", (byte) (autoValue ? 1 : 0));
             BlockEntityType<?> type = data != null ? data.type() : BlockEntityType.COMMAND_BLOCK;
             ItemUtils.setComponent(stack, DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(type, tag));
@@ -104,10 +112,10 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
                 return null;
             }, potionType));
         }));
-        addRenderableWidget(new EEButton(width / 2 + 1, height / 2 + 42, 149, 20,
-                Component.translatable("gui.ee.cancel"), b -> getMinecraft().setScreen(parent)));
+        addRenderableWidget(new EEButton(width / 2 - 150, height / 2 + 42, 150, 20,
+                Component.translatable("gui.ee.cancel"), b -> onCancel()));
         addRenderableWidget(
-                new EEButton(width / 2 - 150, height / 2 + 42, 150, 20, Component.translatable("gui.done"), b -> {
+                new EEButton(width / 2 + 1, height / 2 + 42, 149, 20, Component.translatable("gui.done"), b -> {
                     setData();
                     set(stack);
                     getMinecraft().setScreen(parent);

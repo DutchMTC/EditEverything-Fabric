@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 
 public class GuiContainerModifier extends GuiModifier<ContainerData> {
     private final ContainerData data;
+    private final ContainerData originalData;
     private final Component title;
     private final List<Component> slotNames;
 
@@ -27,20 +28,26 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
 
     public GuiContainerModifier(Screen parent, Component title, Consumer<ContainerData> setter, ContainerData data, List<Component> slotNames) {
         super(parent, Component.translatable("gui.ee.modifier.inventory"), setter);
+        this.originalData = data;
         this.data = data.copy();
         this.title = title;
         this.slotNames = slotNames;
     }
 
     @Override
+    public boolean isModified() {
+        return !data.equals(originalData);
+    }
+
+    @Override
     protected void init() {
         addRenderableWidget(
-                new EEButton(width / 2 - 96, height / 2 + 60, 94, 20, Component.translatable("gui.done"), b -> {
+                new EEButton(width / 2 - 96, height / 2 + 60, 94, 20, Component.translatable("gui.ee.cancel"), b -> onCancel()));
+        addRenderableWidget(
+                new EEButton(width / 2 + 2, height / 2 + 60, 94, 20, Component.translatable("gui.done"), b -> {
                     set(data);
                     mc.setScreen(parent);
                 }));
-        addRenderableWidget(
-                new EEButton(width / 2 + 2, height / 2 + 60, 94, 20, Component.translatable("gui.cancel"), b -> mc.setScreen(parent)));
         super.init();
     }
 

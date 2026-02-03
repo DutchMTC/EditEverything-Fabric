@@ -49,16 +49,16 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
     @SuppressWarnings("unchecked")
     private void defineMenu() {
         clearWidgets();
+        addRenderableWidget(new EEButton(width / 2 - 100, height - 21, 100, 20, Component.translatable("gui.ee.cancel"),
+                b -> onCancel()));
         addRenderableWidget(
-                new EEButton(width / 2 - 100, height - 21, 100, 20, Component.translatable("gui.done"), b -> {
+                new EEButton(width / 2 + 1, height - 21, 99, 20, Component.translatable("gui.done"), b -> {
                     String[] result = new String[values.size()];
                     for (int i = 0; i < result.length; i++)
-                        result[i] = values.get(i).replaceAll("&", String.valueOf(ChatUtils.MODIFIER));
+                        result[i] = ChatUtils.translateColorCodes(values.get(i));
                     set(result);
                     mc.setScreen(parent);
                 }));
-        addRenderableWidget(new EEButton(width / 2 + 1, height - 21, 99, 20, Component.translatable("gui.ee.cancel"),
-                b -> onCancel()));
         addRenderableWidget(last = new EEButton(width / 2 - 121, height - 21, 20, 20, Component.literal("<-"), b -> {
             page--;
             b.active = page != 0;

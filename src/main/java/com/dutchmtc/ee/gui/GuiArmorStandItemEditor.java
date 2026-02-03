@@ -390,7 +390,7 @@ public class GuiArmorStandItemEditor extends Screen {
             if (v == null || v.isBlank()) {
                 preview.setCustomName(null);
             } else {
-                preview.setCustomName(Component.literal(v.replace('&', ChatUtils.MODIFIER)));
+                preview.setCustomName(Component.literal(ChatUtils.translateColorCodes(v)));
             }
             syncTagFromPreview();
         });

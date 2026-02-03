@@ -459,18 +459,18 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         int d = (buttons.length + l + (cancelButton ? 1 : 0)) * 50;
         int dl = width / 2 - d;
         int dr = width / 2 + d;
+        if (cancelButton)
+            addRenderableWidget(new EEButton(dl, height - 21, 99, 20,
+                    Component.translatable("gui.ee.cancel"), b -> onCancel()));
+        int i;
+        for (i = 0; i < buttons.length; i++)
+            addRenderableWidget(new GuiValueButton<>(dl + 100 * (i + (cancelButton ? 1 : 0)), height - 21, 99, 20,
+                    Component.translatable(buttons[i].a), buttons[i].b, b -> b.getValue().a.run()));
         if (doneButton)
-            addRenderableWidget(new EEButton(dl, height - 21, 99, 20, Component.translatable("gui.done"), b -> {
+            addRenderableWidget(new EEButton(dl + 100 * (i + (cancelButton ? 1 : 0)), height - 21, 99, 20, Component.translatable("gui.done"), b -> {
                 set(get());
                 getMinecraft().setScreen(parent);
             }));
-        int i;
-        for (i = 0; i < buttons.length; i++)
-            addRenderableWidget(new GuiValueButton<>(dl + 100 * (i + l), height - 21, 99, 20,
-                    Component.literal(buttons[i].a), buttons[i].b, b -> b.getValue().a.run()));
-        if (cancelButton)
-            addRenderableWidget(new EEButton(dl + 100 * (i + l), height - 21, 99, 20,
-                    Component.translatable("gui.ee.cancel"), b -> onCancel()));
         addRenderableWidget(lastPage = new EEButton(dl - 21, height - 21, 20, 20, Component.literal("<-"), b -> {
             page--;
             define();

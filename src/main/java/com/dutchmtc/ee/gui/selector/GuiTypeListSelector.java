@@ -1,5 +1,6 @@
 package com.dutchmtc.ee.gui.selector;
 
+import com.dutchmtc.ee.gui.GuiConfirmation;
 import com.dutchmtc.ee.gui.ItemStackButtonWidget;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.Tuple;
@@ -11,10 +12,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.ArrayList;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class GuiTypeListSelector extends GuiListSelector<ItemStack> {
+    private BiFunction<ItemStack, Boolean, Screen> extendedSetter;
 
     static class TypeListElement extends ListElement {
         private final GuiTypeListSelector parent;
@@ -47,7 +50,50 @@ public class GuiTypeListSelector extends GuiListSelector<ItemStack> {
 
     @SuppressWarnings("unchecked")
     public GuiTypeListSelector(Screen parent, Component name, Function<ItemStack, Screen> setter) {
-        super(parent, name, new ArrayList<>(), setter, false, new Tuple[0]);
+        this(parent, name, (is, keep) -> setter.apply(is));
+    }
+
+    public GuiTypeListSelector(Screen parent, Component name, BiFunction<ItemStack, Boolean, Screen> setter) {
+        super(parent, name, new ArrayList<>(), is -> setter.apply(is, true), false, new Tuple[]{
+                new Tuple<>("gui.ee.inventory", new Tuple<Runnable, Runnable>(() -> {
+                }, () -> {
+                }))
+        });
+        // Fix button action because we need 'this' reference which is not available in super call
+        this.buttons[0].b.a = () -> {
+            getMinecraft().setScreen(new GuiInventorySelector(this, Component.translatable("gui.ee.inventory"), invStack -> {
+                if (setter == null) {
+                    return null;
+                }
+
+                // Return the confirmation screen instead of navigating here.
+                // GuiListSelector.select() will handle switching to the returned screen.
+                return new GuiConfirmation(this, Component.translatable("gui.ee.copy_components_question"),
+                        () -> { // Confirm -> Copy components (keep=false)
+                            Screen s = setter.apply(invStack, false);
+                            getMinecraft().setScreen(s == null ? GuiTypeListSelector.this.parent : s);
+                        },
+                        () -> { // Cancel -> Keep existing components (keep=true)
+                            Screen s = setter.apply(invStack, true);
+                            getMinecraft().setScreen(s == null ? GuiTypeListSelector.this.parent : s);
+                        }
+                ) {
+                    @Override
+                    public void init() {
+                        super.init();
+                        // Custom button text without relying on Screen internals (renderables list is private in newer MC)
+                        if (getCancelButton() != null) {
+                            getCancelButton().setMessage(Component.translatable("gui.ee.keep_components"));
+                        }
+                        if (getConfirmButton() != null) {
+                            getConfirmButton().setMessage(Component.translatable("gui.ee.copy_components"));
+                        }
+                    }
+                };
+            }));
+        };
+
+        this.extendedSetter = setter;
         NonNullList<ItemStack> stacks = NonNullList.create();
         BuiltInRegistries.ITEM.forEach(i -> // Item.REGISTRY
                 stacks.add(new ItemStack(i)));

@@ -42,6 +42,7 @@ import java.util.function.Consumer;
 
 public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
     private ItemStack currentItemStack;
+    private final ItemStack originalItemStack;
 
     private static final float DEFAULT_EQUIPMENT_DROP_CHANCE = 0.085F;
     private static final String[] EQUIPMENT_DROP_CHANCE_KEYS = {
@@ -68,7 +69,13 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
 
     public GuiSpawnEggModifier(Screen parent, Consumer<ItemStack> setter, ItemStack currentItemStack) {
         super(parent, Component.literal("Set entity"), setter);
-        this.currentItemStack = currentItemStack;
+        this.originalItemStack = currentItemStack;
+        this.currentItemStack = currentItemStack.copy();
+    }
+
+    @Override
+    public boolean isModified() {
+        return !ItemStack.matches(currentItemStack, originalItemStack);
     }
 
     @Override
@@ -127,12 +134,12 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         
         // Done/Cancel at bottom
         addRenderableWidget(new EEButton(centerX - 100, height - 25, 100, 20,
+                Component.translatable("gui.ee.cancel"), b -> onCancel()));
+        addRenderableWidget(new EEButton(centerX + 1, height - 25, 99, 20,
                 Component.translatable("gui.done"), b -> {
             set(currentItemStack);
             getMinecraft().setScreen(parent);
         }));
-        addRenderableWidget(new EEButton(centerX + 1, height - 25, 99, 20,
-                Component.translatable("gui.ee.cancel"), b -> getMinecraft().setScreen(parent)));
     }
     
     private void initGeneral(int centerX, int currentY, int spacing) {
@@ -975,12 +982,19 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
     }
 
     private static class GuiMannequinLayers extends GuiModifier<CompoundTag> {
+        private final CompoundTag originalTag;
         private final CompoundTag tag;
         private static final String[] LAYERS = {"cape", "jacket", "left_sleeve", "right_sleeve", "left_pants_leg", "right_pants_leg", "hat"};
 
         public GuiMannequinLayers(Screen parent, CompoundTag tag, Consumer<CompoundTag> setter) {
             super(parent, Component.literal("Hidden Layers"), setter);
-            this.tag = tag;
+            this.originalTag = tag.copy();
+            this.tag = tag.copy();
+        }
+
+        @Override
+        public boolean isModified() {
+            return !tag.equals(originalTag);
         }
 
         @Override
@@ -1005,12 +1019,16 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                     ListTag newList = new ListTag();
                     currentLayers.forEach(s -> newList.add(StringTag.valueOf(s)));
                     tag.put("hidden_layers", newList);
-                    set(tag);
                 }, () -> currentLayers.contains(layer)));
                 y += 24;
             }
-            
-            addRenderableWidget(new EEButton(centerX - 100, height - 25, 200, 20, Component.translatable("gui.done"), b -> getMinecraft().setScreen(parent)));
+
+            addRenderableWidget(new EEButton(centerX - 100, height - 25, 100, 20,
+                    Component.translatable("gui.ee.cancel"), b -> onCancel()));
+            addRenderableWidget(new EEButton(centerX + 1, height - 25, 99, 20, Component.translatable("gui.done"), b -> {
+                set(tag);
+                getMinecraft().setScreen(parent);
+            }));
         }
         
         @Override
@@ -1028,11 +1046,18 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
     }
 
     private static class GuiMannequinAdvanced extends GuiModifier<CompoundTag> {
+        private final CompoundTag originalTag;
         private final CompoundTag tag;
 
         public GuiMannequinAdvanced(Screen parent, CompoundTag tag, Consumer<CompoundTag> setter) {
             super(parent, Component.literal("Advanced Options"), setter);
-            this.tag = tag;
+            this.originalTag = tag.copy();
+            this.tag = tag.copy();
+        }
+
+        @Override
+        public boolean isModified() {
+            return !tag.equals(originalTag);
         }
 
         @Override
@@ -1057,8 +1082,13 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
             addLabel(centerX, y, "Model");
             addCycleButton(centerX, y, "model", Arrays.asList("wide", "slim"), "wide");
             y += spacing;
-            
-            addRenderableWidget(new EEButton(centerX - 100, height - 25, 200, 20, Component.translatable("gui.done"), b -> getMinecraft().setScreen(parent)));
+
+            addRenderableWidget(new EEButton(centerX - 100, height - 25, 100, 20,
+                    Component.translatable("gui.ee.cancel"), b -> onCancel()));
+            addRenderableWidget(new EEButton(centerX + 1, height - 25, 99, 20, Component.translatable("gui.done"), b -> {
+                set(tag);
+                getMinecraft().setScreen(parent);
+            }));
         }
 
         private void addLabel(int centerX, int y, String label) {
@@ -1074,7 +1104,6 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
             editBox.setResponder(val -> {
                 if (val.isEmpty()) ItemUtils.remove(tag, nbtKey);
                 else tag.putString(nbtKey, val);
-                set(tag);
             });
             addRenderableWidget(editBox);
         }
@@ -1094,7 +1123,6 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                 String next = values.get(index);
                 
                 tag.putString(nbtKey, next);
-                set(tag);
                 b.setMessage(Component.literal(next));
             }));
         }

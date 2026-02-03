@@ -335,10 +335,7 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         int btnStartX = centerX - totalBtnWidth / 2;
 
         addRenderableWidget(
-                new EEButton(btnStartX, btnY, btnWidth, 20, Component.translatable("gui.done"), b -> {
-                    complete();
-                    getMinecraft().setScreen(parent);
-                }));
+                new EEButton(btnStartX, btnY, btnWidth, 20, Component.translatable("gui.ee.cancel"), b -> onCancel()));
         advButton = addRenderableWidget(new EEButton(btnStartX + btnWidth + btnGap, btnY, btnWidth, 20,
                 Component.translatable("gui.ee.advanced"), b -> {
             advanced ^= true;
@@ -347,7 +344,10 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
             updateControlsVisibility();
         }));
         addRenderableWidget(
-                new EEButton(btnStartX + 2 * (btnWidth + btnGap), btnY, btnWidth, 20, Component.translatable("gui.ee.cancel"), b -> onCancel()));
+                new EEButton(btnStartX + 2 * (btnWidth + btnGap), btnY, btnWidth, 20, Component.translatable("gui.done"), b -> {
+                    complete();
+                    getMinecraft().setScreen(parent);
+                }));
 
         // Advanced fields
         int rgbBoxX = centerX - 40;

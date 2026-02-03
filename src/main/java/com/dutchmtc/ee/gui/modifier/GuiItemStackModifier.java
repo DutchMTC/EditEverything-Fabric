@@ -61,20 +61,25 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
 
     @Override
     public void init() {
+        if (getMinecraft().player != null && !getMinecraft().player.isCreative()) {
+            getMinecraft().player.displayClientMessage(Component.translatable("gui.ee.nocreative").withStyle(ChatFormatting.RED), false);
+            getMinecraft().setScreen(parent);
+            return;
+        }
 
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2 - 42, 100, 20,
                 Component.translatable("gui.ee.modifier.name"), b -> getMinecraft().setScreen(new GuiStringModifier(GuiItemStackModifier.this,
                 Component.translatable("gui.ee.modifier.name"),
                 currentItemStack.getHoverName().getString().replaceAll("" + ChatUtils.MODIFIER, "&"),
                 name -> currentItemStack.set(DataComponents.CUSTOM_NAME, name.isEmpty() ? null
-                        : Component.literal(name.replaceAll("&", String.valueOf(ChatUtils.MODIFIER))))))));
+                        : Component.literal(ChatUtils.translateColorCodes(name)))))));
 
         addRenderableWidget(new EEButton(width / 2 + 1, height / 2 - 42, 99, 20,
                 Component.translatable("gui.ee.modifier.lore"), b -> getMinecraft().setScreen(new GuiStringArrayModifier(GuiItemStackModifier.this,
                 Component.translatable("gui.ee.modifier.lore"), ItemUtils.getLore(currentItemStack),
                 value -> {
                     for (int i = 0; i < value.length; i++)
-                        value[i] = value[i].replaceAll("&", String.valueOf(ChatUtils.MODIFIER));
+                        value[i] = ChatUtils.translateColorCodes(value[i]);
                     ItemUtils.setLore(currentItemStack, value);
                 }))));
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2 - 21, 100, 20,
@@ -88,8 +93,12 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                 list -> ItemUtils.setAttributes(list, currentItemStack)))));
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2, 100, 20,
                 Component.translatable("gui.ee.modifier.type"), b -> getMinecraft().setScreen(new GuiTypeListSelector(GuiItemStackModifier.this,
-                Component.translatable("gui.ee.modifier.type"), is -> {
-            currentItemStack = ItemUtils.setItem(is.getItem(), currentItemStack);
+                Component.translatable("gui.ee.modifier.type"), (is, keep) -> {
+            if (keep) {
+                currentItemStack = ItemUtils.setItem(is.getItem(), currentItemStack);
+            } else {
+                currentItemStack = is.copy();
+            }
             if (currentItemStack.getCount() == 0) {
                 currentItemStack.setCount(1);
             }
@@ -190,9 +199,9 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                     .setScreen(new GuiContainerModifier(this, currentItemStack.getHoverName(), data -> ItemUtils.setContainerData(currentItemStack, data), Objects.requireNonNull(ItemUtils.fetchContainerData(currentItemStack))))));
         else
             i = 0;
-        addRenderableWidget(new EEButton(width / 2 + 1, height / 2 + 25 + 21 * i, 99, 20,
-                Component.translatable("gui.ee.cancel"), b -> onCancel()));
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 25 + 21 * i, 100, 20,
+                Component.translatable("gui.ee.cancel"), b -> onCancel()));
+        addRenderableWidget(new EEButton(width / 2 + 1, height / 2 + 25 + 21 * i, 99, 20,
                 Component.translatable("gui.done"), b -> {
             set(currentItemStack);
             getMinecraft().setScreen(parent);

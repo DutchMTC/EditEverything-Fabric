@@ -82,7 +82,7 @@ public class NBTStringElement extends NBTElement {
 
     @Override
     public Tag get() {
-        return StringTag.valueOf(value.replaceAll("&", String.valueOf(ChatUtils.MODIFIER)));
+        return StringTag.valueOf(ChatUtils.translateColorCodes(value));
     }
 
     @Override

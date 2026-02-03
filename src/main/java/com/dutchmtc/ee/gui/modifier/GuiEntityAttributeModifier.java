@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class GuiEntityAttributeModifier extends GuiListModifier<List<CompoundTag>> {
+    private final List<CompoundTag> originalAttributes;
 
     static class EntityAttributeListElement extends ListElement {
         private final EditBox base;
@@ -192,8 +193,75 @@ public class GuiEntityAttributeModifier extends GuiListModifier<List<CompoundTag
     @SuppressWarnings("unchecked")
     public GuiEntityAttributeModifier(Screen parent, List<CompoundTag> attributes, Consumer<List<CompoundTag>> setter) {
         super(parent, Component.translatable("gui.ee.modifier.attr"), new ArrayList<>(), setter, new Tuple[0]);
+        this.originalAttributes = normalizeOriginal(attributes);
         attributes.forEach(attribute -> addListElement(new EntityAttributeListElement(this, attribute)));
         addListElement(new AddElementList(this, supplier));
+    }
+
+    @Override
+    public boolean isModified() {
+        List<CompoundTag> current = get();
+        if (current.size() != originalAttributes.size()) {
+            return true;
+        }
+        for (int i = 0; i < current.size(); i++) {
+            if (!current.get(i).equals(originalAttributes.get(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<CompoundTag> normalizeOriginal(List<CompoundTag> attributes) {
+        List<CompoundTag> normalized = new ArrayList<>();
+        for (CompoundTag tag : attributes) {
+            normalized.add(normalizeAttributeTag(tag));
+        }
+        return normalized;
+    }
+
+    private static CompoundTag normalizeAttributeTag(CompoundTag data) {
+        CompoundTag tag = data.copy();
+
+        String name = ItemUtils.getString(tag, "id");
+        if (name.isEmpty()) {
+            name = ItemUtils.getString(tag, "Name");
+        }
+
+        Attribute attribute = null;
+        Identifier id = Identifier.tryParse(name);
+        if (id != null) {
+            attribute = BuiltInRegistries.ATTRIBUTE.get(id).map(Holder.Reference::value).orElse(null);
+        }
+        if (attribute == null) {
+            attribute = Attributes.MAX_HEALTH.value();
+        }
+
+        double baseValue;
+        if (ItemUtils.hasTag(tag, "base", 99)) { // 99 = Any Number
+            baseValue = ItemUtils.getDouble(tag, "base");
+        } else if (ItemUtils.hasTag(tag, "Base", 99)) {
+            baseValue = ItemUtils.getDouble(tag, "Base");
+        } else {
+            baseValue = attribute.getDefaultValue();
+        }
+
+        ItemUtils.remove(tag, "Name");
+        ItemUtils.remove(tag, "Base");
+        ItemUtils.putString(tag, "id", BuiltInRegistries.ATTRIBUTE.getKey(attribute).toString());
+        ItemUtils.putDouble(tag, "base", baseValue);
+
+        if (ItemUtils.hasTag(tag, "Modifiers", 9)) {
+            ListTag mods = ItemUtils.getList(tag, "Modifiers", 10);
+            ItemUtils.remove(tag, "Modifiers");
+            tag.put("modifiers", mods);
+        }
+
+        if (!ItemUtils.hasTag(tag, "modifiers", 9)) {
+            tag.put("modifiers", new ListTag());
+        }
+
+        return tag;
     }
 
     @Override

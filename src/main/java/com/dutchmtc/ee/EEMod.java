@@ -165,6 +165,7 @@ public class EEMod implements ModInitializer {
     public static void saveItem(String code) {
         LOGGER.info("Adding : {}", code);
         config.getCustomitems().add(0, code);
+        saveConfigs();
     }
 
     public static void setDoesDisableToolTip(boolean doesDisableToolTip) {

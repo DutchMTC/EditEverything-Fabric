@@ -30,12 +30,26 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
     private int elms;
     private int page = 0;
 
+    private void updateFieldVisibility() {
+        if (tfs == null) return;
+        int start = page * elms;
+        int end = (page + 1) * elms;
+        for (int i = 0; i < tfs.length; i++) {
+            boolean onPage = i >= start && i < end;
+            tfs[i].visible = onPage;
+            tfs[i].active = onPage;
+            if (!onPage) {
+                tfs[i].setFocused(false);
+            }
+        }
+    }
+
     public GuiStringArrayModifier(Screen parent, Component name, String[] values, Consumer<String[]> setter) {
         super(parent, name, setter);
         this.values = new ArrayList<>();
         this.originalValues = new ArrayList<>();
         for (String v : values) {
-            String s = v.replaceAll(String.valueOf(ChatUtils.MODIFIER), "&");
+            String s = ChatUtils.untranslateColorCodes(v);
             this.values.add(s);
             this.originalValues.add(s);
         }
@@ -63,6 +77,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
             page--;
             b.active = page != 0;
             next.active = page + 1 <= values.size() / elms;
+            updateFieldVisibility();
         }) {
 
             @Override
@@ -75,6 +90,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
             page++;
             last.active = page != 0;
             b.active = page + 1 <= values.size() / elms;
+            updateFieldVisibility();
         }) {
 
             @Override
@@ -122,6 +138,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
             btsAdd[i].setMessage(Component.literal("+").withStyle(ChatFormatting.GREEN));
             addRenderableWidget(tfs[i]);
         }
+        updateFieldVisibility();
         btsAdd[i] = addRenderableWidget(new GuiValueButton<Integer>(width / 2 - 100, 21 + 21 * i % (elms * 21), 200, 20,
                 Component.literal("+"), i, b -> {
             values.add(Objects.requireNonNull(b.getValue()), "");
@@ -163,16 +180,41 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        double mouseX = event.x();
-        double mouseY = event.y();
+        int mouseX = (int) event.x();
+        int mouseY = (int) event.y();
         int mouseButton = event.button();
-        for (int i = page * elms; i < (page + 1) * elms && i < values.size(); i++) {
-            tfs[i].setFocused(false);
-            if (mouseButton == 1 && GuiUtils.isHover(tfs[i], (int) mouseX, (int) mouseY)) {
-                tfs[i].setValue("");
-                return true;
+
+        int start = page * elms;
+        int end = Math.min(values.size(), (page + 1) * elms);
+
+        // Right-click: clear the hovered line and keep focus on it.
+        if (mouseButton == 1) {
+            for (int i = start; i < end; i++) {
+                if (GuiUtils.isHover(tfs[i], mouseX, mouseY)) {
+                    tfs[i].setValue("");
+                    tfs[i].setFocused(true);
+                    setFocused(tfs[i]);
+                    return true;
+                }
             }
         }
+
+        boolean clickedField = false;
+        for (int i = start; i < end; i++) {
+            if (GuiUtils.isHover(tfs[i], mouseX, mouseY)) {
+                clickedField = true;
+                break;
+            }
+        }
+
+        // If the click isn't on a visible field, clear the screen's focused element so fields can be re-focused.
+        if (!clickedField) {
+            for (int i = start; i < end; i++) {
+                tfs[i].setFocused(false);
+            }
+            setFocused(null);
+        }
+
         return super.mouseClicked(event, doubleClick);
     }
 
@@ -181,6 +223,8 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
         for (int i = page * elms; i < (page + 1) * elms && i < values.size(); i++) {
             values.set(i, tfs[i].getValue());
         }
+        updateFieldVisibility();
+
         for (int i = 0; i < btsAdd.length; i++)
             if (i < (page + 1) * elms && i >= page * elms) {
                 if (btsAdd[i] != null)

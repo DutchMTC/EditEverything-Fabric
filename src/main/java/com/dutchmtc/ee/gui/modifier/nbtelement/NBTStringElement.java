@@ -28,7 +28,7 @@ public class NBTStringElement extends NBTElement {
 
     public NBTStringElement(GuiListModifier<?> parent, String key, String value) {
         super(parent, key, 200, 42);
-        this.value = value.replaceAll(String.valueOf(ChatUtils.MODIFIER), "&");
+        this.value = ChatUtils.untranslateColorCodes(value);
         fieldList.add(field = new EditBox(font, 2, 2, 196, 16, Component.literal("")));
         buttonList.add(
                 new EEButton(0, 21, 200, 20, Component.translatable("gui.ee.modifier.tag.editor.string.data"), b -> {

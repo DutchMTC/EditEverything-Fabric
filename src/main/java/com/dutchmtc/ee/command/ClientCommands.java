@@ -318,8 +318,7 @@ public class ClientCommands {
                             ItemStack item = mc.player.getMainHandItem();
                             if (item.isEmpty()) return 0;
                             
-                            String coloredName = com.dutchmtc.ee.utils.ChatUtils.translateColorCodes(name);
-                            item.set(DataComponents.CUSTOM_NAME, Component.literal(coloredName));
+                            item.set(DataComponents.CUSTOM_NAME, com.dutchmtc.ee.utils.ChatUtils.parseLegacyFormattingComponent(name));
                             int slot = 36 + mc.player.getInventory().getSelectedSlot();
                             ItemUtilsClient.give(item, slot);
                             return 1;

@@ -42,11 +42,47 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         SV, H, NONE
     }
 
-    private static final int PICKER_SIZE = 200;
-    private static final int PICKER_HUE_WIDTH = 20;
+    private static final int PICKER_TEXTURE_SIZE = 200;
+    private static final int PICKER_HUE_TEXTURE_WIDTH = 20;
+    private static final int PICKER_MIN_SIZE = 96;
+    private static final int PICKER_MIN_FALLBACK_SIZE = 64;
+    private static final int PICKER_MIN_HUE_WIDTH = 12;
     private static final int PICKER_GAP = 4;
+    private static final int DYE_CELL_SIZE = 19;
+    private static final int DYE_CELL_SMALL_SIZE = 16;
+    private static final int DYE_COLUMNS = 2;
+    private static final int DYE_ROWS = 8;
+    private static final int PREVIEW_HEIGHT = 20;
+    private static final int ROW_HEIGHT = 20;
+    private static final int BUTTON_HEIGHT = 20;
     private static final Identifier PICKER_SV_RESOURCE = Identifier.fromNamespaceAndPath(EEMod.MOD_ID, "picker_sv");
     private static final Identifier PICKER_H_RESOURCE = Identifier.fromNamespaceAndPath(EEMod.MOD_ID, "picker_h");
+
+    private record PickerLayout(
+            int pickerX,
+            int pickerY,
+            int pickerSize,
+            int hueX,
+            int hueY,
+            int hueWidth,
+            int bodyTop,
+            int bodyHeight,
+            int previewY,
+            int dyeX,
+            int dyeY,
+            int dyeCellSize,
+            boolean showDyes,
+            int randomX,
+            int randomY,
+            int randomWidth,
+            int deleteX,
+            int deleteY,
+            int deleteWidth,
+            int buttonsX,
+            int buttonsY,
+            int buttonWidth,
+            int buttonGap) {
+    }
     
     private DynamicTexture pickerImageSV;
     private DynamicTexture pickerImageH;
@@ -97,9 +133,9 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         if (pickerImageH != null) pickerImageH.close();
 
         pickerImageSV = new DynamicTexture(() -> EEMod.MOD_ID + "_picker_sv",
-                new NativeImage(NativeImage.Format.RGBA, PICKER_SIZE, PICKER_SIZE, false));
+                new NativeImage(NativeImage.Format.RGBA, PICKER_TEXTURE_SIZE, PICKER_TEXTURE_SIZE, false));
         pickerImageH = new DynamicTexture(() -> EEMod.MOD_ID + "_picker_h",
-                new NativeImage(NativeImage.Format.RGBA, PICKER_HUE_WIDTH, PICKER_SIZE, false));
+                new NativeImage(NativeImage.Format.RGBA, PICKER_HUE_TEXTURE_WIDTH, PICKER_TEXTURE_SIZE, false));
 
         // Generate Hue texture
         var pixels = Objects.requireNonNull(pickerImageH.getPixels());
@@ -133,6 +169,139 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     private int localValue;
     private boolean isUpdating = false;
     private final int originalColor;
+
+    private PickerLayout createLayout() {
+        int marginX = 8;
+        int topPadding = 8;
+        int bottomPadding = 8;
+        int previewGap = 4;
+        int afterMainGap = 8;
+        int beforeButtonsGap = 8;
+        int dyeGap = 4;
+        int buttonGap = 5;
+
+        int fixedHeight = topPadding + bottomPadding + PREVIEW_HEIGHT + previewGap + afterMainGap + ROW_HEIGHT + beforeButtonsGap
+                + BUTTON_HEIGHT;
+        int bodyBudget = Math.max(24, height - fixedHeight);
+
+        int dyeCellSize = bodyBudget >= DYE_ROWS * DYE_CELL_SIZE ? DYE_CELL_SIZE : DYE_CELL_SMALL_SIZE;
+        int dyeHeight = DYE_ROWS * dyeCellSize;
+        boolean showDyes = dyeHeight <= bodyBudget;
+
+        int pickerSize = Math.min(PICKER_TEXTURE_SIZE, bodyBudget);
+        int hueWidth = GuiUtils.clamp(pickerSize / 10, PICKER_MIN_HUE_WIDTH, PICKER_HUE_TEXTURE_WIDTH);
+        int dyeWidth = showDyes ? DYE_COLUMNS * dyeCellSize : 0;
+        int currentDyeGap = showDyes ? dyeGap : 0;
+        int pickerByWidth = width - marginX * 2 - dyeWidth - currentDyeGap - PICKER_GAP - hueWidth;
+        pickerSize = Math.min(pickerSize, pickerByWidth);
+
+        if (showDyes && pickerSize < PICKER_MIN_SIZE) {
+            showDyes = false;
+            dyeWidth = 0;
+            currentDyeGap = 0;
+            pickerByWidth = width - marginX * 2 - PICKER_GAP - hueWidth;
+            pickerSize = Math.min(Math.min(PICKER_TEXTURE_SIZE, bodyBudget), pickerByWidth);
+        }
+
+        pickerSize = Math.max(24, pickerSize);
+        hueWidth = GuiUtils.clamp(pickerSize / 10, PICKER_MIN_HUE_WIDTH, PICKER_HUE_TEXTURE_WIDTH);
+        pickerByWidth = width - marginX * 2 - dyeWidth - currentDyeGap - PICKER_GAP - hueWidth;
+        pickerSize = Math.max(24, Math.min(pickerSize, pickerByWidth));
+        if (pickerSize < PICKER_MIN_FALLBACK_SIZE && showDyes) {
+            showDyes = false;
+            dyeWidth = 0;
+            currentDyeGap = 0;
+            pickerByWidth = width - marginX * 2 - PICKER_GAP - hueWidth;
+            pickerSize = Math.max(24, Math.min(Math.min(PICKER_TEXTURE_SIZE, bodyBudget), pickerByWidth));
+        }
+
+        dyeHeight = showDyes ? DYE_ROWS * dyeCellSize : 0;
+        int bodyHeight = Math.max(pickerSize, dyeHeight);
+        if (bodyHeight > bodyBudget) {
+            showDyes = false;
+            dyeWidth = 0;
+            currentDyeGap = 0;
+            dyeHeight = 0;
+            bodyHeight = Math.min(pickerSize, bodyBudget);
+            pickerSize = bodyHeight;
+            hueWidth = GuiUtils.clamp(Math.max(1, pickerSize / 10), PICKER_MIN_HUE_WIDTH, PICKER_HUE_TEXTURE_WIDTH);
+        }
+
+        int contentHeight = PREVIEW_HEIGHT + previewGap + bodyHeight + afterMainGap + ROW_HEIGHT + beforeButtonsGap + BUTTON_HEIGHT;
+        int availableHeight = height - topPadding - bottomPadding;
+        int contentTop = topPadding + Math.max(0, (availableHeight - contentHeight) / 2);
+        int bodyTop = contentTop + PREVIEW_HEIGHT + previewGap;
+
+        int contentWidth = dyeWidth + currentDyeGap + pickerSize + PICKER_GAP + hueWidth;
+        int contentLeft = (width - contentWidth) / 2;
+        int pickerX = contentLeft + dyeWidth + currentDyeGap;
+        int pickerY = bodyTop + (bodyHeight - pickerSize) / 2;
+        int hueX = pickerX + pickerSize + PICKER_GAP;
+        int hueY = pickerY;
+        int dyeX = contentLeft;
+        int dyeY = bodyTop + (bodyHeight - dyeHeight) / 2;
+
+        int randomX = pickerX;
+        int randomY = bodyTop + bodyHeight + afterMainGap;
+        int randomWidth = 38;
+        int deleteWidth = 40;
+        int deleteX = hueX + hueWidth - deleteWidth;
+        int deleteY = randomY;
+
+        int buttonWidth = GuiUtils.clamp((width - marginX * 2 - buttonGap * 2) / 3, 58, 90);
+        int buttonsX = (width - (buttonWidth * 3 + buttonGap * 2)) / 2;
+        int buttonsY = randomY + ROW_HEIGHT + beforeButtonsGap;
+
+        return new PickerLayout(pickerX, pickerY, pickerSize, hueX, hueY, hueWidth, bodyTop, bodyHeight, contentTop,
+                dyeX, dyeY, dyeCellSize, showDyes, randomX, randomY, randomWidth, deleteX, deleteY, deleteWidth,
+                buttonsX, buttonsY, buttonWidth, buttonGap);
+    }
+
+    private void applyAdvancedFieldLayout(PickerLayout layout) {
+        if (tfr == null || tfg == null || tfb == null || tfh == null || tfs == null || tfv == null || intColor == null || hexColor == null) {
+            return;
+        }
+
+        int panelLeft = layout.pickerX();
+        int panelRight = layout.hueX() + layout.hueWidth();
+        int panelWidth = panelRight - panelLeft;
+        int fieldWidth = GuiUtils.clamp((panelWidth - 84) / 2, 40, 64);
+        int rgbX = panelLeft + 38;
+        int hsvX = panelRight - fieldWidth - 6;
+        int rowStart = layout.bodyTop() + Math.max(4, (layout.bodyHeight() - 112) / 2);
+        int rowGap = 24;
+
+        tfr.setX(rgbX);
+        tfg.setX(rgbX);
+        tfb.setX(rgbX);
+        tfh.setX(hsvX);
+        tfs.setX(hsvX);
+        tfv.setX(hsvX);
+
+        tfr.setY(rowStart);
+        tfg.setY(rowStart + rowGap);
+        tfb.setY(rowStart + rowGap * 2);
+        tfh.setY(rowStart);
+        tfs.setY(rowStart + rowGap);
+        tfv.setY(rowStart + rowGap * 2);
+
+        tfr.setWidth(fieldWidth);
+        tfg.setWidth(fieldWidth);
+        tfb.setWidth(fieldWidth);
+        tfh.setWidth(fieldWidth);
+        tfs.setWidth(fieldWidth);
+        tfv.setWidth(fieldWidth);
+
+        int intHexGap = 8;
+        int intHexWidth = Math.max(42, (panelWidth - intHexGap) / 2);
+        int intHexY = rowStart + rowGap * 3 + 8;
+        intColor.setX(panelLeft);
+        intColor.setY(intHexY);
+        intColor.setWidth(intHexWidth);
+        hexColor.setX(panelRight - intHexWidth);
+        hexColor.setY(intHexY);
+        hexColor.setWidth(intHexWidth);
+    }
 
     public GuiColorModifier(Screen parent, Consumer<Integer> setter, int color) {
         this(parent, cd -> {
@@ -197,47 +366,43 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         // allow multiple color modifiers
         updatePickerTexture(localHue);
+        PickerLayout layout = createLayout();
+        applyAdvancedFieldLayout(layout);
 
         super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-
-        int centerX = width / 2;
-        int centerY = height / 2;
-        int totalWidth = PICKER_SIZE + PICKER_GAP + PICKER_HUE_WIDTH;
-        int pickerX = centerX - totalWidth / 2;
-        int pickerY = centerY - 100;
-        int hueX = pickerX + PICKER_SIZE + PICKER_GAP;
-        int hueY = pickerY;
 
         if (!advanced) {
             // SV PICKER
             graphics.blit(RenderPipelines.GUI_TEXTURED, PICKER_SV_RESOURCE,
-                    pickerX, pickerY,
+                    layout.pickerX(), layout.pickerY(),
                     0.0F, 0.0F,
-                    PICKER_SIZE, PICKER_SIZE,
-                    PICKER_SIZE, PICKER_SIZE);
+                    layout.pickerSize(), layout.pickerSize(),
+                    layout.pickerSize(), layout.pickerSize());
 
             // SV Index
-            int sX = pickerX + (localSaturation * PICKER_SIZE / 100);
-            int vY = pickerY + PICKER_SIZE - (localValue * PICKER_SIZE / 100);
+            int sX = layout.pickerX() + (localSaturation * layout.pickerSize() / 100);
+            int vY = layout.pickerY() + layout.pickerSize() - (localValue * layout.pickerSize() / 100);
             
             GuiUtils.drawRect(graphics, sX - 2, vY - 2, sX + 2, vY + 2, 0xff222222);
             GuiUtils.drawRect(graphics, sX - 1, vY - 1, sX + 1, vY + 1, 0xffcccccc);
 
             // Hue Picker
             graphics.blit(RenderPipelines.GUI_TEXTURED, PICKER_H_RESOURCE,
-                    hueX, hueY,
+                    layout.hueX(), layout.hueY(),
                     0.0F, 0.0F,
-                    PICKER_HUE_WIDTH, PICKER_SIZE,
-                    PICKER_HUE_WIDTH, PICKER_SIZE);
+                    layout.hueWidth(), layout.pickerSize(),
+                    layout.hueWidth(), layout.pickerSize());
 
             // Hue Index
-            int hY = hueY + (localHue * PICKER_SIZE / 360);
-            GuiUtils.drawRect(graphics, hueX - 2, hY - 2, hueX + PICKER_HUE_WIDTH + 2, hY + 2, 0xff222222);
-            GuiUtils.drawRect(graphics, hueX - 1, hY - 1, hueX + PICKER_HUE_WIDTH + 1, hY + 1, 0xffcccccc);
+            int hY = layout.hueY() + (localHue * layout.pickerSize() / 360);
+            GuiUtils.drawRect(graphics, layout.hueX() - 2, hY - 2, layout.hueX() + layout.hueWidth() + 2, hY + 2, 0xff222222);
+            GuiUtils.drawRect(graphics, layout.hueX() - 1, hY - 1, layout.hueX() + layout.hueWidth() + 1, hY + 1, 0xffcccccc);
 
         } else {
+            int panelLeft = layout.pickerX() - 6;
+            int panelRight = layout.hueX() + layout.hueWidth() + 6;
             graphics.pose().pushMatrix();
-            GuiUtils.drawRect(graphics, centerX - 100, pickerY, centerX + 130, pickerY + PICKER_SIZE,
+            GuiUtils.drawRect(graphics, panelLeft, layout.bodyTop(), panelRight, layout.bodyTop() + layout.bodyHeight(),
                     0xE0000000);
             graphics.pose().popMatrix();
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.red") + ": ", tfr, 0xffffffff);
@@ -258,15 +423,15 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         
         // Current color preview
         if ((color & 0xFF000000) == 0)
-            GuiUtils.drawRect(graphics, pickerX, pickerY - 24, hueX + PICKER_HUE_WIDTH, pickerY - 4,
+            GuiUtils.drawRect(graphics, layout.pickerX(), layout.previewY(), layout.hueX() + layout.hueWidth(), layout.previewY() + PREVIEW_HEIGHT,
                     color | 0xff000000);
 
         if (Minecraft.getInstance().player != null) {
             ItemStack stack = Minecraft.getInstance().player.getMainHandItem().copy();
             if (ItemUtils.canGlobalColorIt(stack)) {
                 ItemUtils.setGlobalColor(stack, color);
-                int previewX = pickerX + (hueX + PICKER_HUE_WIDTH - pickerX) / 2 - 8;
-                int previewY = pickerY - 24 + (20 - 16) / 2;
+                int previewX = layout.pickerX() + (layout.hueX() + layout.hueWidth() - layout.pickerX()) / 2 - 8;
+                int previewY = layout.previewY() + (PREVIEW_HEIGHT - 16) / 2;
                 GuiUtils.drawItemStack(graphics, stack, previewX, previewY);
             }
         }
@@ -275,39 +440,40 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         };
         
         // Dye colors
-        for (var i = 0; i < DyeColor.values().length; ++i) {
-            var color = DyeColor.values()[i];
-            var x = pickerX - 40 + (i % 2) * 19;
-            var y = pickerY + (i / 2) * 19;
-            
-            GuiUtils.drawRect(graphics, x, y, x + 19, y + 19, 0xff000000 | color.getFireworkColor());
-            if (GuiUtils.isHover(x, y, 19, 19, mouseX, mouseY)) {
-                show = () -> GuiUtils.drawTextBox(graphics, font, mouseX, mouseY, width, height, getZLevel(),
-                        I18n.get("item.minecraft.firework_star." + color.getName()));
+        if (layout.showDyes()) {
+            for (var i = 0; i < DyeColor.values().length; ++i) {
+                var dyeColor = DyeColor.values()[i];
+                var x = layout.dyeX() + (i % DYE_COLUMNS) * layout.dyeCellSize();
+                var y = layout.dyeY() + (i / DYE_COLUMNS) * layout.dyeCellSize();
+
+                GuiUtils.drawRect(graphics, x, y, x + layout.dyeCellSize(), y + layout.dyeCellSize(),
+                        0xff000000 | dyeColor.getFireworkColor());
+                if (GuiUtils.isHover(x, y, layout.dyeCellSize(), layout.dyeCellSize(), mouseX, mouseY)) {
+                    show = () -> GuiUtils.drawTextBox(graphics, font, mouseX, mouseY, width, height, getZLevel(),
+                            I18n.get("item.minecraft.firework_star." + dyeColor.getName()));
+                }
+                GuiUtils.drawItemStack(graphics, new ItemStack(DyeItem.byColor(dyeColor)),
+                        x + (layout.dyeCellSize() - 16) / 2, y + (layout.dyeCellSize() - 16) / 2);
             }
-            GuiUtils.drawItemStack(graphics, new ItemStack(DyeItem.byColor(color)), x + (19 - 16) / 2,
-                    y + (19 - 16) / 2);
         }
 
         // random
-        int randX = pickerX;
-        int randY = pickerY + PICKER_SIZE + 10;
-        GuiUtils.drawHoverableRect(graphics, randX, randY, randX + 38, randY + 20,
+        GuiUtils.drawHoverableRect(graphics, layout.randomX(), layout.randomY(), layout.randomX() + layout.randomWidth(),
+                layout.randomY() + ROW_HEIGHT,
                 0xFF444444, GuiUtils.getTimeColor(RANDOM_PICKER_FREQUENCY, 50, 15), mouseX, mouseY);
-        GuiUtils.drawItemStack(graphics, updatePicker(), randX + 38 / 2 - 16 / 2,
-                randY + 20 / 2 - 16 / 2);
-        if (GuiUtils.isHover(randX, randY, 38, 20, mouseX, mouseY)) {
+        GuiUtils.drawItemStack(graphics, updatePicker(), layout.randomX() + layout.randomWidth() / 2 - 16 / 2,
+                layout.randomY() + ROW_HEIGHT / 2 - 16 / 2);
+        if (GuiUtils.isHover(layout.randomX(), layout.randomY(), layout.randomWidth(), ROW_HEIGHT, mouseX, mouseY)) {
             show = () -> GuiUtils.drawTextBox(graphics, font, mouseX, mouseY, width, height, getZLevel(),
                     I18n.get("gui.ee.modifier.meta.setColor.random"));
         }
 
         // delete
-        int delWidth = 40;
-        int delX = hueX + PICKER_HUE_WIDTH - delWidth;
-        int delY = randY;
-        GuiUtils.drawHoverableRect(graphics, delX, delY, delX + delWidth, delY + 20,
+        GuiUtils.drawHoverableRect(graphics, layout.deleteX(), layout.deleteY(),
+                layout.deleteX() + layout.deleteWidth(), layout.deleteY() + ROW_HEIGHT,
                 0xFFDD4444, 0xFFFF4444, mouseX, mouseY);
-        GuiUtils.drawCenterString(graphics, font, "Undo", delX + delWidth / 2, delY, 0xFFFFFFFF, 20);
+        GuiUtils.drawCenterString(graphics, font, "Undo", layout.deleteX() + layout.deleteWidth() / 2, layout.deleteY(),
+                0xFFFFFFFF, ROW_HEIGHT);
 
         super.render(graphics, mouseX, mouseY, partialTicks);
 
@@ -323,20 +489,13 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     @Override
     public void init() {
         initTextures();
-
-        int centerX = width / 2;
-        int centerY = height / 2;
-        int pickerY = centerY - 100;
-        int btnY = pickerY + PICKER_SIZE + 40;
-        
-        int btnWidth = 80;
-        int btnGap = 5;
-        int totalBtnWidth = 3 * btnWidth + 2 * btnGap;
-        int btnStartX = centerX - totalBtnWidth / 2;
+        PickerLayout layout = createLayout();
 
         addRenderableWidget(
-                new EEButton(btnStartX, btnY, btnWidth, 20, Component.translatable("gui.ee.cancel"), b -> onCancel()));
-        advButton = addRenderableWidget(new EEButton(btnStartX + btnWidth + btnGap, btnY, btnWidth, 20,
+                new EEButton(layout.buttonsX(), layout.buttonsY(), layout.buttonWidth(), BUTTON_HEIGHT,
+                        Component.translatable("gui.ee.cancel"), b -> onCancel()));
+        advButton = addRenderableWidget(new EEButton(layout.buttonsX() + layout.buttonWidth() + layout.buttonGap(),
+                layout.buttonsY(), layout.buttonWidth(), BUTTON_HEIGHT,
                 Component.translatable("gui.ee.advanced"), b -> {
             advanced ^= true;
             advButton.setMessage(Component.translatable(
@@ -344,27 +503,23 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
             updateControlsVisibility();
         }));
         addRenderableWidget(
-                new EEButton(btnStartX + 2 * (btnWidth + btnGap), btnY, btnWidth, 20, Component.translatable("gui.done"), b -> {
+                new EEButton(layout.buttonsX() + 2 * (layout.buttonWidth() + layout.buttonGap()), layout.buttonsY(),
+                        layout.buttonWidth(), BUTTON_HEIGHT, Component.translatable("gui.done"), b -> {
                     complete();
                     getMinecraft().setScreen(parent);
                 }));
 
         // Advanced fields
-        int rgbBoxX = centerX - 40;
-        int hsvBoxX = centerX + 75;
-        int boxWidth = 45;
-        
-        tfr = new EditBox(font, rgbBoxX, centerY - 54, boxWidth, 18, Component.literal(""));
-        tfg = new EditBox(font, rgbBoxX, centerY - 26, boxWidth, 18, Component.literal(""));
-        tfb = new EditBox(font, rgbBoxX, centerY + 2, boxWidth, 18, Component.literal(""));
+        tfr = new EditBox(font, 0, 0, 45, 18, Component.literal(""));
+        tfg = new EditBox(font, 0, 0, 45, 18, Component.literal(""));
+        tfb = new EditBox(font, 0, 0, 45, 18, Component.literal(""));
 
-        tfh = new EditBox(font, hsvBoxX, centerY - 54, boxWidth, 18, Component.literal(""));
-        tfs = new EditBox(font, hsvBoxX, centerY - 26, boxWidth, 18, Component.literal(""));
-        tfv = new EditBox(font, hsvBoxX, centerY + 2, boxWidth, 18, Component.literal(""));
+        tfh = new EditBox(font, 0, 0, 45, 18, Component.literal(""));
+        tfs = new EditBox(font, 0, 0, 45, 18, Component.literal(""));
+        tfv = new EditBox(font, 0, 0, 45, 18, Component.literal(""));
 
-        int intHexWidth = 85;
-        intColor = new EditBox(font, centerX - 90, centerY + 40, intHexWidth, 18, Component.literal(""));
-        hexColor = new EditBox(font, centerX + 5, centerY + 40, intHexWidth, 18, Component.literal(""));
+        intColor = new EditBox(font, 0, 0, 85, 18, Component.literal(""));
+        hexColor = new EditBox(font, 0, 0, 85, 18, Component.literal(""));
 
         tfr.setMaxLength(4);
         tfg.setMaxLength(4);
@@ -432,6 +587,7 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         addRenderableWidget(intColor);
         addRenderableWidget(hexColor);
 
+        applyAdvancedFieldLayout(layout);
         updateControlsVisibility();
         updateColor(color); // sync picker color
         super.init();
@@ -470,14 +626,8 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         double mouseX = event.x();
         double mouseY = event.y();
         int mouseButton = event.button();
-        
-        int centerX = width / 2;
-        int centerY = height / 2;
-        int totalWidth = PICKER_SIZE + PICKER_GAP + PICKER_HUE_WIDTH;
-        int pickerX = centerX - totalWidth / 2;
-        int pickerY = centerY - 100;
-        int hueX = pickerX + PICKER_SIZE + PICKER_GAP;
-        int hueY = pickerY;
+        PickerLayout layout = createLayout();
+        applyAdvancedFieldLayout(layout);
 
         if (advanced) {
             if (mouseButton == 1) {
@@ -510,19 +660,16 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         }
         drag = DragState.NONE;
         if (mouseButton == 0) {
-            if (!advanced && GuiUtils.isHover(pickerX, pickerY, PICKER_SIZE, PICKER_SIZE, (int) mouseX, (int) mouseY)) {
+            if (!advanced && GuiUtils.isHover(layout.pickerX(), layout.pickerY(), layout.pickerSize(), layout.pickerSize(),
+                    (int) mouseX, (int) mouseY)) {
                 setColor((int) mouseX, (int) mouseY, DragState.SV);
-            } else if (!advanced && GuiUtils.isHover(hueX, hueY, PICKER_HUE_WIDTH, PICKER_SIZE, (int) mouseX, (int) mouseY)) {
+            } else if (!advanced && GuiUtils.isHover(layout.hueX(), layout.hueY(), layout.hueWidth(), layout.pickerSize(),
+                    (int) mouseX, (int) mouseY)) {
                 setColor((int) mouseX, (int) mouseY, DragState.H);
             } else {
                 // Random and Delete buttons
-                int randX = pickerX;
-                int randY = pickerY + PICKER_SIZE + 10;
-                int delWidth = 40;
-                int delX = hueX + PICKER_HUE_WIDTH - delWidth;
-                int delY = randY;
-
-                if (GuiUtils.isHover(delX, delY, delWidth, 20, (int) mouseX, (int) mouseY)) {
+                if (GuiUtils.isHover(layout.deleteX(), layout.deleteY(), layout.deleteWidth(), ROW_HEIGHT, (int) mouseX,
+                        (int) mouseY)) {
                     if (transparentAsDefault) {
                         color |= 0xFF000000;
                     } else {
@@ -531,19 +678,22 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
                     }
                     playClick();
                     return true;
-                } else if (GuiUtils.isHover(randX, randY, 38, 20, (int) mouseX, (int) mouseY)) {
+                } else if (GuiUtils.isHover(layout.randomX(), layout.randomY(), layout.randomWidth(), ROW_HEIGHT, (int) mouseX,
+                        (int) mouseY)) {
                     updateColor(GuiUtils.getRandomColor() & 0xffffff);
                     playClick();
                     return true;
                 } else {
                     // Dye colors
-                    for (int i = 0; i < DyeColor.values().length; ++i) {
-                        int x = pickerX - 40 + (i % 2) * 19;
-                        int y = pickerY + (i / 2) * 19;
-                        if (GuiUtils.isHover(x, y, 19, 19, (int) mouseX, (int) mouseY)) {
-                            updateColor(DyeColor.values()[i].getFireworkColor());
-                            playClick();
-                            return true;
+                    if (layout.showDyes()) {
+                        for (int i = 0; i < DyeColor.values().length; ++i) {
+                            int x = layout.dyeX() + (i % DYE_COLUMNS) * layout.dyeCellSize();
+                            int y = layout.dyeY() + (i / DYE_COLUMNS) * layout.dyeCellSize();
+                            if (GuiUtils.isHover(x, y, layout.dyeCellSize(), layout.dyeCellSize(), (int) mouseX, (int) mouseY)) {
+                                updateColor(DyeColor.values()[i].getFireworkColor());
+                                playClick();
+                                return true;
+                            }
                         }
                     }
                 }
@@ -597,26 +747,19 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         drag = dragState;
         if (drag == DragState.NONE)
             return;
-
-        int centerX = width / 2;
-        int centerY = height / 2;
-        int totalWidth = PICKER_SIZE + PICKER_GAP + PICKER_HUE_WIDTH;
-        int pickerX = centerX - totalWidth / 2;
-        int pickerY = centerY - 100;
-        int hueX = pickerX + PICKER_SIZE + PICKER_GAP;
-        int hueY = pickerY;
+        PickerLayout layout = createLayout();
 
         switch (drag) {
             case SV -> {
                 // Saturation (x)
-                var s = GuiUtils.clamp(mouseX - pickerX, 0, PICKER_SIZE) * 100 / PICKER_SIZE;
+                var s = GuiUtils.clamp(mouseX - layout.pickerX(), 0, layout.pickerSize()) * 100 / layout.pickerSize();
                 // Value (y) - inverted (top is 100, bottom is 0)
-                var v = 100 - (GuiUtils.clamp(mouseY - pickerY, 0, PICKER_SIZE) * 100 / PICKER_SIZE);
+                var v = 100 - (GuiUtils.clamp(mouseY - layout.pickerY(), 0, layout.pickerSize()) * 100 / layout.pickerSize());
                 updateColor(localHue, s, v);
             }
             case H -> {
                 // Hue (y)
-                var h = GuiUtils.clamp(mouseY - hueY, 0, PICKER_SIZE) * 360 / PICKER_SIZE;
+                var h = GuiUtils.clamp(mouseY - layout.hueY(), 0, layout.pickerSize()) * 360 / layout.pickerSize();
                 updateColor(h, localSaturation, localValue);
             }
         }

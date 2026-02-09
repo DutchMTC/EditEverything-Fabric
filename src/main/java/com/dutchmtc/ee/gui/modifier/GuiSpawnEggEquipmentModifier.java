@@ -34,15 +34,19 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
 
     private static final int SLOT_SIZE = 18;
     private static final int ICON_SIZE = 16;
-    private static final int ROW_H = 24;
+    private static final int BASE_ROW_H = 24;
+    private static final int MIN_ROW_H = 18;
+    private static final int ROW_COUNT = 8;
 
-    private static final int PANEL_W = 308;
+    private static final int PANEL_MAX_W = 308;
+    private static final int PANEL_MIN_W = 260;
+    private static final int OUTER_MARGIN = 6;
     private static final int PANEL_HEADER_Y_OFF = 22;
     private static final int PANEL_ROW_Y_OFF = 34;
     private static final int PANEL_PADDING_X = 12;
 
-    private static final int SLIDER_W = 128;
     private static final int AMOUNT_W = 56;
+    private static final int PANEL_CHROME_H = 76;
 
     private final EquipmentData originalData;
     private final EquipmentData data;
@@ -52,6 +56,10 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     private final List<EditBox> amountFields = new ArrayList<>();
     private final List<PercentSlider> chanceSliders = new ArrayList<>();
     private boolean syncing;
+    private int panelWidth = PANEL_MAX_W;
+    private int panelHeight = PANEL_CHROME_H + BASE_ROW_H * ROW_COUNT;
+    private int rowHeight = BASE_ROW_H;
+    private int sliderWidth = 128;
 
     public GuiSpawnEggEquipmentModifier(Screen parent, Component title, Consumer<EquipmentData> setter,
             EquipmentData data, List<Component> slotNames) {
@@ -75,16 +83,11 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     }
 
     private int panelLeft() {
-        return width / 2 - PANEL_W / 2;
+        return width / 2 - panelWidth / 2;
     }
 
     private int panelTop() {
-        int panelH = panelHeight();
-        return height / 2 - panelH / 2;
-    }
-
-    private int panelHeight() {
-        return 40 + ROW_H * 8 + 36;
+        return height / 2 - panelHeight / 2;
     }
 
     private int sliderX(int left) {
@@ -92,33 +95,53 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     }
 
     private int amountX(int left) {
-        return left + PANEL_W - PANEL_PADDING_X - AMOUNT_W;
+        return left + panelWidth - PANEL_PADDING_X - AMOUNT_W;
     }
 
     private int rowY(int top, int slot) {
-        return top + PANEL_ROW_Y_OFF + slot * ROW_H + 2;
+        return top + PANEL_ROW_Y_OFF + slot * rowHeight + 2;
+    }
+
+    private void recomputeLayout() {
+        int maxPanelW = Math.max(220, width - OUTER_MARGIN * 2);
+        int minPanelW = Math.min(PANEL_MIN_W, maxPanelW);
+        panelWidth = GuiUtils.clamp(PANEL_MAX_W, minPanelW, maxPanelW);
+
+        int availableH = Math.max(PANEL_CHROME_H + MIN_ROW_H * ROW_COUNT, height - OUTER_MARGIN * 2);
+        int desiredPanelH = PANEL_CHROME_H + BASE_ROW_H * ROW_COUNT;
+        if (desiredPanelH > availableH) {
+            rowHeight = Math.max(MIN_ROW_H, (availableH - PANEL_CHROME_H) / ROW_COUNT);
+        } else {
+            rowHeight = BASE_ROW_H;
+        }
+        panelHeight = PANEL_CHROME_H + rowHeight * ROW_COUNT;
+
+        int left = panelLeft();
+        int sx = sliderX(left);
+        int ax = amountX(left);
+        sliderWidth = Math.max(72, ax - sx - 6);
     }
 
     @Override
     protected void init() {
+        recomputeLayout();
         super.init();
         amountFields.clear();
         chanceSliders.clear();
 
-        int panelH = panelHeight();
         int left = panelLeft();
         int top = panelTop();
 
-        addRenderableWidget(new EEButton(width / 2 - 96, top + panelH - 26, 94, 20,
+        addRenderableWidget(new EEButton(width / 2 - 96, top + panelHeight - 26, 94, 20,
                 Component.translatable("gui.ee.cancel"), b -> onCancel()));
         addRenderableWidget(
-                new EEButton(width / 2 + 2, top + panelH - 26, 94, 20, Component.translatable("gui.done"), b -> {
+                new EEButton(width / 2 + 2, top + panelHeight - 26, 94, 20, Component.translatable("gui.done"), b -> {
                     applyAmountsFromFields();
                     set(data);
                     mc.setScreen(parent);
                 }));
 
-        for (int slot = 0; slot < 8; slot++) {
+        for (int slot = 0; slot < ROW_COUNT; slot++) {
             int y = rowY(top, slot);
 
             int finalSlot = slot;
@@ -129,7 +152,7 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
             addRenderableWidget(amount);
             amountFields.add(amount);
 
-            PercentSlider slider = new PercentSlider(sliderX(left), y, SLIDER_W, 18, Component.empty(),
+            PercentSlider slider = new PercentSlider(sliderX(left), y, sliderWidth, 18, Component.empty(),
                     () -> getChancePercent(finalSlot), p -> setChancePercent(finalSlot, p));
             addRenderableWidget(slider);
             chanceSliders.add(slider);
@@ -147,11 +170,10 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         super.renderBackground(graphics, mouseX, mouseY, delta);
 
-        int panelH = panelHeight();
         int left = panelLeft();
         int top = panelTop();
-        int right = left + PANEL_W;
-        int bottom = top + panelH;
+        int right = left + panelWidth;
+        int bottom = top + panelHeight;
 
         GuiUtils.drawRect(graphics, left, top, right, bottom, GuiUtils.COLOR_CONTAINER_BORDER | 0xFF000000);
         GuiUtils.drawCenterString(graphics, font, title.getString(), width / 2, top + 8, 0xFF7F7F7F);
@@ -164,7 +186,7 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
         ItemStack hoverStack = null;
         Component hoverName = null;
 
-        for (int slot = 0; slot < 8; slot++) {
+        for (int slot = 0; slot < ROW_COUNT; slot++) {
             int y = rowY(top, slot);
 
             int iconX = left + PANEL_PADDING_X;
@@ -213,7 +235,7 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
         int left = panelLeft();
         int top = panelTop();
 
-        for (int slot = 0; slot < 8; slot++) {
+        for (int slot = 0; slot < ROW_COUNT; slot++) {
             int y = rowY(top, slot);
             int iconX = left + PANEL_PADDING_X;
             int iconY = y;
@@ -252,7 +274,7 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     private void syncAllFields() {
         syncing = true;
         try {
-            for (int slot = 0; slot < 8; slot++) {
+            for (int slot = 0; slot < ROW_COUNT; slot++) {
                 syncSlotFields(slot);
             }
         } finally {
@@ -323,8 +345,8 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     private void applyAmountsFromFields() {
         syncing = true;
         try {
-            for (int slot = 0; slot < 8; slot++) {
-                ItemStack stack = data.equipment().stacks().get(slot);
+        for (int slot = 0; slot < ROW_COUNT; slot++) {
+            ItemStack stack = data.equipment().stacks().get(slot);
                 EditBox amount = amountFields.get(slot);
                 String raw = amount.getValue();
 

@@ -49,8 +49,9 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
     }
 
     private void setData() {
-        ItemUtils.setComponent(stack, DataComponents.CUSTOM_NAME, Component.literal(name.getValue().isEmpty() ? "@"
-                : ChatUtils.translateColorCodes(name.getValue()) + ChatFormatting.RESET));
+        ItemUtils.setComponent(stack, DataComponents.CUSTOM_NAME, name.getValue().isEmpty()
+                ? Component.literal("@").withStyle(s -> s.withItalic(false))
+                : ChatUtils.parseLegacyFormattingComponent(name.getValue()));
 
         if (stack.getItem() == Items.COMMAND_BLOCK_MINECART) {
             TypedEntityData<EntityType<?>> data = ItemUtils.getComponent(stack, DataComponents.ENTITY_DATA);
@@ -79,10 +80,10 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
             tag = data != null ? data.copyTagWithoutId() : new CompoundTag();
         }
 
-        name.setValue((ItemUtils.getComponent(stack, DataComponents.CUSTOM_NAME) != null ? stack.getHoverName().getString() : "@")
-                .replaceAll("" + ChatUtils.MODIFIER, "&"));
+        Component customName = ItemUtils.getComponent(stack, DataComponents.CUSTOM_NAME);
+        name.setValue(customName != null ? ChatUtils.componentToLegacyCodes(customName) : "@");
         command.setValue(
-                (ItemUtils.hasTag(tag, "Command", 8) ? ItemUtils.getString(tag, "Command") : "").replaceAll("" + ChatUtils.MODIFIER, "&"));
+                ChatUtils.untranslateColorCodes(ItemUtils.hasTag(tag, "Command", 8) ? ItemUtils.getString(tag, "Command") : ""));
         autoValue = ItemUtils.hasTag(tag, "auto", 99) && ItemUtils.getByte(tag, "auto") == (byte) 1;
     }
 

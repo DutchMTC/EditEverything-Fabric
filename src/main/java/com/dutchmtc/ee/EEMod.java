@@ -10,6 +10,7 @@ import com.dutchmtc.ee.command.ModdedCommandGamemode;
 import com.dutchmtc.ee.command.ModdedCommandGamemodeQuick;
 import com.dutchmtc.ee.command.arguments.StringListArgumentType;
 import com.dutchmtc.ee.config.Configuration;
+import com.dutchmtc.ee.server.EventWorldAttributeResetter;
 import com.dutchmtc.ee.network.EENetworking;
 import com.dutchmtc.ee.internalcommand.InternalCommandExecutor;
 import com.dutchmtc.ee.utils.*;
@@ -116,6 +117,14 @@ public class EEMod implements ModInitializer {
 
     public static boolean doesDisableToolTip() {
         return config.doesDisableToolTip();
+    }
+
+    public static boolean doesResetPlayerAttributesOnEventWorldExit() {
+        return config.doesResetPlayerAttributesOnEventWorldExit();
+    }
+
+    public static Optional<Identifier> getEventWorldId() {
+        return config.getEventWorldId();
     }
 
     public static SyncList<String> getCustomItems() {
@@ -254,6 +263,9 @@ public class EEMod implements ModInitializer {
         // Config
         config.sync(FabricLoader.getInstance().getConfigDir().resolve(MOD_ID + ".json"));
         config.addCustomItemsCallback(this::syncItemConfig);
+
+        // Server-side safety: if configured, reset player attributes when leaving the event world.
+        EventWorldAttributeResetter.init();
 
         // Register Argument Types
         ArgumentTypeRegistry.registerArgumentType(

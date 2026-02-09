@@ -311,6 +311,11 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
     private boolean needRedefine = false;
 
     private int dSize = 42, paddingLeft = 0, paddingTop = 0;
+    /**
+     * Extra vertical space reserved at the very top of the screen for custom controls
+     * (e.g. tab bars) added by subclasses before {@link #super#init()}.
+     */
+    private int topControlsHeight = 0;
     private boolean noAdaptativeSize = false;
 
     private boolean justStart = true;
@@ -386,7 +391,10 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         for (int i = 0; i < visibleElements.length; i++)
             visibleElements[i] = new ArrayList<>();
         maxPage = 0;
-        int pageHeight = height - 63;
+        // Reserve space for the bottom button bar (21px) and the list header area (42px),
+        // plus any subclass-provided top controls, and account for vertical spacing to avoid
+        // the last element overlapping the buttons.
+        int pageHeight = height - 63 - topControlsHeight - paddingTop;
         int currentSize = 0;
         int i = 0;
         for (ListElement elm : searchedElements) {
@@ -419,9 +427,10 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             }
         else
             j = visibleElements.length;
+        int baseHeader = 42 + topControlsHeight;
         dSize = (!(add || noAdaptativeSize) && j == 1 && maxPage == 1
                 ? height / 2 - visibleElements[0].stream().mapToInt(ListElement::getSizeY).sum() / 2
-                : 42) + paddingTop;
+                : baseHeader) + paddingTop;
         lastPage.active = page != 0;
         nextPage.active = page + 1 < maxPage;
     }
@@ -494,7 +503,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         int m = font.width(I18n.get("gui.ee.search") + " : ");
         int n = Math.min(600, width - 20);
         search.setX((width - n) / 2 + 6 + m);
-        search.setY(18);
+        search.setY(18 + topControlsHeight);
         search.setWidth(n - 18 - m);
         search.setHeight(18);
         search.setResponder(s -> {
@@ -601,11 +610,13 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             }
         }
 
-        super.render(graphics, mouseX, mouseY, partialTicks);
-        // search.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
-        GuiUtils.drawCenterString(graphics, font, getStringTitle(), width / 2, 2, 0xFFFFFFFF, 10);
+        GuiUtils.drawCenterString(graphics, font, getStringTitle(), width / 2, 2 + topControlsHeight, 0xFFFFFFFF, 10);
         GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.search") + " : ", search.getX(), search.getY(), Color.ORANGE.getRGB(),
                 search.getHeight());
+
+        // Draw widgets after header text so top tabs/buttons don't get covered by the title/search label.
+        super.render(graphics, mouseX, mouseY, partialTicks);
+        // search.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
         if (equals(getMinecraft().screen)) {
             for (int i = 0; i < visibleElements.length; i++) {
                 int currentSize = dSize;
@@ -629,6 +640,10 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
 
     public void setPaddingTop(int paddingTop) {
         this.paddingTop = paddingTop;
+    }
+
+    public void setTopControlsHeight(int topControlsHeight) {
+        this.topControlsHeight = Math.max(0, topControlsHeight);
     }
 
     @Override

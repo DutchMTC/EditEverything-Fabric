@@ -103,7 +103,7 @@ public class GuiGiver extends GuiModifier<String> {
         code = new EditBox(font, width / 2 - 178, height / 2 + 2, 356, 16, Component.literal(""));
         code.setMaxLength(Integer.MAX_VALUE);
         if (preText != null)
-            code.setValue(preText.replaceAll(String.valueOf(ChatUtils.MODIFIER), "&"));
+            code.setValue(ChatUtils.untranslateColorCodes(preText));
         originalCodeValue = code.getValue();
         addRenderableWidget(code);
         int s1 = deleteButton ? 120 : 180;
@@ -136,8 +136,14 @@ public class GuiGiver extends GuiModifier<String> {
         if (deleteButton)
             addRenderableWidget(new EEButton(width / 2 - 180, height / 2 + 42, s2, 20,
                     Component.translatable("gui.ee.delete"), b -> {
-                setter.accept(null);
-                getMinecraft().setScreen(parent);
+                getMinecraft().setScreen(new GuiConfirmation(this,
+                        Component.translatable("gui.ee.menu.delete_question"),
+                        Component.translatable("gui.ee.delete"),
+                        () -> {
+                            setter.accept(null);
+                            getMinecraft().setScreen(parent);
+                        },
+                        () -> getMinecraft().setScreen(this)));
             }));
 
         super.init();

@@ -68,11 +68,15 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
         }
 
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2 - 42, 100, 20,
-                Component.translatable("gui.ee.modifier.name"), b -> getMinecraft().setScreen(new GuiStringModifier(GuiItemStackModifier.this,
                 Component.translatable("gui.ee.modifier.name"),
-                currentItemStack.getHoverName().getString().replaceAll("" + ChatUtils.MODIFIER, "&"),
-                name -> currentItemStack.set(DataComponents.CUSTOM_NAME, name.isEmpty() ? null
-                        : Component.literal(ChatUtils.translateColorCodes(name)))))));
+                b -> getMinecraft().setScreen(new GuiStringModifier(
+                        GuiItemStackModifier.this,
+                        Component.translatable("gui.ee.modifier.name"),
+                        ItemUtils.getComponent(currentItemStack, DataComponents.CUSTOM_NAME) != null
+                                ? ChatUtils.componentToLegacyCodes(ItemUtils.getComponent(currentItemStack, DataComponents.CUSTOM_NAME))
+                                : ChatUtils.untranslateColorCodes(currentItemStack.getHoverName().getString()),
+                        newName -> currentItemStack.set(DataComponents.CUSTOM_NAME, newName.isEmpty() ? null
+                                : ChatUtils.parseLegacyFormattingComponent(newName))))));
 
         addRenderableWidget(new EEButton(width / 2 + 1, height / 2 - 42, 99, 20,
                 Component.translatable("gui.ee.modifier.lore"), b -> getMinecraft().setScreen(new GuiStringArrayModifier(GuiItemStackModifier.this,
@@ -175,6 +179,11 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                     Component.translatable("gui.ee.modifier.meta.explosion"), b -> getMinecraft().setScreen(new GuiFireworksModifer.GuiExplosionModifier(this, exp -> {
                 ItemUtils.setFireworkExplosionFromTag(currentItemStack, exp.getTag());
             }, ItemUtils.getExplosionInformation(ItemUtils.getFireworkExplosionTag(currentItemStack))))));
+        else if (currentItemStack.getItem() instanceof BannerItem || currentItemStack.getItem() instanceof ShieldItem)
+            addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
+                    Component.translatable("gui.ee.modifier.meta.banner"),
+                    b -> getMinecraft().setScreen(new GuiBannerEditor(GuiItemStackModifier.this,
+                            currentItemStack, is -> currentItemStack = is))));
         else if (currentItemStack.getItem().equals(Items.LIGHT)) {
             addRenderableWidget(new AbstractSliderButton(width / 2 - 100, height / 2 + 21, 200, 20, Component.empty(), ItemUtils.getLightLevel(currentItemStack) / 15.0) {
                 {

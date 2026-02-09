@@ -12,12 +12,17 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
+
+import net.minecraft.resources.Identifier;
 
 public class Configuration {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private ConfigData data = new ConfigData();
     private Path configPath;
+
+    private transient Optional<Identifier> eventWorldIdParsed = Optional.empty();
 
     private Consumer<List<String>> customItemsCallback = (s) -> {
     };
@@ -32,10 +37,27 @@ public class Configuration {
     public static class ConfigData {
         public List<String> items = new ArrayList<>();
         public boolean disableToolTip = false;
+        /**
+         * If true and {@link #eventWorldId} is set, player attributes are reset when leaving that world.
+         */
+        public boolean resetPlayerAttributesOnEventWorldExit = true;
+        /**
+         * Dimension identifier for the "event world" (e.g. "minecraft:overworld" or "my_mod:event").
+         * When empty, the attribute reset feature is disabled.
+         */
+        public String eventWorldId = "";
     }
 
     public boolean doesDisableToolTip() {
         return data.disableToolTip;
+    }
+
+    public boolean doesResetPlayerAttributesOnEventWorldExit() {
+        return data.resetPlayerAttributesOnEventWorldExit;
+    }
+
+    public Optional<Identifier> getEventWorldId() {
+        return eventWorldIdParsed;
     }
 
     public SyncList<String> getCustomitems() {
@@ -79,6 +101,12 @@ public class Configuration {
             // Defaults
             data.items = new ArrayList<>(List.of(EEMod.DEFAULT_CUSTOM_ITEMS));
         }
+
+        eventWorldIdParsed = Optional.ofNullable(data.eventWorldId)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(Identifier::tryParse)
+                .filter(id -> id != null);
         
         // Sync to internal list
         customItems.applyUpdate(lst -> {

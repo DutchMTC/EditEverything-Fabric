@@ -55,6 +55,7 @@
   "gui.ee.give.fail": "物品欄已滿",
   "gui.ee.give.fail2": "發生內部錯誤",
   "gui.ee.menu": "菜單",
+  "gui.ee.menu.delete_question": "Delete this menu item?",
   "gui.ee.modifier.type": "類別",
   "gui.ee.modifier.name": "名字",
   "gui.ee.modifier.lore": "描述",

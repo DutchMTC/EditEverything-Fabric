@@ -95,7 +95,7 @@ public final class ArmorStandEditorUtils {
 
         String raw = tag.getStringOr(KEY_NAME, "");
         if (!raw.isBlank()) {
-            stand.setCustomName(net.minecraft.network.chat.Component.literal(ChatUtils.translateColorCodes(raw)));
+            stand.setCustomName(ChatUtils.parseLegacyFormattingComponent(raw));
         } else {
             stand.setCustomName(null);
         }

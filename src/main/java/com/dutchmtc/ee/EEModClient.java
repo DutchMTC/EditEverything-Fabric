@@ -233,8 +233,7 @@ public class EEModClient implements ClientModInitializer {
                 if (KeyBindingHelper.getBoundKeyOf(menu).getValue() != 0) {
                     if (isKeyDown(KeyBindingHelper.getBoundKeyOf(menu).getValue())) {
                         var registryAccess = mc.level != null ? mc.level.registryAccess() : VanillaRegistries.createLookup();
-                        String code = ItemUtils.getGiveCode(stack, registryAccess)
-                                .replace(com.dutchmtc.ee.utils.ChatUtils.MODIFIER, '&');
+                        String code = com.dutchmtc.ee.utils.ChatUtils.untranslateColorCodes(ItemUtils.getGiveCode(stack, registryAccess));
                         EEMod.saveItem(code);
                         mc.setScreen(new GuiMenu(mc.screen));
                     }

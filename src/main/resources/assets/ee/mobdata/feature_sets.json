@@ -1,0 +1,21 @@
+{
+  "feature_sets": {
+    "breedable": [
+      "#bred"
+    ],
+    "bucket": [
+      "#frombucket"
+    ],
+    "raid": [],
+    "tameable": [
+      "#tame",
+      "#collar_color"
+    ],
+    "trader": [
+      "#villager_profession",
+      "#villager_type",
+      "#villager_level"
+    ]
+  },
+  "version": "1.21.11"
+}

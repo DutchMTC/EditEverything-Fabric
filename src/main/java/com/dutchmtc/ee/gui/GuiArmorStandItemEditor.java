@@ -71,12 +71,20 @@ public class GuiArmorStandItemEditor extends Screen {
         }
     }
 
-    private static final int PANEL_W = 440;
-    private static final int PANEL_H = 280;
+    private static final int PANEL_MAX_W = 440;
+    private static final int PANEL_MAX_H = 280;
+    private static final int PANEL_MIN_W = 320;
+    private static final int PANEL_MIN_H = 228;
+    private static final int OUTER_MARGIN = 6;
     private static final int PAD = 12;
 
-    private static final int PREVIEW_W = 190;
-    private static final int PREVIEW_H = 220;
+    private static final int PREVIEW_MAX_W = 190;
+    private static final int PREVIEW_MAX_H = 220;
+    private static final int PREVIEW_MIN_W = 130;
+    private static final int PREVIEW_MIN_H = 140;
+    private static final int PREVIEW_MIN_FALLBACK_W = 72;
+    private static final int PREVIEW_MIN_FALLBACK_H = 96;
+    private static final int CONTROLS_MIN_W = 150;
 
     private static final int TAB_H = 20;
     private static final int BTN_H = 20;
@@ -96,8 +104,12 @@ public class GuiArmorStandItemEditor extends Screen {
 
     private int panelLeft;
     private int panelTop;
+    private int panelWidth;
+    private int panelHeight;
     private int previewLeft;
     private int previewTop;
+    private int previewWidth;
+    private int previewHeight;
 
     private boolean draggingPreview;
     private float previewYaw;
@@ -121,10 +133,7 @@ public class GuiArmorStandItemEditor extends Screen {
 
     @Override
     protected void init() {
-        panelLeft = width / 2 - PANEL_W / 2;
-        panelTop = height / 2 - PANEL_H / 2;
-        previewLeft = panelLeft + PAD;
-        previewTop = panelTop + TAB_H + 4;
+        recomputeLayout();
 
         if (minecraft == null || minecraft.level == null) {
             minecraft.setScreen(parent);
@@ -151,6 +160,35 @@ public class GuiArmorStandItemEditor extends Screen {
         rebuildUi();
     }
 
+    private void recomputeLayout() {
+        int maxPanelW = Math.max(240, width - OUTER_MARGIN * 2);
+        int minPanelW = Math.min(PANEL_MIN_W, maxPanelW);
+        panelWidth = GuiUtils.clamp(PANEL_MAX_W, minPanelW, maxPanelW);
+
+        int maxPanelH = Math.max(180, height - OUTER_MARGIN * 2);
+        int minPanelH = Math.min(PANEL_MIN_H, maxPanelH);
+        panelHeight = GuiUtils.clamp(PANEL_MAX_H, minPanelH, maxPanelH);
+
+        int previewMaxByWidth = panelWidth - PAD * 3 - CONTROLS_MIN_W;
+        previewWidth = Math.min(PREVIEW_MAX_W, previewMaxByWidth);
+        previewWidth = GuiUtils.clamp(previewWidth, PREVIEW_MIN_W, PREVIEW_MAX_W);
+        if (previewWidth > previewMaxByWidth) {
+            previewWidth = Math.max(PREVIEW_MIN_FALLBACK_W, previewMaxByWidth);
+        }
+
+        int previewMaxByHeight = panelHeight - (TAB_H + 4) - (PAD + BTN_H + 4);
+        previewHeight = Math.min(PREVIEW_MAX_H, previewMaxByHeight);
+        previewHeight = GuiUtils.clamp(previewHeight, PREVIEW_MIN_H, PREVIEW_MAX_H);
+        if (previewHeight > previewMaxByHeight) {
+            previewHeight = Math.max(PREVIEW_MIN_FALLBACK_H, previewMaxByHeight);
+        }
+
+        panelLeft = width / 2 - panelWidth / 2;
+        panelTop = height / 2 - panelHeight / 2;
+        previewLeft = panelLeft + PAD;
+        previewTop = panelTop + TAB_H + 4;
+    }
+
     private void resetPreviewView() {
         previewYaw = DEFAULT_PREVIEW_YAW;
         previewPitch = DEFAULT_PREVIEW_PITCH;
@@ -175,9 +213,9 @@ public class GuiArmorStandItemEditor extends Screen {
     private void rebuildUi() {
         clearWidgets();
 
-        int controlsLeft = previewLeft + PREVIEW_W + PAD;
+        int controlsLeft = previewLeft + previewWidth + PAD;
         int controlsTop = panelTop;
-        int controlsW = panelLeft + PANEL_W - PAD - controlsLeft;
+        int controlsW = panelLeft + panelWidth - PAD - controlsLeft;
 
         int tabCount = Tab.values().length;
         int tabW = (controlsW - (tabCount - 1) * 2) / tabCount;
@@ -225,21 +263,30 @@ public class GuiArmorStandItemEditor extends Screen {
             case OPTIONS -> y = buildOptionsTab(controlsLeft, y, controlsW);
         }
 
-        int bottomY = panelTop + PANEL_H - PAD - BTN_H;
-        addRenderableWidget(new EEButton(panelLeft + PAD, bottomY, 90, BTN_H, Component.translatable("gui.ee.armorstand.reset"),
+        int bottomY = panelTop + panelHeight - PAD - BTN_H;
+        int actionStartX = panelLeft + PAD;
+        int actionWidth = panelWidth - PAD * 2;
+        int actionGap = 4;
+        int actionBtnW = Math.max(60, (actionWidth - actionGap * 3) / 4);
+        int x0 = actionStartX;
+        int x1 = x0 + actionBtnW + actionGap;
+        int x2 = x1 + actionBtnW + actionGap;
+        int x3 = x2 + actionBtnW + actionGap;
+
+        addRenderableWidget(new EEButton(x0, bottomY, actionBtnW, BTN_H, Component.translatable("gui.ee.armorstand.reset"),
                 b -> {
                     currentTag = originalTag.copy();
                     loadTagIntoPreview(currentTag);
                     rebuildUi();
                 }));
 
-        addRenderableWidget(new EEButton(panelLeft + PAD + 94, bottomY, 110, BTN_H, Component.translatable("gui.ee.armorstand.reset_view"),
+        addRenderableWidget(new EEButton(x1, bottomY, actionBtnW, BTN_H, Component.translatable("gui.ee.armorstand.reset_view"),
                 b -> resetPreviewView()));
 
-        addRenderableWidget(new EEButton(panelLeft + PANEL_W - PAD - 186, bottomY, 90, BTN_H,
+        addRenderableWidget(new EEButton(x2, bottomY, actionBtnW, BTN_H,
                 Component.translatable("gui.cancel"), b -> onCancel()));
 
-        addRenderableWidget(new EEButton(panelLeft + PANEL_W - PAD - 92, bottomY, 92, BTN_H,
+        addRenderableWidget(new EEButton(x3, bottomY, actionBtnW, BTN_H,
                 Component.translatable("gui.done").withStyle(ChatFormatting.GREEN), b -> {
                     syncTagFromPreview();
                     ArmorStandItemUtils.setArmorStandEntityTag(currentItemStack, ArmorStandItemUtils.sanitizeArmorStandEntityTag(currentTag));
@@ -385,12 +432,12 @@ public class GuiArmorStandItemEditor extends Screen {
         nameField = new EditBox(font, x, y, w, BTN_H, Component.translatable("gui.ee.armorstand.name"));
         nameField.setHint(Component.translatable("gui.ee.armorstand.name.hint").withStyle(ChatFormatting.DARK_GRAY));
         nameField.setMaxLength(256);
-        nameField.setValue(Optional.ofNullable(preview.getCustomName()).map(c -> c.getString()).orElse("").replace(ChatUtils.MODIFIER, '&'));
+        nameField.setValue(Optional.ofNullable(preview.getCustomName()).map(ChatUtils::componentToLegacyCodes).orElse(""));
         nameField.setResponder(v -> {
             if (v == null || v.isBlank()) {
                 preview.setCustomName(null);
             } else {
-                preview.setCustomName(Component.literal(ChatUtils.translateColorCodes(v)));
+                preview.setCustomName(ChatUtils.parseLegacyFormattingComponent(v));
             }
             syncTagFromPreview();
         });
@@ -544,18 +591,18 @@ public class GuiArmorStandItemEditor extends Screen {
         super.renderBackground(graphics, mouseX, mouseY, delta);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
 
-        GuiUtils.drawBox(graphics, panelLeft, panelTop, PANEL_W, PANEL_H, 0);
+        GuiUtils.drawBox(graphics, panelLeft, panelTop, panelWidth, panelHeight, 0);
 
-        GuiUtils.drawRect(graphics, previewLeft - 1, previewTop - 1, previewLeft + PREVIEW_W + 1, previewTop + PREVIEW_H + 1, 0xFF202020);
-        GuiUtils.drawRect(graphics, previewLeft, previewTop, previewLeft + PREVIEW_W, previewTop + PREVIEW_H, 0xFF0F0F0F);
+        GuiUtils.drawRect(graphics, previewLeft - 1, previewTop - 1, previewLeft + previewWidth + 1, previewTop + previewHeight + 1, 0xFF202020);
+        GuiUtils.drawRect(graphics, previewLeft, previewTop, previewLeft + previewWidth, previewTop + previewHeight, 0xFF0F0F0F);
 
         if (preview != null) {
             GuiEntityPreviewUtils.renderLivingEntityInBox(
                     graphics,
                     previewLeft,
                     previewTop,
-                    PREVIEW_W,
-                    PREVIEW_H,
+                    previewWidth,
+                    previewHeight,
                     60,
                     0.0f,
                     previewYaw,
@@ -574,9 +621,9 @@ public class GuiArmorStandItemEditor extends Screen {
     }
 
     private void renderTabText(GuiGraphics graphics) {
-        int controlsLeft = previewLeft + PREVIEW_W + PAD;
+        int controlsLeft = previewLeft + previewWidth + PAD;
         int controlsTop = panelTop;
-        int controlsW = panelLeft + PANEL_W - PAD - controlsLeft;
+        int controlsW = panelLeft + panelWidth - PAD - controlsLeft;
         int x = controlsLeft;
         int y = controlsTop + TAB_H + 8;
 
@@ -657,7 +704,7 @@ public class GuiArmorStandItemEditor extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (GuiUtils.isHover(previewLeft, previewTop, PREVIEW_W, PREVIEW_H, (int) event.x(), (int) event.y())
+        if (GuiUtils.isHover(previewLeft, previewTop, previewWidth, previewHeight, (int) event.x(), (int) event.y())
                 && event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             draggingPreview = true;
             return true;

@@ -48,7 +48,7 @@ public class GuiStringModifier extends GuiModifier<String> {
     public void init() {
         field = new EditBox(font, width / 2 - 99, height / 2 - 20, 198, 18, Component.literal(""));
         field.setMaxLength(Integer.MAX_VALUE);
-        field.setValue(value.replaceAll(String.valueOf(ChatUtils.MODIFIER), "&"));
+        field.setValue(ChatUtils.untranslateColorCodes(value));
         field.setFocused(true);
         field.setCanLoseFocus(false);
         addRenderableWidget(field);

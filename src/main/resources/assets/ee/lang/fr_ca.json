@@ -97,6 +97,7 @@
   "gui.ee.give.fail": "Veuillez vider un emplacement de votre barre d'action",
   "gui.ee.give.fail2": "Une erreur est survenue",
   "gui.ee.menu": "Menu de Edit Everything",
+  "gui.ee.menu.delete_question": "Delete this menu item?",
   "gui.ee.modifier.type": "Type",
   "gui.ee.modifier.name": "Nom",
   "gui.ee.modifier.lore": "Description",

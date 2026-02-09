@@ -90,7 +90,7 @@ public class GuiMenu extends GuiListModifier<Object> {
                         }, true));
                 } else if (mouseButton == 1)
                     if (EEModClient.isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT))
-                        parent.removeListElement(this);
+                        parent.openDeleteConfirmation(this);
                     else
                         ItemUtilsClient.give(stack);
             }
@@ -99,6 +99,17 @@ public class GuiMenu extends GuiListModifier<Object> {
     }
 
     private boolean initialized = false;
+    private void openDeleteConfirmation(MenuListElement element) {
+        getMinecraft().setScreen(new GuiConfirmation(this,
+                Component.translatable("gui.ee.menu.delete_question"),
+                Component.translatable("gui.ee.delete"),
+                () -> {
+                    removeListElement(element);
+                    getMinecraft().setScreen(this);
+                },
+                () -> getMinecraft().setScreen(this)));
+    }
+
     private final Consumer<String> ADD_STACK = i -> {
         ItemStack is = ItemUtils.getFromGiveCode(ChatUtils.translateColorCodes(i), registryAccess());
         if (is != null)

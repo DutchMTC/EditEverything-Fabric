@@ -48,6 +48,14 @@ public class GuiBooleanButton extends EEButton {
             setMessage(textNo.copy().withStyle(ChatFormatting.RED));
     }
 
+    /**
+     * Re-evaluate the current value from the getter and refresh the button label/colors.
+     * Useful when the underlying value changes externally (e.g. switching selection).
+     */
+    public void refreshDisplay() {
+        updateDisplay();
+    }
+
     @Override
     public void onPress(InputWithModifiers event) {
         boolean newValue = !getter.get();

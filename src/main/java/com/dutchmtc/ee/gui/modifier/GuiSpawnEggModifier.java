@@ -2,6 +2,10 @@ package com.dutchmtc.ee.gui.modifier;
 
 import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.gui.modifier.nbt.GuiNBTModifier;
+import com.dutchmtc.ee.gui.modifier.mob.GuiMobFieldsEditor;
+import com.dutchmtc.ee.gui.modifier.mob.GuiVillagerTradesEditor;
+import com.dutchmtc.ee.gui.modifier.mob.MobPropertyEditorState;
+import com.dutchmtc.ee.mobdata.MobDataRepository;
 import com.dutchmtc.ee.gui.selector.GuiButtonListSelector;
 import com.dutchmtc.ee.utils.ChatUtils;
 import com.dutchmtc.ee.utils.GuiUtils;
@@ -33,6 +37,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.component.TypedEntityData;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,7 +65,8 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
     private enum Tab {
         GENERAL("General"),
         FLAGS("Flags"),
-        DATA("Data");
+        DATA("Data"),
+        TRADES("Trades");
         
         final String label;
         Tab(String label) { this.label = label; }
@@ -109,12 +116,17 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         
         // Add Tab Buttons
         int tabWidth = 60;
-        int totalTabWidth = Tab.values().length * tabWidth;
+        List<Tab> tabs = getVisibleTabs();
+        if (!tabs.contains(currentTab)) {
+            currentTab = Tab.GENERAL;
+        }
+
+        int totalTabWidth = tabs.size() * tabWidth;
         int startX = (width - totalTabWidth) / 2;
         int y = 45; 
         
-        for (int i = 0; i < Tab.values().length; i++) {
-            Tab t = Tab.values()[i];
+        for (int i = 0; i < tabs.size(); i++) {
+            Tab t = tabs.get(i);
             EEButton btn = new EEButton(startX + i * tabWidth, y, tabWidth, 20, Component.literal(t.label), b -> {
                 currentTab = t;
                 init(); // Re-init to refresh widgets
@@ -130,6 +142,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
             case GENERAL -> initGeneral(centerX, contentY, spacing);
             case FLAGS -> initFlags(centerX, contentY, spacing);
             case DATA -> initData(centerX, contentY, spacing);
+            case TRADES -> initTrades(centerX, contentY, spacing);
         }
         
         // Done/Cancel at bottom
@@ -190,10 +203,31 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         Identifier id = getEntityRegistry().getKey(type);
         String idStr = id.toString();
 
-        if (idStr.contains("mannequin")) {
-            initMannequin(centerX, currentY, spacing);
-            return;
-        }
+        // Mob Fields / Feature Sets (data-driven)
+        addRenderableWidget(new EEButton(centerX - 100, currentY, 200, 20,
+                Component.literal("Edit Mob Properties"), b -> {
+            EntityType<?> entityType = getCurrentEntityType(currentItemStack);
+            Identifier entityId = getEntityRegistry().getKey(entityType);
+            String entityPath = entityId.getPath();
+
+            CompoundTag tag = getEntityTag();
+
+            // Default enabled feature sets from mob_fields.json (if present)
+            java.util.Set<String> featureSets = new java.util.LinkedHashSet<>();
+            JsonObject entity = MobDataRepository.getEntity(entityPath);
+            if (entity != null && entity.has("feature_sets") && entity.get("feature_sets").isJsonArray()) {
+                JsonArray arr = entity.getAsJsonArray("feature_sets");
+                for (int i = 0; i < arr.size(); i++) {
+                    if (arr.get(i).isJsonPrimitive()) {
+                        featureSets.add(arr.get(i).getAsString());
+                    }
+                }
+            }
+
+            MobPropertyEditorState state = MobPropertyEditorState.createDefault(entityPath, tag, featureSets);
+            getMinecraft().setScreen(new GuiMobFieldsEditor(GuiSpawnEggModifier.this, this::setEntityTag, state));
+        }));
+        currentY += spacing;
 
         // Name
         addNameInput(centerX, currentY);
@@ -209,43 +243,6 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                 () -> ItemUtils.getBoolean(getEntityTag(), "CustomNameVisible") || ItemUtils.getBoolean(getEntityTag(), "custom_name_visible")
         ));
         currentY += spacing;
-
-        // Specific Properties
-        if (idStr.contains("zombie") || idStr.contains("piglin") || idStr.contains("hoglin") || idStr.contains("zoglin")) {
-             addRenderableWidget(new GuiBooleanButton(centerX - 100, currentY, 200, 20,
-                    Component.literal("Is Baby"), 
-                    val -> updateEntityTag(tag -> ItemUtils.putBoolean(tag, "IsBaby", val)),
-                    () -> ItemUtils.getBoolean(getEntityTag(), "IsBaby")
-            ));
-            currentY += spacing;
-        }
-        
-        if (idStr.contains("slime") || idStr.contains("magma_cube") || idStr.contains("phantom")) {
-            addIntegerInput(centerX, currentY, "Size", "Size");
-            currentY += spacing;
-        }
-        
-        if (idStr.contains("creeper")) {
-            addRenderableWidget(new GuiBooleanButton(centerX - 100, currentY, 200, 20,
-                    Component.literal("Powered"), 
-                    val -> updateEntityTag(tag -> ItemUtils.putBoolean(tag, "powered", val)),
-                    () -> ItemUtils.getBoolean(getEntityTag(), "powered")
-            ));
-            currentY += spacing;
-            
-            addIntegerInput(centerX, currentY, "Explosion Radius", "ExplosionRadius");
-            currentY += spacing;
-            addIntegerInput(centerX, currentY, "Fuse", "Fuse");
-            currentY += spacing;
-        }
-        
-        if (idStr.contains("cow") || idStr.contains("sheep") || idStr.contains("chicken") || idStr.contains("pig") || 
-            idStr.contains("rabbit") || idStr.contains("wolf") || idStr.contains("cat") || idStr.contains("horse") ||
-            idStr.contains("donkey") || idStr.contains("mule") || idStr.contains("llama") || idStr.contains("panda") ||
-            idStr.contains("fox") || idStr.contains("turtle") || idStr.contains("villager")) {
-             addIntegerInput(centerX, currentY, "Age", "Age");
-             currentY += spacing;
-        }
     }
     
     private void initFlags(int centerX, int currentY, int spacing) {
@@ -354,15 +351,159 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                 Component.translatable("gui.ee.modifier.tag.editor"), b -> {
             CompoundTag tag = getEntityTag();
             getMinecraft().setScreen(new GuiNBTModifier(GuiSpawnEggModifier.this, newTag -> {
-                TypedEntityData<EntityType<?>> entityData = ItemUtils.getComponent(currentItemStack, DataComponents.ENTITY_DATA);
-                EntityType<?> type = entityData != null ? entityData.type() : getEggEntityType(currentItemStack);
-                if (newTag.isEmpty()) {
-                    ItemUtils.setComponent(currentItemStack, DataComponents.ENTITY_DATA, null);
-                } else {
-                    ItemUtils.setComponent(currentItemStack, DataComponents.ENTITY_DATA, TypedEntityData.of(type, newTag));
-                }
+                setEntityTag(newTag);
             }, tag));
         }));
+    }
+
+    private void initTrades(int centerX, int currentY, int spacing) {
+        if (!supportsTradesTab()) {
+            EEButton info = new EEButton(centerX - 100, currentY, 200, 20,
+                    Component.literal("Trades are only available for villager-type entities."), b -> {});
+            info.active = false;
+            addRenderableWidget(info);
+            return;
+        }
+
+        int tradeCount = getTradeRecipes(getEntityTag()).size();
+        EEButton count = new EEButton(centerX - 100, currentY, 200, 20,
+                Component.literal("Trades: " + tradeCount), b -> {});
+        count.active = false;
+        addRenderableWidget(count);
+        currentY += spacing;
+
+        addRenderableWidget(new EEButton(centerX - 100, currentY, 200, 20,
+                Component.literal("Edit Trades"), b -> {
+            List<CompoundTag> recipes = getTradeRecipes(getEntityTag());
+            // Defer opening to the next tick to avoid the screen being overwritten by other UI transitions
+            // (e.g. chat closing), which can look like the GUI "opens for 1 frame then closes".
+            var mc = getMinecraft();
+            mc.execute(() -> mc.setScreen(new GuiVillagerTradesEditor(this, recipes, newRecipes -> {
+                updateEntityTag(tag -> {
+                    setTradeRecipes(tag, newRecipes);
+                    ensureVillagerDataForTrading(tag);
+                });
+            })));
+        }));
+        currentY += spacing;
+
+        addRenderableWidget(new EEButton(centerX - 100, currentY, 200, 20,
+                Component.literal("Edit Offers NBT (raw)"), b -> {
+            CompoundTag tag = getEntityTag();
+            CompoundTag offers = tag.getCompound("Offers").orElse(new CompoundTag());
+            getMinecraft().setScreen(new GuiNBTModifier(Component.literal("Offers"), this, this::setOffersTag, offers));
+        }));
+    }
+
+    private void setOffersTag(CompoundTag offersTag) {
+        updateEntityTag(tag -> {
+            if (offersTag == null || offersTag.isEmpty()) {
+                ItemUtils.remove(tag, "Offers");
+            } else {
+                tag.put("Offers", offersTag);
+                ensureVillagerDataForTrading(tag);
+            }
+        });
+    }
+
+    private void ensureVillagerDataForTrading(CompoundTag entityTag) {
+        if (entityTag == null) {
+            return;
+        }
+
+        EntityType<?> type = getCurrentEntityType(currentItemStack);
+        Identifier id = getEntityRegistry().getKey(type);
+        if (id == null) {
+            return;
+        }
+
+        // Villager trading can instantly close if VillagerData is missing or the profession is "none".
+        // Only apply sane defaults for vanilla villager variants; don't clobber custom entities.
+        String path = id.getPath();
+        if (!"villager".equals(path) && !"zombie_villager".equals(path)) {
+            return;
+        }
+
+        CompoundTag data = entityTag.getCompound("VillagerData").orElse(new CompoundTag());
+        boolean changed = false;
+
+        String profession = data.getString("profession").orElse("");
+        if (profession.isEmpty() || "minecraft:none".equals(profession) || "none".equals(profession)) {
+            data.putString("profession", "minecraft:farmer");
+            changed = true;
+        }
+
+        String villagerType = data.getString("type").orElse("");
+        if (villagerType.isEmpty()) {
+            data.putString("type", "minecraft:plains");
+            changed = true;
+        }
+
+        if (!ItemUtils.hasTag(data, "level", Tag.TAG_INT) && !ItemUtils.hasTag(data, "level", Tag.TAG_BYTE)) {
+            data.putInt("level", 2);
+            changed = true;
+        }
+
+        if (changed) {
+            entityTag.put("VillagerData", data);
+        }
+    }
+
+    private static List<CompoundTag> getTradeRecipes(CompoundTag entityTag) {
+        List<CompoundTag> out = new ArrayList<>();
+        if (!ItemUtils.hasTag(entityTag, "Offers", Tag.TAG_COMPOUND)) return out;
+        CompoundTag offers = entityTag.getCompound("Offers").orElse(new CompoundTag());
+        if (!ItemUtils.hasTag(offers, "Recipes", Tag.TAG_LIST)) return out;
+        ListTag recipes = offers.getList("Recipes").orElse(new ListTag());
+        for (int i = 0; i < recipes.size(); i++) {
+            Tag t = recipes.get(i);
+            if (t instanceof CompoundTag ct) {
+                out.add(ct.copy());
+            }
+        }
+        return out;
+    }
+
+    private static void setTradeRecipes(CompoundTag entityTag, List<CompoundTag> recipes) {
+        if (recipes == null || recipes.isEmpty()) {
+            if (ItemUtils.hasTag(entityTag, "Offers", Tag.TAG_COMPOUND)) {
+                CompoundTag offers = entityTag.getCompound("Offers").orElse(new CompoundTag());
+                ItemUtils.remove(offers, "Recipes");
+                if (offers.isEmpty()) {
+                    ItemUtils.remove(entityTag, "Offers");
+                } else {
+                    entityTag.put("Offers", offers);
+                }
+            }
+            return;
+        }
+
+        CompoundTag offers = entityTag.getCompound("Offers").orElse(new CompoundTag());
+        ListTag list = new ListTag();
+        for (CompoundTag recipe : recipes) {
+            list.add(recipe);
+        }
+        offers.put("Recipes", list);
+        entityTag.put("Offers", offers);
+    }
+
+    private List<Tab> getVisibleTabs() {
+        List<Tab> tabs = new ArrayList<>();
+        tabs.add(Tab.GENERAL);
+        tabs.add(Tab.FLAGS);
+        tabs.add(Tab.DATA);
+        if (supportsTradesTab()) {
+            tabs.add(Tab.TRADES);
+        }
+        return tabs;
+    }
+
+    private boolean supportsTradesTab() {
+        EntityType<?> type = getCurrentEntityType(currentItemStack);
+        Identifier id = getEntityRegistry().getKey(type);
+        if (id == null) return false;
+        String path = id.getPath();
+        return "villager".equals(path) || "zombie_villager".equals(path) || "wandering_trader".equals(path);
     }
 
     private void addIntegerInput(int centerX, int y, String label, String nbtKey) {
@@ -400,6 +541,16 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
             ItemUtils.setComponent(currentItemStack, DataComponents.ENTITY_DATA, null);
         } else {
             ItemUtils.setComponent(currentItemStack, DataComponents.ENTITY_DATA, TypedEntityData.of(type, tag));
+        }
+    }
+
+    private void setEntityTag(CompoundTag newTag) {
+        TypedEntityData<EntityType<?>> entityData = ItemUtils.getComponent(currentItemStack, DataComponents.ENTITY_DATA);
+        EntityType<?> type = entityData != null ? entityData.type() : getEggEntityType(currentItemStack);
+        if (newTag == null || newTag.isEmpty()) {
+            ItemUtils.setComponent(currentItemStack, DataComponents.ENTITY_DATA, null);
+        } else {
+            ItemUtils.setComponent(currentItemStack, DataComponents.ENTITY_DATA, TypedEntityData.of(type, newTag));
         }
     }
 
@@ -501,28 +652,67 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
             return Component.empty();
         }
 
+        String formatted = ChatUtils.translateColorCodes(input);
         StringBuilder buffer = new StringBuilder();
         List<net.minecraft.ChatFormatting> formats = new ArrayList<>();
+        Integer rgbColor = null;
         MutableComponent out = Component.literal("");
 
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-            if ((c == '&' || c == ChatUtils.MODIFIER) && i + 1 < input.length()) {
-                char code = Character.toLowerCase(input.charAt(i + 1));
+        for (int i = 0; i < formatted.length(); i++) {
+            char c = formatted.charAt(i);
+            if (c == ChatUtils.MODIFIER && i + 1 < formatted.length()) {
+                char code = Character.toLowerCase(formatted.charAt(i + 1));
+
+                // §x§R§R§G§G§B§B
+                if (code == 'x' && i + 13 < formatted.length()) {
+                    int rgb = tryParseSectionHexColor(formatted, i);
+                    if (rgb >= 0) {
+                        if (buffer.length() > 0) {
+                            MutableComponent part = Component.literal(buffer.toString());
+                            if (!formats.isEmpty()) {
+                                part = part.withStyle(formats.toArray(new net.minecraft.ChatFormatting[0]));
+                            }
+                            if (rgbColor != null) {
+                                int cRgb = rgbColor;
+                                part = part.withStyle(s -> s.withColor(cRgb));
+                            }
+                            out.append(part);
+                            buffer.setLength(0);
+                        }
+
+                        formats.clear();
+                        rgbColor = rgb;
+                        i += 13;
+                        continue;
+                    }
+                }
+
                 net.minecraft.ChatFormatting fmt = legacyCodeToFormatting(code);
                 if (fmt != null) {
                     if (buffer.length() > 0) {
-                        out.append(Component.literal(buffer.toString()).withStyle(formats.toArray(new net.minecraft.ChatFormatting[0])));
+                        MutableComponent part = Component.literal(buffer.toString());
+                        if (!formats.isEmpty()) {
+                            part = part.withStyle(formats.toArray(new net.minecraft.ChatFormatting[0]));
+                        }
+                        if (rgbColor != null) {
+                            int cRgb = rgbColor;
+                            part = part.withStyle(s -> s.withColor(cRgb));
+                        }
+                        out.append(part);
                         buffer.setLength(0);
                     }
+
                     if (code == 'r') {
                         formats.clear();
-                    } else if ("0123456789abcdef".indexOf(code) >= 0) {
+                        rgbColor = null;
+                    } else if (fmt.isColor()) {
                         formats.clear();
                         formats.add(fmt);
+                        rgbColor = null;
                     } else if (!formats.contains(fmt)) {
                         formats.add(fmt);
                     }
+
                     i++; // skip code
                     continue;
                 }
@@ -531,10 +721,36 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         }
 
         if (buffer.length() > 0) {
-            out.append(Component.literal(buffer.toString()).withStyle(formats.toArray(new net.minecraft.ChatFormatting[0])));
+            MutableComponent part = Component.literal(buffer.toString());
+            if (!formats.isEmpty()) {
+                part = part.withStyle(formats.toArray(new net.minecraft.ChatFormatting[0]));
+            }
+            if (rgbColor != null) {
+                int cRgb = rgbColor;
+                part = part.withStyle(s -> s.withColor(cRgb));
+            }
+            out.append(part);
         }
 
         return out;
+    }
+
+    private static int tryParseSectionHexColor(String s, int sectionIndex) {
+        // §x§R§R§G§G§B§B -> 14 chars total, starting at §
+        if (sectionIndex + 13 >= s.length()) return -1;
+        if (s.charAt(sectionIndex) != ChatUtils.MODIFIER) return -1;
+        if (Character.toLowerCase(s.charAt(sectionIndex + 1)) != 'x') return -1;
+
+        int rgb = 0;
+        for (int j = 0; j < 6; j++) {
+            int sepIndex = sectionIndex + 2 + j * 2;
+            int digitIndex = sectionIndex + 3 + j * 2;
+            if (s.charAt(sepIndex) != ChatUtils.MODIFIER) return -1;
+            int d = Character.digit(s.charAt(digitIndex), 16);
+            if (d < 0) return -1;
+            rgb = (rgb << 4) | d;
+        }
+        return rgb;
     }
 
     private static net.minecraft.ChatFormatting legacyCodeToFormatting(char code) {
@@ -837,75 +1053,13 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         return BuiltInRegistries.ENTITY_TYPE;
     }
 
-    private void initMannequin(int centerX, int currentY, int spacing) {
-        // Row 1: Profile
-        addLabel(centerX, currentY, "Profile");
-        addStringInput(centerX, currentY, "profile");
-        currentY += spacing;
-
-        // Row 2: Main Hand | Pose
-        addCombinedCycleButton(centerX - 100, currentY, 98, "Main Hand", "main_hand", Arrays.asList("right", "left"), "right");
-        addCombinedCycleButton(centerX + 2, currentY, 98, "Pose", "pose", Arrays.asList("standing", "crouching", "swimming", "fall_flying", "sleeping"), "standing");
-        currentY += spacing;
-
-        // Row 3: Immovable | Hide Description
-        addRenderableWidget(new GuiBooleanButton(centerX - 100, currentY, 98, 20,
-                Component.literal("Immovable"), 
-                val -> updateEntityTag(tag -> ItemUtils.putBoolean(tag, "immovable", val)),
-                () -> ItemUtils.getBoolean(getEntityTag(), "immovable")
-        ));
-        addRenderableWidget(new GuiBooleanButton(centerX + 2, currentY, 98, 20,
-                Component.literal("Hide Desc."), 
-                val -> updateEntityTag(tag -> ItemUtils.putBoolean(tag, "hide_description", val)),
-                () -> ItemUtils.getBoolean(getEntityTag(), "hide_description")
-        ));
-        currentY += spacing;
-
-        // Row 4: Description
-        addLabel(centerX, currentY, "Description");
-        addStringInput(centerX, currentY, "description");
-        currentY += spacing;
-
-        // Row 5: Name
-        addNameInput(centerX, currentY);
-        currentY += spacing;
-
-        // Row 6: Show Name | Hidden Layers
-        addRenderableWidget(new GuiBooleanButton(centerX - 100, currentY, 98, 20,
-                Component.literal("Show Name"),
-                val -> updateEntityTag(tag -> {
-                    ItemUtils.putBoolean(tag, "CustomNameVisible", val);
-                    ItemUtils.remove(tag, "custom_name_visible");
-                }),
-                () -> ItemUtils.getBoolean(getEntityTag(), "CustomNameVisible") || ItemUtils.getBoolean(getEntityTag(), "custom_name_visible")
-        ));
-        
-        addRenderableWidget(new EEButton(centerX + 2, currentY, 98, 20, Component.literal("Hidden Layers"), b -> {
-            getMinecraft().setScreen(new GuiMannequinLayers(this, getEntityTag(), newTag -> updateEntityTag(t -> {
-                if (newTag.contains("hidden_layers")) t.put("hidden_layers", newTag.get("hidden_layers"));
-                else ItemUtils.remove(t, "hidden_layers");
-            })));
-        }));
-        currentY += spacing;
-
-        // Row 7: Advanced Options
-        addRenderableWidget(new EEButton(centerX - 100, currentY, 200, 20, Component.literal("Advanced Options"), b -> {
-            getMinecraft().setScreen(new GuiMannequinAdvanced(this, getEntityTag(), newTag -> updateEntityTag(t -> {
-                if (newTag.contains("texture")) t.put("texture", newTag.get("texture")); else ItemUtils.remove(t, "texture");
-                if (newTag.contains("cape")) t.put("cape", newTag.get("cape")); else ItemUtils.remove(t, "cape");
-                if (newTag.contains("elytra")) t.put("elytra", newTag.get("elytra")); else ItemUtils.remove(t, "elytra");
-                if (newTag.contains("model")) t.put("model", newTag.get("model")); else ItemUtils.remove(t, "model");
-            })));
-        }));
-    }
-
     private void addNameInput(int centerX, int y) {
         EditBox nameBox = new EditBox(font, centerX - 100, y, 200, 20, Component.literal("Name"));
         nameBox.setMaxLength(256);
         String currentName = "";
         Component currentNameComponent = readEntityCustomName(getEntityTag());
         if (!currentNameComponent.getString().isEmpty()) {
-            currentName = currentNameComponent.getString();
+            currentName = ChatUtils.componentToLegacyCodes(currentNameComponent);
         }
         nameBox.setValue(currentName);
         nameBox.setResponder(val -> updateEntityTag(tag -> {
@@ -926,218 +1080,4 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         addRenderableWidget(nameBox);
     }
 
-    private void addCombinedCycleButton(int x, int y, int width, String label, String nbtKey, List<String> values, String defaultValue) {
-        String current = ItemUtils.getString(getEntityTag(), nbtKey);
-        if (current.isEmpty()) current = defaultValue;
-        
-        final String finalCurrent = current;
-        
-        addRenderableWidget(new EEButton(x, y, width, 20, Component.literal(label + ": " + finalCurrent), b -> {
-            String val = ItemUtils.getString(getEntityTag(), nbtKey);
-            if (val.isEmpty()) val = defaultValue;
-            int index = values.indexOf(val);
-            if (index == -1) index = 0;
-            index = (index + 1) % values.size();
-            String next = values.get(index);
-            
-            updateEntityTag(tag -> tag.putString(nbtKey, next));
-            b.setMessage(Component.literal(label + ": " + next));
-        }));
-    }
-
-    private void addLabel(int centerX, int y, String label) {
-        EEButton labelBtn = new EEButton(centerX - 100, y, 100, 20, Component.literal(label), b -> {});
-        labelBtn.active = false;
-        addRenderableWidget(labelBtn);
-    }
-
-    private void addStringInput(int centerX, int y, String nbtKey) {
-        EditBox editBox = new EditBox(font, centerX + 2, y, 95, 20, Component.literal(nbtKey));
-        editBox.setMaxLength(256);
-        editBox.setValue(ItemUtils.getString(getEntityTag(), nbtKey));
-        editBox.setResponder(val -> updateEntityTag(tag -> {
-            if (val.isEmpty()) ItemUtils.remove(tag, nbtKey);
-            else tag.putString(nbtKey, val);
-        }));
-        addRenderableWidget(editBox);
-    }
-    
-    private void addCycleButton(int centerX, int y, String nbtKey, List<String> values, String defaultValue) {
-        String current = ItemUtils.getString(getEntityTag(), nbtKey);
-        if (current.isEmpty()) current = defaultValue;
-        
-        final String finalCurrent = current;
-        
-        addRenderableWidget(new EEButton(centerX + 2, y, 95, 20, Component.literal(finalCurrent), b -> {
-            String val = ItemUtils.getString(getEntityTag(), nbtKey);
-            if (val.isEmpty()) val = defaultValue;
-            int index = values.indexOf(val);
-            if (index == -1) index = 0;
-            index = (index + 1) % values.size();
-            String next = values.get(index);
-            
-            updateEntityTag(tag -> tag.putString(nbtKey, next));
-            b.setMessage(Component.literal(next));
-        }));
-    }
-
-    private static class GuiMannequinLayers extends GuiModifier<CompoundTag> {
-        private final CompoundTag originalTag;
-        private final CompoundTag tag;
-        private static final String[] LAYERS = {"cape", "jacket", "left_sleeve", "right_sleeve", "left_pants_leg", "right_pants_leg", "hat"};
-
-        public GuiMannequinLayers(Screen parent, CompoundTag tag, Consumer<CompoundTag> setter) {
-            super(parent, Component.literal("Hidden Layers"), setter);
-            this.originalTag = tag.copy();
-            this.tag = tag.copy();
-        }
-
-        @Override
-        public boolean isModified() {
-            return !tag.equals(originalTag);
-        }
-
-        @Override
-        public void init() {
-            super.init();
-            int centerX = width / 2;
-            int y = 40;
-            
-            ListTag list = ItemUtils.getList(tag, "hidden_layers", 8);
-            List<String> currentLayers = new ArrayList<>();
-            for (int i = 0; i < list.size(); i++) {
-                currentLayers.add(list.getString(i).orElse(""));
-            }
-
-            for (String layer : LAYERS) {
-                addRenderableWidget(new GuiBooleanButton(centerX - 100, y, 200, 20, Component.literal(layer), val -> {
-                    if (val) {
-                        if (!currentLayers.contains(layer)) currentLayers.add(layer);
-                    } else {
-                        currentLayers.remove(layer);
-                    }
-                    ListTag newList = new ListTag();
-                    currentLayers.forEach(s -> newList.add(StringTag.valueOf(s)));
-                    tag.put("hidden_layers", newList);
-                }, () -> currentLayers.contains(layer)));
-                y += 24;
-            }
-
-            addRenderableWidget(new EEButton(centerX - 100, height - 25, 100, 20,
-                    Component.translatable("gui.ee.cancel"), b -> onCancel()));
-            addRenderableWidget(new EEButton(centerX + 1, height - 25, 99, 20, Component.translatable("gui.done"), b -> {
-                set(tag);
-                getMinecraft().setScreen(parent);
-            }));
-        }
-        
-        @Override
-        public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-             // do nothing
-        }
-        
-        @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-            GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
-            super.render(graphics, mouseX, mouseY, partialTicks);
-            GuiUtils.drawCenterString(graphics, font, getStringTitle(), width / 2, 10, 0xFFFFFFFF);
-        }
-    }
-
-    private static class GuiMannequinAdvanced extends GuiModifier<CompoundTag> {
-        private final CompoundTag originalTag;
-        private final CompoundTag tag;
-
-        public GuiMannequinAdvanced(Screen parent, CompoundTag tag, Consumer<CompoundTag> setter) {
-            super(parent, Component.literal("Advanced Options"), setter);
-            this.originalTag = tag.copy();
-            this.tag = tag.copy();
-        }
-
-        @Override
-        public boolean isModified() {
-            return !tag.equals(originalTag);
-        }
-
-        @Override
-        public void init() {
-            super.init();
-            int centerX = width / 2;
-            int y = 40;
-            int spacing = 24;
-
-            addLabel(centerX, y, "Texture");
-            addStringInput(centerX, y, "texture");
-            y += spacing;
-
-            addLabel(centerX, y, "Cape");
-            addStringInput(centerX, y, "cape");
-            y += spacing;
-
-            addLabel(centerX, y, "Elytra");
-            addStringInput(centerX, y, "elytra");
-            y += spacing;
-
-            addLabel(centerX, y, "Model");
-            addCycleButton(centerX, y, "model", Arrays.asList("wide", "slim"), "wide");
-            y += spacing;
-
-            addRenderableWidget(new EEButton(centerX - 100, height - 25, 100, 20,
-                    Component.translatable("gui.ee.cancel"), b -> onCancel()));
-            addRenderableWidget(new EEButton(centerX + 1, height - 25, 99, 20, Component.translatable("gui.done"), b -> {
-                set(tag);
-                getMinecraft().setScreen(parent);
-            }));
-        }
-
-        private void addLabel(int centerX, int y, String label) {
-            EEButton labelBtn = new EEButton(centerX - 100, y, 100, 20, Component.literal(label), b -> {});
-            labelBtn.active = false;
-            addRenderableWidget(labelBtn);
-        }
-
-        private void addStringInput(int centerX, int y, String nbtKey) {
-            EditBox editBox = new EditBox(font, centerX + 2, y, 95, 20, Component.literal(nbtKey));
-            editBox.setMaxLength(256);
-            editBox.setValue(ItemUtils.getString(tag, nbtKey));
-            editBox.setResponder(val -> {
-                if (val.isEmpty()) ItemUtils.remove(tag, nbtKey);
-                else tag.putString(nbtKey, val);
-            });
-            addRenderableWidget(editBox);
-        }
-        
-        private void addCycleButton(int centerX, int y, String nbtKey, List<String> values, String defaultValue) {
-            String current = ItemUtils.getString(tag, nbtKey);
-            if (current.isEmpty()) current = defaultValue;
-            
-            final String finalCurrent = current;
-            
-            addRenderableWidget(new EEButton(centerX + 2, y, 95, 20, Component.literal(finalCurrent), b -> {
-                String val = ItemUtils.getString(tag, nbtKey);
-                if (val.isEmpty()) val = defaultValue;
-                int index = values.indexOf(val);
-                if (index == -1) index = 0;
-                index = (index + 1) % values.size();
-                String next = values.get(index);
-                
-                tag.putString(nbtKey, next);
-                b.setMessage(Component.literal(next));
-            }));
-        }
-        
-        @Override
-        public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-             // do nothing
-        }
-        
-        @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-            GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
-            super.render(graphics, mouseX, mouseY, partialTicks);
-            GuiUtils.drawCenterString(graphics, font, getStringTitle(), width / 2, 10, 0xFFFFFFFF);
-        }
-    }
 }

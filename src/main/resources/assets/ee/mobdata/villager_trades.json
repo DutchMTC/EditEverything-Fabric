@@ -1,0 +1,212 @@
+{
+  "version": "1.21.11",
+  "villager_data": {
+    "type": {
+      "field": "VillagerData.type",
+      "label": "Biome Type",
+      "options": [
+        {
+          "value": "desert",
+          "label": "Desert"
+        },
+        {
+          "value": "jungle",
+          "label": "Jungle"
+        },
+        {
+          "value": "plains",
+          "label": "Plains"
+        },
+        {
+          "value": "savanna",
+          "label": "Savanna"
+        },
+        {
+          "value": "snow",
+          "label": "Snow"
+        },
+        {
+          "value": "swamp",
+          "label": "Swamp"
+        },
+        {
+          "value": "taiga",
+          "label": "Taiga"
+        }
+      ]
+    },
+    "profession": {
+      "field": "VillagerData.profession",
+      "label": "Profession",
+      "options": [
+        {
+          "value": "armorer",
+          "label": "Armorer"
+        },
+        {
+          "value": "butcher",
+          "label": "Butcher"
+        },
+        {
+          "value": "cartographer",
+          "label": "Cartographer"
+        },
+        {
+          "value": "cleric",
+          "label": "Cleric"
+        },
+        {
+          "value": "farmer",
+          "label": "Farmer"
+        },
+        {
+          "value": "fisherman",
+          "label": "Fisherman"
+        },
+        {
+          "value": "fletcher",
+          "label": "Fletcher"
+        },
+        {
+          "value": "leatherworker",
+          "label": "Leatherworker"
+        },
+        {
+          "value": "librarian",
+          "label": "Librarian"
+        },
+        {
+          "value": "mason",
+          "label": "Mason"
+        },
+        {
+          "value": "nitwit",
+          "label": "Nitwit"
+        },
+        {
+          "value": "shepherd",
+          "label": "Shepherd"
+        },
+        {
+          "value": "toolsmith",
+          "label": "Toolsmith"
+        },
+        {
+          "value": "weaponsmith",
+          "label": "Weaponsmith"
+        }
+      ]
+    },
+    "level": {
+      "field": "VillagerData.level",
+      "label": "Level",
+      "options": [
+        {
+          "value": "1",
+          "label": "Novice"
+        },
+        {
+          "value": "2",
+          "label": "Apprentice"
+        },
+        {
+          "value": "3",
+          "label": "Journeyman"
+        },
+        {
+          "value": "4",
+          "label": "Expert"
+        },
+        {
+          "value": "5",
+          "label": "Master"
+        },
+        {
+          "value": "99",
+          "label": "No Default Trades"
+        }
+      ]
+    }
+  },
+  "offers": {
+    "list_nbt_path": "Offers.Recipes",
+    "entry_fields": [
+      {
+        "key": "maxUses",
+        "label": "Max Uses",
+        "nbt_path": "maxUses",
+        "type": "int",
+        "help": "Trade disabled when limit reached. Increases 2 to 12 when offers are refreshed"
+      },
+      {
+        "key": "rewardExp",
+        "label": "Reward Exp",
+        "nbt_path": "rewardExp",
+        "type": "bool",
+        "help": "If trade drops xp orbs",
+        "ui": {
+          "checkbox_label": "Disabled",
+          "inverted": true,
+          "checked_value_hint": "0b"
+        }
+      },
+      {
+        "key": "priceMultiplier",
+        "label": "Price Multiplier",
+        "nbt_path": "priceMultiplier",
+        "type": "float",
+        "help": "Multiplies the demand price adjuster"
+      },
+      {
+        "key": "demand",
+        "label": "Demand",
+        "nbt_path": "demand",
+        "type": "int",
+        "help": "Price adjuster of the first cost item based on demand. Updates when villager resupplies."
+      },
+      {
+        "key": "specialPrice",
+        "label": "Special Price",
+        "nbt_path": "specialPrice",
+        "type": "int",
+        "help": "Added to the original price of the first cos item."
+      }
+    ],
+    "item_stacks": [
+      {
+        "key": "buy",
+        "label": "Buy (A)",
+        "nbt_path": "buy",
+        "format": "legacy",
+        "legacy_paths": {
+          "id": "id",
+          "count": "count",
+          "tag": "components"
+        }
+      },
+      {
+        "key": "buyB",
+        "label": "Buy (B)",
+        "nbt_path": "buyB",
+        "format": "legacy",
+        "optional": true,
+        "legacy_paths": {
+          "id": "id",
+          "count": "count",
+          "tag": "components"
+        }
+      },
+      {
+        "key": "sell",
+        "label": "Sell",
+        "nbt_path": "sell",
+        "format": "legacy",
+        "legacy_paths": {
+          "id": "id",
+          "count": "count",
+          "tag": "components"
+        }
+      }
+    ]
+  }
+}

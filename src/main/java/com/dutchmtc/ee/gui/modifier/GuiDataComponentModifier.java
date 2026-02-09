@@ -21,6 +21,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ShieldItem;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -265,6 +266,9 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
             return new GuiEnchModifier(back, ItemUtils.getEnchantments(stack, true),
                     list -> ItemUtils.setEnchantments(list, stack, true,
                             getMinecraft().level != null ? getMinecraft().level.registryAccess() : null));
+        }
+        if (!forceGeneric && type == DataComponents.BANNER_PATTERNS && stack.getItem() instanceof ShieldItem) {
+            return new GuiBannerEditor(back, stack, edited -> stack.applyComponents(edited.getComponentsPatch()));
         }
 
         Object value = ItemUtils.getComponent(stack, (DataComponentType<Object>) type);

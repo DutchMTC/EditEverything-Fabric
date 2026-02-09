@@ -76,11 +76,23 @@ public class EditEverything {
 
     private void accept(CreativeModeTab.ItemDisplayParameters params, CreativeModeTab.Output output) {
         output.acceptAll(subItems);
-        EEMod.getCustomItems().stream()
-                .map(com.dutchmtc.ee.utils.ChatUtils::translateColorCodes)
-                .map(ItemUtils::getFromGiveCode)
-                .peek(s -> s.setCount(1))
-                .forEach(output::accept);
+        for (String code : EEMod.getCustomItems()) {
+            if (code == null || code.isEmpty()) {
+                continue;
+            }
+            try {
+                ItemStack stack = ItemUtils.getFromGiveCode(com.dutchmtc.ee.utils.ChatUtils.translateColorCodes(code),
+                        params != null ? params.holders() : null);
+                if (stack == null || stack.isEmpty()) {
+                    continue;
+                }
+                stack.setCount(1);
+                output.accept(stack);
+            } catch (Throwable t) {
+                // Never fail tab population (and creative search indexing) due to a single bad entry.
+                EEMod.LOGGER.warn("Skipping invalid custom item entry in ACT tab: {}", code, t);
+            }
+        }
     }
 
     public void register() {

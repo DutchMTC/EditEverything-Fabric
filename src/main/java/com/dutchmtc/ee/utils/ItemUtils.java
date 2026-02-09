@@ -582,7 +582,7 @@ public class ItemUtils {
             @Nullable Tuple<Enchantment, Integer>[] enchantments) {
         ItemStack is = new ItemStack(item, count);
         if (name != null) {
-            setComponent(is, DataComponents.CUSTOM_NAME, Component.literal(name));
+            setComponent(is, DataComponents.CUSTOM_NAME, ChatUtils.parseLegacyFormattingComponent(name));
         }
         if (lore != null) {
             setLore(is, lore);
@@ -653,7 +653,58 @@ public class ItemUtils {
         if (registryAccess == null) {
             registryAccess = VanillaRegistries.createLookup();
         }
-        return new ItemReader(registryAccess).readItem(code);
+        ItemStack stack = new ItemReader(registryAccess).readItem(code);
+        if (stack != null && !stack.isEmpty()) {
+            normalizeLegacyTextComponents(stack);
+        }
+        return stack;
+    }
+
+    private static void normalizeLegacyTextComponents(ItemStack stack) {
+        // custom_name: if it was parsed as a plain string component containing legacy codes, convert to a styled component
+        Component customName = getComponent(stack, DataComponents.CUSTOM_NAME);
+        if (customName != null) {
+            String raw = customName.getString();
+            if (looksLikeLegacyFormatting(raw)) {
+                setComponent(stack, DataComponents.CUSTOM_NAME, ChatUtils.parseLegacyFormattingComponent(raw));
+            }
+        }
+
+        // lore: same conversion per-line
+        ItemLore lore = getComponent(stack, DataComponents.LORE);
+        if (lore != null && !lore.lines().isEmpty()) {
+            boolean changed = false;
+            List<Component> lines = new ArrayList<>(lore.lines().size());
+            for (Component line : lore.lines()) {
+                String raw = line.getString();
+                if (looksLikeLegacyFormatting(raw)) {
+                    lines.add(ChatUtils.parseLegacyFormattingComponent(raw));
+                    changed = true;
+                } else {
+                    lines.add(line);
+                }
+            }
+            if (changed) {
+                setComponent(stack, DataComponents.LORE, new ItemLore(lines));
+            }
+        }
+    }
+
+    private static boolean looksLikeLegacyFormatting(String s) {
+        if (s == null || s.isEmpty()) return false;
+        if (s.indexOf(ChatUtils.MODIFIER) >= 0) return true;
+        if (s.indexOf('&') < 0) return s.contains("&#");
+        // Quick heuristics; we already treat & codes as formatting in many UIs
+        for (int i = 0; i + 1 < s.length(); i++) {
+            if (s.charAt(i) == '&') {
+                char c = Character.toLowerCase(s.charAt(i + 1));
+                if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'k' && c <= 'o') || c == 'r' || c == '#'
+                        || c == 'x') {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public static String getGiveCode(ItemStack itemStack) {
@@ -795,7 +846,7 @@ public class ItemUtils {
             return new String[0];
         }
         return lore.lines().stream()
-                .map(Component::getString)
+                .map(ChatUtils::componentToLegacyCodes)
                 .toArray(String[]::new);
     }
 
@@ -1154,7 +1205,7 @@ public class ItemUtils {
             return setLoreComponents(stack, List.of());
         }
         List<Component> components = Arrays.stream(lore)
-                .map(Component::literal)
+                .map(ChatUtils::parseLegacyFormattingComponent)
                 .collect(Collectors.toList());
         return setLoreComponents(stack, components);
     }
@@ -1340,14 +1391,7 @@ public class ItemUtils {
                 return stack;
             }
             CompoundTag blockTag = getOrCreateTagElement(stack, "BlockEntityTag");
-            CompoundTag itemTag = new CompoundTag();
-            putString(itemTag, "id", getRegistry(cd.getItem()).toString());
-            putByte(itemTag, "Count", (byte) cd.getCount());
-            CompoundTag it = getTag(cd);
-            if (it != null) {
-                itemTag.put("tag", it);
-            }
-
+            Tag itemTag = saveStack(cd, VanillaRegistries.createLookup());
             blockTag.put("RecordItem", itemTag);
             setTag(stack, getTag(stack));
         }

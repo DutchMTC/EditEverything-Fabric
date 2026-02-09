@@ -12,6 +12,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import com.dutchmtc.ee.utils.ServerItemOps;
+import com.dutchmtc.ee.utils.ChatUtils;
 
 public class ModdedCommandRename extends ModdedCommand {
 
@@ -26,9 +27,10 @@ public class ModdedCommandRename extends ModdedCommand {
         return command.then(Commands.argument("itemname", StringArgumentType.greedyString()).executes(c -> {
             var player = c.getSource().getPlayerOrException();
             ItemStack stack = player.getMainHandItem().copy();
-            stack.set(DataComponents.CUSTOM_NAME, Component.literal(StringArgumentType.getString(c, "itemname")
-                    .replaceAll("&([0-9a-fA-FrRk-oK-O])", EEMod.FORMAT_CHAR + "$1")
-                    .replaceAll("&" + EEMod.FORMAT_CHAR, "&")));
+            String rawName = StringArgumentType.getString(c, "itemname");
+            // Preserve the legacy escaping behavior from previous versions.
+            String unescaped = rawName.replace("&" + EEMod.FORMAT_CHAR, "&");
+            stack.set(DataComponents.CUSTOM_NAME, ChatUtils.parseLegacyFormattingComponent(unescaped));
             ServerItemOps.setMainHand(player, stack);
             return 1;
         }));

@@ -1,0 +1,3292 @@
+{
+  "entities": {
+    "allay": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": null,
+      "label": "Allay",
+      "tags": [
+        "breedable",
+        "flying",
+        "passive",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "area_effect_cloud": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Area Effect Cloud",
+      "tags": [],
+      "type": "common"
+    },
+    "armadillo": {
+      "feature_sets": [
+        "breedable",
+        "bucket",
+        "tameable",
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "state",
+          "label": "State",
+          "options": [
+            {
+              "label": "idle",
+              "value": ""
+            },
+            {
+              "label": "unrolling",
+              "value": "unrolling"
+            },
+            {
+              "label": "scared",
+              "value": "scared"
+            }
+          ],
+          "type": "select"
+        }
+      ],
+      "label": "Armadillo",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "armor_stand": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Armor Stand",
+      "tags": [],
+      "type": "common"
+    },
+    "arrow": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Arrow",
+      "tags": [],
+      "type": "projectile"
+    },
+    "axolotl": {
+      "feature_sets": [
+        "breedable",
+        "bucket",
+        "tameable",
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "Variant",
+          "label": "Variant",
+          "options": [
+            {
+              "label": "Random",
+              "value": ""
+            },
+            {
+              "label": "Leucistic (Pink)",
+              "value": "0"
+            },
+            {
+              "label": "Wild (Brown)",
+              "value": "1"
+            },
+            {
+              "label": "Gold (Yellow)",
+              "value": "2"
+            },
+            {
+              "label": "Cyan (White)",
+              "value": "3"
+            },
+            {
+              "label": "Blue",
+              "value": "4"
+            }
+          ],
+          "type": "select"
+        },
+        "#frombucket"
+      ],
+      "label": "Axolotl",
+      "tags": [
+        "animal",
+        "aquatic",
+        "breedable",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "bat": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "BatFlags",
+          "help": "1 when hanging upside-down from a block, 0 when flying.",
+          "label": "BatFlags",
+          "type": "bool"
+        }
+      ],
+      "label": "Bat",
+      "tags": [
+        "animal",
+        "flying",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "bee": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "Anger",
+          "help": "Time left in ticks until the bee's anger ends. If this is zero, it is not angry.",
+          "label": "Anger",
+          "max": 2000000000,
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "field": "HasNectar",
+          "help": "Whether it is carrying pollen.",
+          "label": "Has Nectar",
+          "type": "bool"
+        },
+        {
+          "field": "HasStung",
+          "help": "Whether it has stung a mob or player.",
+          "label": "Has Stung",
+          "type": "bool"
+        },
+        "#hurtby_j115",
+        "#hurtby_j116",
+        {
+          "field": "TicksSincePollination",
+          "help": "Number of ticks passed since its last pollination.",
+          "label": "Ticks Since Pollination",
+          "max": 2000000000,
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "field": "CannotEnterHiveTicks",
+          "help": "Time left in ticks until the bee can enter a beehive.",
+          "label": "Cannot Enter Hive Ticks",
+          "max": 2000000000,
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "field": "CropsGrownSincePollination",
+          "help": "Used to limit number of crops it can grow.",
+          "label": "Crops Grown Since Pollination",
+          "max": 2000000000,
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "field": "HivePos",
+          "help": "Coordinates of its hive.",
+          "label": "Hive Pos",
+          "type": "coordinates"
+        },
+        {
+          "field": "FlowerPos",
+          "help": "Stores coordinates of the flower it is circling.",
+          "label": "Flower Pos",
+          "type": "coordinates"
+        }
+      ],
+      "label": "Bee",
+      "tags": [
+        "animal",
+        "arthropod",
+        "breedable",
+        "flying",
+        "neutral"
+      ],
+      "type": "mob"
+    },
+    "blaze": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Blaze",
+      "tags": [
+        "flying",
+        "hostile",
+        "nether"
+      ],
+      "type": "mob"
+    },
+    "block_display": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Block Display",
+      "tags": [],
+      "type": "common"
+    },
+    "bogged": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Bogged",
+      "tags": [
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "breeze": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Breeze",
+      "tags": [
+        "flying",
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "breeze_wind_charge": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Wind Charge",
+      "tags": [],
+      "type": "projectile"
+    },
+    "camel": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": [
+        "#saddleitem",
+        "#tame",
+        "#temper",
+        "#bred",
+        "#eatinghaystack"
+      ],
+      "label": "Camel",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive",
+        "rideable",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "camel_husk": {
+      "feature_sets": [],
+      "fields": [
+        "#saddleitem",
+        "#tame",
+        "#temper",
+        "#bred",
+        "#eatinghaystack"
+      ],
+      "label": "Camel Husk",
+      "tags": [
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "cat": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": [
+        "#cat_colors_119",
+        "#collar_color"
+      ],
+      "label": "Cat",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "cave_spider": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Cave Spider",
+      "tags": [
+        "arthropod",
+        "neutral"
+      ],
+      "type": "mob"
+    },
+    "chicken": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "variant",
+          "label": "Variant (1.21.5+)",
+          "options": "#climate3",
+          "type": "select"
+        },
+        {
+          "field": "IsChickenJockey",
+          "help": "If true, then the chicken can naturally despawn.",
+          "label": "Is Chicken Jockey",
+          "type": "bool"
+        },
+        {
+          "field": "EggLayTime",
+          "help": "Ticks countdown until the chicken lays its egg, laying at 0. Timer resets to a new random number between 6000 and 12000.",
+          "label": "Egg Lay Time",
+          "type": "number"
+        }
+      ],
+      "label": "Chicken",
+      "tags": [
+        "animal",
+        "breedable",
+        "flying",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "cod": {
+      "feature_sets": [
+        "bucket"
+      ],
+      "fields": [
+        "#frombucket"
+      ],
+      "label": "Cod",
+      "tags": [
+        "animal",
+        "aquatic",
+        "fish",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "copper_golem": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "weather_state",
+          "help": "The weathered state of the copper golem.",
+          "label": "Weather State",
+          "options": [
+            {
+              "label": "Unset",
+              "value": ""
+            },
+            {
+              "label": "Unaffected",
+              "value": "unaffected"
+            },
+            {
+              "label": "Exposed",
+              "value": "exposed"
+            },
+            {
+              "label": "Weathered",
+              "value": "weathered"
+            },
+            {
+              "label": "Oxidized",
+              "value": "oxidized"
+            }
+          ],
+          "type": "select"
+        },
+        {
+          "field": "next_weather_age",
+          "help": "Number of ticks until the golem's next weathering state change. (-1 is random 504000 to 552000 ticks, -2 is waxed)",
+          "label": "Next Weather Age",
+          "min": -2,
+          "type": "number"
+        }
+      ],
+      "label": "Copper Golem",
+      "tags": [
+        "golem",
+        "neutral"
+      ],
+      "type": "mob"
+    },
+    "cow": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "variant",
+          "label": "Variant (1.21.5+)",
+          "options": "#climate3",
+          "type": "select"
+        }
+      ],
+      "label": "Cow",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "creaking": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Creaking",
+      "tags": [
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "creeper": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "powered",
+          "label": "Charged",
+          "type": "bool"
+        },
+        {
+          "field": "Fuse",
+          "label": "Fuse",
+          "placeholder": "30",
+          "type": "number"
+        },
+        {
+          "field": "ExplosionRadius",
+          "label": "ExplosionRadius",
+          "placeholder": "3",
+          "type": "number"
+        },
+        {
+          "field": "ignited",
+          "label": "Ignited",
+          "type": "bool"
+        }
+      ],
+      "label": "Creeper",
+      "tags": [
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "dolphin": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "GotFish",
+          "help": "Dolphin got fish from a player",
+          "label": "GotFish",
+          "type": "bool"
+        },
+        {
+          "field": "CanFindTreasure",
+          "help": "Dolphin can lead a player to treasure, require pos x, y, z",
+          "label": "CanFindTreasure",
+          "type": "bool"
+        },
+        {
+          "field": "TreasurePosX",
+          "help": "Coordinate destination when leading a player to treasure",
+          "label": "TreasurePosX",
+          "type": "number"
+        },
+        {
+          "field": "TreasurePosY",
+          "help": "Coordinate destination when leading a player to treasure",
+          "label": "TreasurePosY",
+          "max": 255,
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "field": "TreasurePosZ",
+          "help": "Coordinate destination when leading a player to treasure",
+          "label": "TreasurePosZ",
+          "type": "number"
+        }
+      ],
+      "label": "Dolphin",
+      "tags": [
+        "animal",
+        "aquatic",
+        "neutral"
+      ],
+      "type": "mob"
+    },
+    "donkey": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": [
+        "#saddleitem",
+        "#tame",
+        "#temper",
+        "#bred",
+        "#chestedhorse",
+        "#eatinghaystack"
+      ],
+      "label": "Donkey",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive",
+        "rideable",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "dragon_fireball": {
+      "feature_sets": [],
+      "fields": [
+        "#explosion_power"
+      ],
+      "label": "Dragon Fireball",
+      "tags": [],
+      "type": "projectile"
+    },
+    "drowned": {
+      "feature_sets": [],
+      "fields": [
+        "#isbaby",
+        "#canbreakdoors",
+        "#drownedconversiontime",
+        "#inwatertime",
+        "#spawnreinforcements"
+      ],
+      "label": "Drowned",
+      "tags": [
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "egg": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Thrown Egg",
+      "tags": [],
+      "type": "projectile"
+    },
+    "elder_guardian": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Elder Guardian",
+      "tags": [
+        "aquatic",
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "ender_dragon": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "DragonPhase",
+          "help": "Dragon's current action state",
+          "label": "DragonPhase",
+          "options": [
+            {
+              "label": "Hovering (with no AI)",
+              "value": ""
+            },
+            {
+              "label": "Circling",
+              "value": "0"
+            },
+            {
+              "label": "Strafing (preparing to shoot a fireball)",
+              "value": "1"
+            },
+            {
+              "label": "Flying to the portal to land (part of transition to landed state)",
+              "value": "2"
+            },
+            {
+              "label": "Landing on the portal (part of transition to landed state)",
+              "value": "3"
+            },
+            {
+              "label": "Taking off from the portal (part of transition out of landed state)",
+              "value": "4"
+            },
+            {
+              "label": "Landed, performing breath attack",
+              "value": "5"
+            },
+            {
+              "label": "Landed, looking for a player for breath attack",
+              "value": "6"
+            },
+            {
+              "label": "Landed, roar before beginning breath attack",
+              "value": "7"
+            },
+            {
+              "label": "Charging player",
+              "value": "8"
+            },
+            {
+              "label": "Flying to portal to die",
+              "value": "9"
+            },
+            {
+              "label": "Hovering (with no AI, default)",
+              "value": "10"
+            }
+          ],
+          "type": "select"
+        }
+      ],
+      "label": "Ender Dragon",
+      "tags": [
+        "flying",
+        "hostile",
+        "boss",
+        "end"
+      ],
+      "type": "mob"
+    },
+    "ender_pearl": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Thrown Ender Pearl",
+      "tags": [],
+      "type": "projectile"
+    },
+    "enderman": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "carriedBlockState.Name",
+          "help": "Recommended to use blocks, other items do not work.",
+          "label": "Carried Block",
+          "type": "text-autocomplete-blocks"
+        }
+      ],
+      "label": "Enderman",
+      "tags": [
+        "neutral",
+        "nether",
+        "end"
+      ],
+      "type": "mob"
+    },
+    "endermite": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "Lifetime",
+          "help": "How long the endermite has existed in ticks. Despawns when this reaches around 2400.",
+          "label": "Lifetime",
+          "type": "number"
+        },
+        {
+          "field": "PlayerSpawned",
+          "help": "Endermen attack the endermite if this value is 1",
+          "label": "PlayerSpawned",
+          "type": "bool"
+        }
+      ],
+      "label": "Endermite",
+      "tags": [
+        "arthropod",
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "evoker": {
+      "feature_sets": [
+        "raid"
+      ],
+      "fields": [
+        "#spellticks"
+      ],
+      "label": "Evoker",
+      "tags": [
+        "hostile",
+        "raid",
+        "illager"
+      ],
+      "type": "mob"
+    },
+    "evoker_fangs": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Evoker Fangs",
+      "tags": [],
+      "type": "projectile"
+    },
+    "experience_orb": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "Value",
+          "help": "Experience Amount.",
+          "label": "Value",
+          "type": "number"
+        },
+        {
+          "field": "Age",
+          "help": "After 6000 ticks (5 minutes) the orb is destroyed.",
+          "label": "Age (Ticks)",
+          "type": "number"
+        },
+        {
+          "field": "Count",
+          "help": "Number of times that the orb can be picked up",
+          "label": "Count",
+          "min": 1,
+          "type": "number"
+        },
+        {
+          "field": "Health",
+          "help": "Orbs take damage from fire, lava, falling anvils, and explosions. The orb is destroyed when its health reaches 0.",
+          "label": "Health",
+          "min": 1,
+          "type": "number"
+        }
+      ],
+      "label": "Experience Orb",
+      "tags": [],
+      "type": "common"
+    },
+    "eye_of_ender": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Eye of Ender",
+      "tags": [],
+      "type": "projectile"
+    },
+    "falling_block": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Falling Block",
+      "tags": [],
+      "type": "common"
+    },
+    "fireball": {
+      "feature_sets": [],
+      "fields": [
+        "#explosion_power"
+      ],
+      "label": "Fireball",
+      "tags": [],
+      "type": "projectile"
+    },
+    "firework_rocket": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Firework Rocket",
+      "tags": [],
+      "type": "common"
+    },
+    "fox": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": [
+        {
+          "field": "Type",
+          "label": "Type",
+          "options": [
+            {
+              "label": "Random",
+              "value": ""
+            },
+            {
+              "label": "Red",
+              "value": "red"
+            },
+            {
+              "label": "Snow",
+              "value": "snow"
+            }
+          ],
+          "type": "select"
+        },
+        {
+          "field": "Sleeping",
+          "label": "Sleeping",
+          "type": "bool"
+        },
+        {
+          "field": "Sitting",
+          "label": "Sitting",
+          "type": "bool"
+        },
+        {
+          "field": "Crouching",
+          "label": "Crouching",
+          "type": "bool"
+        },
+        {
+          "field": "TrustedUUIDs",
+          "label": "TrustedUUIDs",
+          "type": "text",
+          "version_max": "j1.15"
+        },
+        {
+          "field": "Trusted",
+          "label": "Trusted",
+          "type": "int-array",
+          "version_min": "j1.16"
+        }
+      ],
+      "label": "Fox",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "frog": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "variant",
+          "label": "Variant",
+          "options": "#climate3",
+          "type": "select"
+        }
+      ],
+      "label": "Frog",
+      "tags": [
+        "animal",
+        "aquatic",
+        "breedable",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "ghast": {
+      "feature_sets": [],
+      "fields": [
+        "#explosion_power"
+      ],
+      "label": "Ghast",
+      "tags": [
+        "hostile",
+        "flying",
+        "nether"
+      ],
+      "type": "mob"
+    },
+    "giant": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Giant",
+      "tags": [
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "glow_squid": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Glow Squid",
+      "tags": [
+        "animal",
+        "aquatic",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "goat": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "IsScreamingGoat",
+          "help": "Java",
+          "label": "IsScreamingGoat",
+          "type": "bool"
+        }
+      ],
+      "label": "Goat",
+      "tags": [
+        "animal",
+        "breedable",
+        "neutral"
+      ],
+      "type": "mob"
+    },
+    "guardian": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Guardian",
+      "tags": [
+        "aquatic",
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "happy_ghast": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Happy Ghast",
+      "tags": [
+        "flying",
+        "rideable"
+      ],
+      "type": "mob"
+    },
+    "hoglin": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        "#immunezombification",
+        "#timeinoverworld",
+        {
+          "field": "CannotBeHunted",
+          "help": "If true, piglins do not attack the hoglin.",
+          "label": "CannotBeHunted",
+          "type": "bool"
+        }
+      ],
+      "label": "Hoglin",
+      "tags": [
+        "breedable",
+        "hostile",
+        "nether",
+        "piglin"
+      ],
+      "type": "mob"
+    },
+    "horse": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": [
+        {
+          "default": 0,
+          "field": "Variant",
+          "option_groups": [
+            {
+              "label": "Color",
+              "options": [
+                {
+                  "label": "White",
+                  "value": 0
+                },
+                {
+                  "label": "Creamy",
+                  "value": 1
+                },
+                {
+                  "label": "Chestnut",
+                  "value": 2
+                },
+                {
+                  "label": "Brown",
+                  "value": 3
+                },
+                {
+                  "label": "Black",
+                  "value": 4
+                },
+                {
+                  "label": "Gray",
+                  "value": 5
+                },
+                {
+                  "label": "Dark Brown",
+                  "value": 6
+                }
+              ]
+            },
+            {
+              "label": "Pattern",
+              "options": [
+                {
+                  "label": "None",
+                  "value": 0
+                },
+                {
+                  "label": "White Socks",
+                  "value": 256
+                },
+                {
+                  "label": "White Field",
+                  "value": 512
+                },
+                {
+                  "label": "White Dots",
+                  "value": 768
+                },
+                {
+                  "label": "Black Dots",
+                  "value": 1024
+                }
+              ]
+            }
+          ],
+          "page_layout": "selectors",
+          "type": "additive-matrix"
+        },
+        "#saddleitem",
+        "#armoritem",
+        "#tame",
+        "#temper",
+        "#bred",
+        "#eatinghaystack",
+        {
+          "field": "HorseJump",
+          "label": "HorseJump",
+          "type": "static",
+          "value": "This is an attribute under the attributes tab."
+        }
+      ],
+      "label": "Horse",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive",
+        "rideable",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "husk": {
+      "feature_sets": [],
+      "fields": [
+        "#isbaby",
+        "#canbreakdoors",
+        "#drownedconversiontime",
+        "#inwatertime",
+        "#spawnreinforcements"
+      ],
+      "label": "Husk",
+      "tags": [
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "illusioner": {
+      "feature_sets": [],
+      "fields": [
+        "#spellticks"
+      ],
+      "label": "Illusioner",
+      "tags": [
+        "illager"
+      ],
+      "type": "mob"
+    },
+    "iron_golem": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "PlayerCreated",
+          "help": "If true this golem was created by a player, and never attacks the player.",
+          "label": "PlayerCreated",
+          "type": "bool"
+        }
+      ],
+      "label": "Iron Golem",
+      "tags": [
+        "golem",
+        "neutral"
+      ],
+      "type": "mob"
+    },
+    "item": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Item",
+      "tags": [],
+      "type": "item"
+    },
+    "item_display": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Item Display",
+      "tags": [],
+      "type": "common"
+    },
+    "llama": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": [
+        "#llama_variant",
+        "#llama_decoritem",
+        "#llama_strength",
+        "#tame",
+        "#temper",
+        "#bred",
+        "#chestedhorse",
+        "#eatinghaystack"
+      ],
+      "label": "Llama",
+      "tags": [
+        "animal",
+        "breedable",
+        "neutral",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "llama_spit": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Llama Spit",
+      "tags": [],
+      "type": "projectile"
+    },
+    "magma_cube": {
+      "feature_sets": [],
+      "fields": [
+        "#size",
+        "#wasongroung"
+      ],
+      "label": "Magma Cube",
+      "tags": [
+        "hostile",
+        "nether"
+      ],
+      "type": "mob"
+    },
+    "mannequin": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "profile",
+          "help": "Player name to get skin of, or leave blank for Alex skin",
+          "label": "Profile",
+          "placeholder": "Enter a player name",
+          "type": "text"
+        },
+        {
+          "field": "hidden_layers",
+          "label": "Hidden Layers",
+          "options": [
+            {
+              "label": "Cape",
+              "value": "cape"
+            },
+            {
+              "label": "Jacket",
+              "value": "jacket"
+            },
+            {
+              "label": "Left Sleeve",
+              "value": "left_sleeve"
+            },
+            {
+              "label": "Right Sleeve",
+              "value": "right_sleeve"
+            },
+            {
+              "label": "Left Pants Leg",
+              "value": "left_pants_leg"
+            },
+            {
+              "label": "Right Pants Leg",
+              "value": "right_pants_leg"
+            },
+            {
+              "label": "Hat",
+              "value": "hat"
+            }
+          ],
+          "type": "checklist"
+        },
+        {
+          "field": "main_hand",
+          "label": "Main Hand",
+          "options": [
+            {
+              "label": "Default (Right)",
+              "value": ""
+            },
+            {
+              "label": "Right",
+              "value": "right"
+            },
+            {
+              "label": "Left",
+              "value": "left"
+            }
+          ],
+          "type": "select"
+        },
+        {
+          "field": "pose",
+          "label": "Pose",
+          "options": [
+            {
+              "label": "Default (Standing)",
+              "value": ""
+            },
+            {
+              "label": "Standing",
+              "value": "standing"
+            },
+            {
+              "label": "Crouching",
+              "value": "crouching"
+            },
+            {
+              "label": "Swimming",
+              "value": "swimming"
+            },
+            {
+              "label": "Fall flying",
+              "value": "fall_flying"
+            },
+            {
+              "label": "Sleeping",
+              "value": "sleeping"
+            }
+          ],
+          "type": "select"
+        },
+        {
+          "field": "immovable",
+          "label": "Immovable",
+          "type": "bool"
+        },
+        {
+          "field": "description",
+          "label": "Description",
+          "type": "text"
+        },
+        {
+          "field": "hide_description",
+          "label": "Hide Description",
+          "type": "bool"
+        },
+        {
+          "field": "advanced_options_hr",
+          "type": "hr"
+        },
+        {
+          "field": "advanced_options",
+          "label": "Advanced Options",
+          "type": "static",
+          "value": "Extra profile options, only use if you know what you are doing. Leave above playername profile above blank if using these options."
+        },
+        {
+          "field": "profile.texture",
+          "help": "Namespaced ID of the skin texture to use, see below.",
+          "label": "Texture",
+          "type": "text"
+        },
+        {
+          "field": "profile.cape",
+          "help": "Namespaced ID of the skin texture to use, see below.",
+          "label": "Cape",
+          "type": "text"
+        },
+        {
+          "field": "profile.elytra",
+          "help": "Namespaced ID of the skin texture to use, see below.",
+          "label": "Elytra",
+          "type": "text"
+        },
+        {
+          "field": "profile.model",
+          "label": "Model",
+          "options": [
+            {
+              "label": "Default (Slim)",
+              "value": ""
+            },
+            {
+              "label": "Wide",
+              "value": "wide"
+            },
+            {
+              "label": "Slim",
+              "value": "slim"
+            }
+          ],
+          "type": "select"
+        }
+      ],
+      "label": "Mannequin",
+      "tags": [],
+      "type": "mob"
+    },
+    "minecart": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Minecart",
+      "tags": [],
+      "type": "common"
+    },
+    "mooshroom": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "Type",
+          "label": "Type",
+          "options": [
+            {
+              "label": "Unset",
+              "value": ""
+            },
+            {
+              "label": "Red",
+              "value": "red"
+            },
+            {
+              "label": "Brown",
+              "value": "brown"
+            }
+          ],
+          "type": "select"
+        },
+        {
+          "field": "EffectId",
+          "help": "Brown mooshroom only, A byte indicating the type of the status effect may give to a suspicious stew.",
+          "label": "Effect Id",
+          "type": "number"
+        },
+        {
+          "field": "EffectDuration",
+          "help": "Brown mooshroom only, How long suspicious stew effect will last.",
+          "label": "Effect Duration",
+          "type": "number"
+        }
+      ],
+      "label": "Mooshroom",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "mule": {
+      "feature_sets": [
+        "tameable"
+      ],
+      "fields": [
+        "#saddleitem",
+        "#tame",
+        "#temper",
+        "#bred",
+        "#chestedhorse",
+        "#eatinghaystack"
+      ],
+      "label": "Mule",
+      "tags": [
+        "animal",
+        "passive",
+        "rideable",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "nautilus": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": [
+        "#saddleitem",
+        "#armornautilus"
+      ],
+      "label": "Nautilus",
+      "tags": [
+        "animal",
+        "aquatic",
+        "breedable",
+        "passive",
+        "rideable",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "oak_boat": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Oak Boat",
+      "tags": [],
+      "type": "boat"
+    },
+    "ocelot": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": [
+        {
+          "field": "Trusting",
+          "help": "If the ocelot trusts players",
+          "label": "Trusting",
+          "type": "bool"
+        }
+      ],
+      "label": "Ocelot",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "panda": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "MainGene",
+          "label": "Main Gene",
+          "options": "#panda_genes",
+          "type": "select"
+        },
+        {
+          "field": "HiddenGene",
+          "label": "Hidden Gene",
+          "options": "#panda_genes",
+          "type": "select"
+        }
+      ],
+      "label": "Panda",
+      "tags": [
+        "animal",
+        "breedable",
+        "neutral"
+      ],
+      "type": "mob"
+    },
+    "parched": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Parched",
+      "tags": [
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "parrot": {
+      "feature_sets": [
+        "tameable"
+      ],
+      "fields": [
+        {
+          "field": "Variant",
+          "label": "Color (Variant)",
+          "options": [
+            {
+              "label": "Random",
+              "value": ""
+            },
+            {
+              "label": "Red",
+              "value": "0"
+            },
+            {
+              "label": "Blue",
+              "value": "1"
+            },
+            {
+              "label": "Green",
+              "value": "2"
+            },
+            {
+              "label": "Cyan",
+              "value": "3"
+            },
+            {
+              "label": "Gray",
+              "value": "4"
+            }
+          ],
+          "type": "select"
+        },
+        {
+          "field": "flyingSpeed",
+          "label": "flyingSpeed",
+          "type": "static",
+          "value": "This is an attribute under the attributes tab."
+        }
+      ],
+      "label": "Parrot",
+      "tags": [
+        "animal",
+        "flying",
+        "passive",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "phantom": {
+      "feature_sets": [],
+      "fields": [
+        "#size",
+        {
+          "field": "AX",
+          "help": "Used with AY and AZ to set the circling location, resets when attacking player.",
+          "label": "AX",
+          "type": "number"
+        },
+        {
+          "field": "AY",
+          "label": "AY",
+          "type": "number"
+        },
+        {
+          "field": "AZ",
+          "label": "AZ",
+          "type": "number"
+        }
+      ],
+      "label": "Phantom",
+      "tags": [
+        "flying",
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "pig": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "variant",
+          "label": "Variant (1.21.5+)",
+          "options": "#climate3",
+          "type": "select"
+        },
+        "#saddleitem"
+      ],
+      "label": "Pig",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive",
+        "rideable"
+      ],
+      "type": "mob"
+    },
+    "piglin": {
+      "feature_sets": [],
+      "fields": [
+        "#isbaby",
+        "#immunezombification",
+        "#timeinoverworld",
+        {
+          "field": "CannotHunt",
+          "help": "If set to true, the piglin does not attack hoglins.",
+          "label": "CannotHunt",
+          "type": "bool"
+        }
+      ],
+      "label": "Piglin",
+      "tags": [
+        "nether",
+        "neutral",
+        "piglin"
+      ],
+      "type": "mob"
+    },
+    "piglin_brute": {
+      "feature_sets": [],
+      "fields": [
+        "#immunezombification",
+        "#timeinoverworld",
+        {
+          "field": "CannotHunt",
+          "help": "If set to true, the piglin does not attack hoglins.",
+          "label": "CannotHunt",
+          "type": "bool"
+        }
+      ],
+      "label": "Piglin Brute",
+      "tags": [
+        "hostile",
+        "nether",
+        "piglin"
+      ],
+      "type": "mob"
+    },
+    "pillager": {
+      "feature_sets": [
+        "raid"
+      ],
+      "fields": null,
+      "label": "Pillager",
+      "tags": [
+        "hostile",
+        "raid",
+        "illager"
+      ],
+      "type": "mob"
+    },
+    "polar_bear": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": null,
+      "label": "Polar Bear",
+      "tags": [
+        "animal",
+        "breedable",
+        "neutral"
+      ],
+      "type": "mob"
+    },
+    "potion": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Potion",
+      "tags": [],
+      "type": "common"
+    },
+    "pufferfish": {
+      "feature_sets": [
+        "bucket"
+      ],
+      "fields": [
+        "#frombucket",
+        {
+          "field": "PuffState",
+          "label": "PuffState",
+          "options": [
+            {
+              "label": "Default / deflated",
+              "value": ""
+            },
+            {
+              "label": "Deflated",
+              "value": 0
+            },
+            {
+              "label": "Halfway puffed-up",
+              "value": 1
+            },
+            {
+              "label": "Fully puffed-up",
+              "value": 2
+            }
+          ],
+          "type": "select"
+        }
+      ],
+      "label": "Pufferfish",
+      "tags": [
+        "animal",
+        "aquatic",
+        "fish",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "rabbit": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "RabbitType",
+          "label": "Rabbit Type",
+          "options": [
+            {
+              "label": "Random",
+              "value": ""
+            },
+            {
+              "label": "Brown",
+              "value": "0"
+            },
+            {
+              "label": "White",
+              "value": "1"
+            },
+            {
+              "label": "Black",
+              "value": "2"
+            },
+            {
+              "label": "Black and White",
+              "value": "3"
+            },
+            {
+              "label": "Gold",
+              "value": "4"
+            },
+            {
+              "label": "Salt and Pepper",
+              "value": "5"
+            },
+            {
+              "label": "Killer Bunny",
+              "value": "99"
+            },
+            {
+              "label": "Toast",
+              "value": "nbt|{CustomName:&quot;Toast&quot;}"
+            }
+          ],
+          "type": "select"
+        },
+        {
+          "field": "MoreCarrotTicks",
+          "help": "Set to 40 when a carrot crop is eaten, then counts down by 0-2 every tick.",
+          "label": "MoreCarrotTicks",
+          "type": "number"
+        }
+      ],
+      "label": "Rabbit",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "ravager": {
+      "feature_sets": [
+        "raid"
+      ],
+      "fields": [
+        {
+          "field": "AttackTick",
+          "help": "Attack cooldown for this ravager.",
+          "label": "AttackTick",
+          "type": "number"
+        },
+        {
+          "field": "RoarTick",
+          "help": "Roar attack cooldown for this ravager.",
+          "label": "RoarTick",
+          "type": "number"
+        },
+        {
+          "field": "StunTick",
+          "help": "Stun attack cooldown for this ravager.",
+          "label": "StunTick",
+          "type": "number"
+        }
+      ],
+      "label": "Ravager",
+      "tags": [
+        "hostile",
+        "raid",
+        "illager"
+      ],
+      "type": "mob"
+    },
+    "salmon": {
+      "feature_sets": [
+        "bucket"
+      ],
+      "fields": [
+        "#frombucket"
+      ],
+      "label": "Salmon",
+      "tags": [
+        "animal",
+        "aquatic",
+        "fish",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "sheep": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "Sheared",
+          "label": "Sheared",
+          "type": "bool"
+        },
+        {
+          "field": "Color",
+          "label": "Color",
+          "options": "#colors16",
+          "type": "select"
+        }
+      ],
+      "label": "Sheep",
+      "tags": [
+        "animal",
+        "breedable",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "shulker": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "Color",
+          "label": "Color",
+          "options": "#colors16",
+          "type": "select"
+        },
+        {
+          "field": "Peek",
+          "help": "Height of the head of the shulker",
+          "label": "Peek",
+          "max": 127,
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "field": "AttachFace",
+          "help": "Direction of the block the shulker is attached to",
+          "label": "AttachFace",
+          "max": 127,
+          "min": -128,
+          "type": "number"
+        },
+        {
+          "field": "APX",
+          "label": "APX",
+          "type": "number"
+        },
+        {
+          "field": "APY",
+          "label": "APY",
+          "type": "number"
+        },
+        {
+          "field": "APZ",
+          "label": "APZ",
+          "type": "number"
+        }
+      ],
+      "label": "Shulker",
+      "tags": [
+        "hostile",
+        "end"
+      ],
+      "type": "mob"
+    },
+    "shulker_bullet": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Shulker Bullet",
+      "tags": [],
+      "type": "projectile"
+    },
+    "silverfish": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Silverfish",
+      "tags": [
+        "arthropod",
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "skeleton": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Skeleton",
+      "tags": [
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "skeleton_horse": {
+      "feature_sets": [
+        "tameable"
+      ],
+      "fields": [
+        "#saddleitem",
+        "#tame",
+        "#temper",
+        "#bred",
+        "#eatinghaystack",
+        {
+          "field": "SkeletonTrap",
+          "help": "If true than horse is a trapped, see SkeletonTrapTime",
+          "label": "SkeletonTrap",
+          "type": "bool"
+        },
+        {
+          "field": "SkeletonTrapTime",
+          "help": "Incremented each tick when SkeletonTrap is set to 1. The horse despawns when it reaches 18000 (15 minutes).",
+          "label": "SkeletonTrapTime",
+          "min": "0",
+          "type": "number"
+        }
+      ],
+      "label": "Skeleton Horse",
+      "tags": [
+        "passive",
+        "rideable",
+        "tameable",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "slime": {
+      "feature_sets": [],
+      "fields": [
+        "#size",
+        "#wasongroung"
+      ],
+      "label": "Slime",
+      "tags": [
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "small_fireball": {
+      "feature_sets": [],
+      "fields": [
+        "#explosion_power"
+      ],
+      "label": "Small Fireball",
+      "tags": [],
+      "type": "projectile"
+    },
+    "sniffer": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": null,
+      "label": "Sniffer",
+      "tags": [
+        "breedable",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "snow_golem": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "Pumpkin",
+          "label": "Pumpkin",
+          "options": [
+            {
+              "label": "Default (pumpkin)",
+              "value": ""
+            },
+            {
+              "label": "No Pumpkin",
+              "value": 0
+            },
+            {
+              "label": "Pumpkin",
+              "value": 1
+            }
+          ],
+          "type": "select"
+        }
+      ],
+      "label": "Snow Golem",
+      "tags": [
+        "golem",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "snowball": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Snowball",
+      "tags": [],
+      "type": "projectile"
+    },
+    "spider": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Spider",
+      "tags": [
+        "arthropod",
+        "neutral"
+      ],
+      "type": "mob"
+    },
+    "squid": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Squid",
+      "tags": [
+        "animal",
+        "aquatic",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "stray": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Stray",
+      "tags": [
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "strider": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        "#saddleitem"
+      ],
+      "label": "Strider",
+      "tags": [
+        "breedable",
+        "nether",
+        "passive",
+        "rideable"
+      ],
+      "type": "mob"
+    },
+    "tadpole": {
+      "feature_sets": [
+        "bucket"
+      ],
+      "fields": [
+        "#frombucket"
+      ],
+      "label": "Tadpole",
+      "tags": [
+        "animal",
+        "aquatic",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "text_display": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Text Display",
+      "tags": [],
+      "type": "common"
+    },
+    "tnt": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "Fuse",
+          "label": "Fuse (Ticks)",
+          "min": 0,
+          "type": "number"
+        }
+      ],
+      "label": "Primed TNT",
+      "tags": [],
+      "type": "common"
+    },
+    "trader_llama": {
+      "feature_sets": [
+        "tameable"
+      ],
+      "fields": [
+        "#llama_variant",
+        "#llama_strength",
+        "#tame",
+        "#temper",
+        "#bred",
+        "#chestedhorse",
+        "#eatinghaystack",
+        {
+          "field": "DespawnDelay",
+          "help": " A timer for trader llamas to despawn.",
+          "label": "Despawn Delay",
+          "type": "number"
+        }
+      ],
+      "label": "Trader Llama",
+      "tags": [
+        "animal",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "tropical_fish": {
+      "feature_sets": [
+        "bucket"
+      ],
+      "fields": [
+        "#frombucket",
+        {
+          "field": "Variant",
+          "label": "Variant",
+          "max": "235799809",
+          "type": "number"
+        }
+      ],
+      "label": "Tropical Fish",
+      "tags": [
+        "animal",
+        "aquatic",
+        "fish",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "turtle": {
+      "feature_sets": [
+        "breedable"
+      ],
+      "fields": [
+        {
+          "field": "HasEgg",
+          "label": "HasEgg",
+          "type": "bool"
+        },
+        {
+          "field": "HomePosX",
+          "label": "HomePosX",
+          "type": "number"
+        },
+        {
+          "field": "HomePosY",
+          "label": "HomePosY",
+          "max": 255,
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "field": "HomePosZ",
+          "label": "HomePosZ",
+          "type": "number"
+        },
+        {
+          "field": "TravelPosX",
+          "label": "TravelPosX",
+          "type": "number"
+        },
+        {
+          "field": "TravelPosY",
+          "label": "TravelPosY",
+          "max": 255,
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "field": "TravelPosZ",
+          "label": "TravelPosZ",
+          "type": "number"
+        }
+      ],
+      "label": "Turtle",
+      "tags": [
+        "animal",
+        "aquatic",
+        "breedable",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "vex": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "BoundX",
+          "help": "Wanders within a 15×11×15 cuboid range centered at coordinates X,Y,Z ",
+          "label": "BoundX",
+          "type": "number"
+        },
+        {
+          "field": "BoundY",
+          "label": "BoundY",
+          "type": "number"
+        },
+        {
+          "field": "BoundZ",
+          "label": "BoundZ",
+          "type": "number"
+        },
+        {
+          "field": "LifeTicks",
+          "help": " Ticks of life remaining, decreasing by 1 per tick. On reaching zero, the vex takes damage and LifeTicks is set to 20.",
+          "label": "LifeTicks",
+          "min": "1",
+          "type": "number"
+        }
+      ],
+      "label": "Vex",
+      "tags": [
+        "flying",
+        "hostile",
+        "illager"
+      ],
+      "type": "mob"
+    },
+    "villager": {
+      "feature_sets": [
+        "breedable",
+        "trader"
+      ],
+      "fields": [
+        "#villager_type",
+        "#villager_profession",
+        "#villager_level"
+      ],
+      "label": "Villager",
+      "tags": [
+        "breedable",
+        "passive",
+        "trader",
+        "villager"
+      ],
+      "type": "mob"
+    },
+    "vindicator": {
+      "feature_sets": [
+        "raid"
+      ],
+      "fields": [
+        {
+          "field": "Johnny",
+          "help": "Enables Johhny behaviour",
+          "label": "Johnny",
+          "type": "bool"
+        }
+      ],
+      "label": "Vindicator",
+      "tags": [
+        "hostile",
+        "raid",
+        "illager"
+      ],
+      "type": "mob"
+    },
+    "wandering_trader": {
+      "feature_sets": [
+        "trader"
+      ],
+      "fields": [
+        {
+          "field": "DespawnDelay",
+          "help": "A timer for trader to despawn.",
+          "label": "Despawn Delay",
+          "type": "number"
+        },
+        {
+          "field": "WanderTarget.X",
+          "help": "Destination toward where this trader wanders.",
+          "label": "WanderTarget X",
+          "type": "number"
+        },
+        {
+          "field": "WanderTarget.Y",
+          "help": "Destination toward where this trader wanders.",
+          "label": "WanderTarget Y",
+          "type": "number"
+        },
+        {
+          "field": "WanderTarget.Z",
+          "help": "Destination toward where this trader wanders.",
+          "label": "WanderTarget Z",
+          "type": "number"
+        }
+      ],
+      "label": "Wandering Trader",
+      "tags": [
+        "trader",
+        "villager",
+        "passive"
+      ],
+      "type": "mob"
+    },
+    "warden": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Warden",
+      "tags": [
+        "hostile"
+      ],
+      "type": "mob"
+    },
+    "wind_charge": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Wind Charge",
+      "tags": [],
+      "type": "projectile"
+    },
+    "witch": {
+      "feature_sets": [
+        "raid"
+      ],
+      "fields": null,
+      "label": "Witch",
+      "tags": [
+        "hostile",
+        "raid",
+        "illager"
+      ],
+      "type": "mob"
+    },
+    "wither": {
+      "feature_sets": [],
+      "fields": [
+        {
+          "field": "Invul",
+          "help": "Ticks of invulnerability left, Countsdown to zero.",
+          "label": "Invulnerability",
+          "min": 0,
+          "type": "number"
+        }
+      ],
+      "label": "Wither",
+      "tags": [
+        "boss",
+        "flying",
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "wither_skeleton": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Wither Skeleton",
+      "tags": [
+        "hostile",
+        "nether",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "wither_skull": {
+      "feature_sets": [],
+      "fields": null,
+      "label": "Wither Skull",
+      "tags": [],
+      "type": "projectile"
+    },
+    "wolf": {
+      "feature_sets": [
+        "breedable",
+        "tameable"
+      ],
+      "fields": [
+        {
+          "field": "variant",
+          "label": "Variant (1.20.5+)",
+          "options": [
+            {
+              "label": "Default",
+              "value": ""
+            },
+            {
+              "label": "Ashen",
+              "value": "ashen"
+            },
+            {
+              "label": "Black",
+              "value": "black"
+            },
+            {
+              "label": "Chestnut",
+              "value": "chestnut"
+            },
+            {
+              "label": "Pale",
+              "value": "pale"
+            },
+            {
+              "label": "Rusty",
+              "value": "rusty"
+            },
+            {
+              "label": "Snowy",
+              "value": "snowy"
+            },
+            {
+              "label": "Spotted",
+              "value": "spotted"
+            },
+            {
+              "label": "Striped",
+              "value": "striped"
+            },
+            {
+              "label": "Woods",
+              "value": "woods"
+            }
+          ],
+          "type": "select"
+        },
+        "#collar_color",
+        {
+          "field": "ux.equipment.body",
+          "label": "Armor (1.20.5+)",
+          "type": "checkbox",
+          "value": "{\"id\":\"wolf_armor\"}"
+        },
+        {
+          "field": "Angry",
+          "label": "Angry",
+          "type": "bool"
+        },
+        {
+          "field": "Sitting",
+          "label": "Sitting",
+          "type": "bool"
+        }
+      ],
+      "label": "Wolf",
+      "tags": [
+        "animal",
+        "breedable",
+        "neutral",
+        "tameable"
+      ],
+      "type": "mob"
+    },
+    "zoglin": {
+      "feature_sets": [],
+      "fields": [
+        "#isbaby"
+      ],
+      "label": "Zoglin",
+      "tags": [
+        "hostile",
+        "nether",
+        "piglin",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "zombie": {
+      "feature_sets": [],
+      "fields": [
+        "#isbaby",
+        "#canbreakdoors",
+        "#drownedconversiontime",
+        "#inwatertime",
+        "#spawnreinforcements"
+      ],
+      "label": "Zombie",
+      "tags": [
+        "hostile",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "zombie_horse": {
+      "feature_sets": [],
+      "fields": [
+        "#saddleitem",
+        "#tame",
+        "#temper",
+        "#bred",
+        "#eatinghaystack"
+      ],
+      "label": "Zombie Horse",
+      "tags": [
+        "neutral",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "zombie_nautilus": {
+      "feature_sets": [],
+      "fields": [
+        "#saddleitem",
+        "#armornautilus"
+      ],
+      "label": "Zombie Nautilus",
+      "tags": [
+        "aquatic",
+        "neutral",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "zombie_villager": {
+      "feature_sets": [],
+      "fields": [
+        "#villager_type",
+        "#villager_profession",
+        "#villager_level",
+        "#isbaby",
+        "#canbreakdoors",
+        "#drownedconversiontime",
+        "#inwatertime"
+      ],
+      "label": "Zombie Villager",
+      "tags": [
+        "hostile",
+        "villager",
+        "undead"
+      ],
+      "type": "mob"
+    },
+    "zombified_piglin": {
+      "feature_sets": [],
+      "fields": [
+        "#isbaby",
+        "#canbreakdoors",
+        "#drownedconversiontime",
+        "#inwatertime",
+        "#spawnreinforcements",
+        {
+          "field": "AngerTime",
+          "help": "Counts down to 0",
+          "label": "AngerTime",
+          "type": "number"
+        },
+        {
+          "field": "AngryAt",
+          "help": "The UUID of the mob is angry at",
+          "label": "AngryAt",
+          "type": "int-array"
+        }
+      ],
+      "label": "Zombified Piglin",
+      "tags": [
+        "hostile",
+        "nether",
+        "undead",
+        "piglin"
+      ],
+      "type": "mob"
+    }
+  },
+  "entity_fields": {
+    "armoritem": {
+      "field": "ux.equipment.body",
+      "i": 3,
+      "label": "Armor",
+      "options": [
+        {
+          "label": "",
+          "value": ""
+        },
+        {
+          "label": "Leather",
+          "value": "{\"id\":\"leather_horse_armor\"}"
+        },
+        {
+          "label": "Iron",
+          "value": "{\"id\":\"iron_horse_armor\"}"
+        },
+        {
+          "label": "Copper",
+          "value": "{\"id\":\"copper_horse_armor\"}"
+        },
+        {
+          "label": "Gold",
+          "value": "{\"id\":\"golden_horse_armor\"}"
+        },
+        {
+          "label": "Diamond",
+          "value": "{\"id\":\"diamond_horse_armor\"}"
+        }
+      ],
+      "type": "select"
+    },
+    "armornautilus": {
+      "field": "ux.equipment.body",
+      "i": 4,
+      "label": "Armor",
+      "options": [
+        {
+          "label": "",
+          "value": ""
+        },
+        {
+          "label": "Iron",
+          "value": "{\"id\":\"iron_nautilus_armor\"}"
+        },
+        {
+          "label": "Gold",
+          "value": "{\"id\":\"golden_nautilus_armor\"}"
+        },
+        {
+          "label": "Copper",
+          "value": "{\"id\":\"copper_nautilus_armor\"}"
+        },
+        {
+          "label": "Diamond",
+          "value": "{\"id\":\"diamond_nautilus_armor\"}"
+        },
+        {
+          "label": "Netherite",
+          "value": "{\"id\":\"netherite_nautilus_armor\"}"
+        }
+      ],
+      "type": "select"
+    },
+    "bred": {
+      "field": "Bred",
+      "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+      "i": 5,
+      "label": "Bred",
+      "type": "bool"
+    },
+    "canbreakdoors": {
+      "field": "CanBreakDoors",
+      "i": 29,
+      "label": "CanBreakDoors",
+      "type": "bool"
+    },
+    "cat_colors_102": {
+      "field": "CatType",
+      "i": 6,
+      "label": "Cat Type",
+      "options": [
+        {
+          "label": "Random",
+          "value": ""
+        },
+        {
+          "label": "Tabby",
+          "value": "0"
+        },
+        {
+          "label": "Tuxedo",
+          "value": "1"
+        },
+        {
+          "label": "Red",
+          "value": "2"
+        },
+        {
+          "label": "Siamese",
+          "value": "3"
+        },
+        {
+          "label": "British Shorthair",
+          "value": "4"
+        },
+        {
+          "label": "Calico",
+          "value": "5"
+        },
+        {
+          "label": "Persian",
+          "value": "6"
+        },
+        {
+          "label": "Ragdoll",
+          "value": "7"
+        },
+        {
+          "label": "White",
+          "value": "8"
+        },
+        {
+          "label": "Jellie",
+          "value": "9"
+        },
+        {
+          "label": "Black",
+          "value": "10"
+        }
+      ],
+      "type": "select"
+    },
+    "cat_colors_119": {
+      "field": "variant",
+      "i": 7,
+      "label": "Cat Type",
+      "options": [
+        {
+          "label": "Random",
+          "value": ""
+        },
+        {
+          "label": "Tabby",
+          "value": "tabby"
+        },
+        {
+          "label": "Tuxedo",
+          "value": "black"
+        },
+        {
+          "label": "Red",
+          "value": "red"
+        },
+        {
+          "label": "Siamese",
+          "value": "siamese"
+        },
+        {
+          "label": "British Shorthair",
+          "value": "british_shorthair"
+        },
+        {
+          "label": "Calico",
+          "value": "calico"
+        },
+        {
+          "label": "Persian",
+          "value": "persian"
+        },
+        {
+          "label": "Ragdoll",
+          "value": "ragdoll"
+        },
+        {
+          "label": "White",
+          "value": "white"
+        },
+        {
+          "label": "Jellie",
+          "value": "jellie"
+        },
+        {
+          "label": "Black",
+          "value": "all_black"
+        }
+      ],
+      "type": "select"
+    },
+    "chestedhorse": {
+      "field": "ChestedHorse",
+      "help": "If true the horse has a chest.",
+      "i": 8,
+      "label": "ChestedHorse",
+      "type": "bool"
+    },
+    "climate3": {
+      "i": 2,
+      "options": [
+        {
+          "label": "Unset",
+          "value": ""
+        },
+        {
+          "label": "Warm",
+          "value": "warm"
+        },
+        {
+          "label": "Temperate",
+          "value": "temperate"
+        },
+        {
+          "label": "Cold",
+          "value": "cold"
+        }
+      ]
+    },
+    "collar_color": {
+      "field": "CollarColor",
+      "i": 9,
+      "label": "Collar Color",
+      "options": "#colors16",
+      "type": "select"
+    },
+    "colors16": {
+      "i": 1,
+      "options": [
+        {
+          "label": "",
+          "value": ""
+        },
+        {
+          "label": "White",
+          "value": 0
+        },
+        {
+          "label": "Orange",
+          "value": 1
+        },
+        {
+          "label": "Magenta",
+          "value": 2
+        },
+        {
+          "label": "Light Blue",
+          "value": 3
+        },
+        {
+          "label": "Yellow",
+          "value": 4
+        },
+        {
+          "label": "Lime",
+          "value": 5
+        },
+        {
+          "label": "Pink",
+          "value": 6
+        },
+        {
+          "label": "Gray",
+          "value": 7
+        },
+        {
+          "label": "Light Gray",
+          "value": 8
+        },
+        {
+          "label": "Cyan",
+          "value": 9
+        },
+        {
+          "label": "Purple",
+          "value": 10
+        },
+        {
+          "label": "Blue",
+          "value": 11
+        },
+        {
+          "label": "Brown",
+          "value": 12
+        },
+        {
+          "label": "Green",
+          "value": 13
+        },
+        {
+          "label": "Red",
+          "value": 14
+        },
+        {
+          "label": "Black",
+          "value": 15
+        }
+      ]
+    },
+    "drownedconversiontime": {
+      "field": "DrownedConversionTime",
+      "help": "The number of ticks until converts to a drowned. (default value is -1, when no conversion is under way).",
+      "i": 30,
+      "label": "Drowned Conversion Time",
+      "type": "number"
+    },
+    "eatinghaystack": {
+      "field": "EatingHaystack",
+      "i": 10,
+      "label": "EatingHaystack",
+      "type": "bool"
+    },
+    "explosion_power": {
+      "field": "ExplosionPower",
+      "help": "The radius of the explosion created by the fireball.",
+      "i": 11,
+      "label": "ExplosionPower",
+      "min": 0,
+      "type": "number"
+    },
+    "frombucket": {
+      "field": "FromBucket",
+      "help": "Fish placed with buckets do not despawn naturally.",
+      "i": 12,
+      "label": "From Bucket",
+      "type": "bool"
+    },
+    "hurtby_j115": {
+      "field": "HurtBy",
+      "help": "Was attacked by player/entity with UUID.",
+      "i": 13,
+      "label": "HurtBy",
+      "type": "text"
+    },
+    "hurtby_j116": {
+      "field": "HurtBy",
+      "help": "The UUID of the player that attacked the bee, stored as four ints.",
+      "i": 14,
+      "label": "HurtBy",
+      "type": "int-array",
+      "version_min": "j1.16"
+    },
+    "immunezombification": {
+      "field": "IsImmuneToZombification",
+      "i": 33,
+      "label": "Immune To Zombification",
+      "type": "bool"
+    },
+    "inwatertime": {
+      "field": "InWaterTime",
+      "help": "The number of ticks has been under water, used to start the drowning conversion. (default value is -1, when no conversion is under way).",
+      "i": 31,
+      "label": "InWaterTime",
+      "type": "number"
+    },
+    "isbaby": {
+      "field": "IsBaby",
+      "i": 15,
+      "label": "IsBaby",
+      "type": "bool"
+    },
+    "llama_decoritem": {
+      "field": "ux.equipment.body",
+      "i": 18,
+      "label": "Decor Item",
+      "options": [
+        {
+          "label": "None",
+          "value": ""
+        },
+        {
+          "label": "White",
+          "value": "{\"id\":\"white_carpet\"}"
+        },
+        {
+          "label": "Orange",
+          "value": "{\"id\":\"orange_carpet\"}"
+        },
+        {
+          "label": "Magenta",
+          "value": "{\"id\":\"magenta_carpet\"}"
+        },
+        {
+          "label": "Light Blue",
+          "value": "{\"id\":\"light_blue_carpet\"}"
+        },
+        {
+          "label": "Yellow",
+          "value": "{\"id\":\"yellow_carpet\"}"
+        },
+        {
+          "label": "Lime",
+          "value": "{\"id\":\"lime_carpet\"}"
+        },
+        {
+          "label": "Pink",
+          "value": "{\"id\":\"pink_carpet\"}"
+        },
+        {
+          "label": "Gray",
+          "value": "{\"id\":\"gray_carpet\"}"
+        },
+        {
+          "label": "Light Gray",
+          "value": "{\"id\":\"light_gray_carpet\"}"
+        },
+        {
+          "label": "Cyan",
+          "value": "{\"id\":\"cyan_carpet\"}"
+        },
+        {
+          "label": "Purple",
+          "value": "{\"id\":\"purple_carpet\"}"
+        },
+        {
+          "label": "Blue",
+          "value": "{\"id\":\"blue_carpet\"}"
+        },
+        {
+          "label": "Brown",
+          "value": "{\"id\":\"brown_carpet\"}"
+        },
+        {
+          "label": "Green",
+          "value": "{\"id\":\"green_carpet\"}"
+        },
+        {
+          "label": "Red",
+          "value": "{\"id\":\"red_carpet\"}"
+        },
+        {
+          "label": "Black",
+          "value": "{\"id\":\"black_carpet\"}"
+        }
+      ],
+      "type": "select"
+    },
+    "llama_strength": {
+      "field": "Strength",
+      "help": "Higher numbers more carry capacify and better wolf defence.",
+      "i": 17,
+      "label": "Strength",
+      "max": "5",
+      "min": "1",
+      "type": "number"
+    },
+    "llama_variant": {
+      "field": "Variant",
+      "i": 16,
+      "label": "Color (Variant)",
+      "options": [
+        {
+          "label": "Random",
+          "value": ""
+        },
+        {
+          "label": "Creamy",
+          "value": "0"
+        },
+        {
+          "label": "White",
+          "value": "1"
+        },
+        {
+          "label": "Brown",
+          "value": "2"
+        },
+        {
+          "label": "Gray",
+          "value": "3"
+        }
+      ],
+      "type": "select"
+    },
+    "panda_genes": {
+      "i": 19,
+      "options": [
+        {
+          "label": "Normal",
+          "value": "normal"
+        },
+        {
+          "label": "Aggressive",
+          "value": "aggressive"
+        },
+        {
+          "label": "Lazy",
+          "value": "lazy"
+        },
+        {
+          "label": "Worried",
+          "value": "worried"
+        },
+        {
+          "label": "Playful",
+          "value": "playful"
+        },
+        {
+          "label": "Weak",
+          "value": "weak"
+        },
+        {
+          "label": "Brown",
+          "value": "brown"
+        }
+      ]
+    },
+    "saddleitem": {
+      "field": "ux.equipment.saddle",
+      "i": 20,
+      "label": "Saddle",
+      "type": "checkbox",
+      "value": "{\"id\":\"saddle\"}"
+    },
+    "size": {
+      "field": "Size",
+      "help": "Set size, 0,1,2 are natural, but you can go much larger.",
+      "i": 22,
+      "label": "Size",
+      "max": 64,
+      "min": 0,
+      "type": "number"
+    },
+    "spawnreinforcements": {
+      "field": "spawnReinforcements",
+      "i": 32,
+      "label": "spawnReinforcements",
+      "type": "static",
+      "value": "This is an attribute under the attributes tab."
+    },
+    "spellticks": {
+      "field": "SpellTicks",
+      "help": "Spell cooldown, number of ticks until a spell can be cast.",
+      "i": 21,
+      "label": "SpellTicks",
+      "type": "number"
+    },
+    "tame": {
+      "field": "Tame",
+      "i": 23,
+      "label": "Tame",
+      "options": [
+        {
+          "label": "",
+          "value": ""
+        },
+        {
+          "label": "Wild",
+          "value": 0
+        },
+        {
+          "label": "Tame",
+          "value": 1
+        }
+      ],
+      "type": "select"
+    },
+    "temper": {
+      "field": "Temper",
+      "help": "Ranges from 0 to 100. Increases with feeding. Higher values make a horse easier to tame.",
+      "i": 24,
+      "label": "Temper",
+      "max": 100,
+      "min": 0,
+      "type": "number"
+    },
+    "timeinoverworld": {
+      "field": "TimeInOverworld",
+      "help": "The number of ticks has has existed in the Overworld, conversion happens at 300",
+      "i": 34,
+      "label": "Time In Overworld",
+      "type": "number"
+    },
+    "villager_level": {
+      "field": "VillagerData.level",
+      "i": 27,
+      "label": "Level",
+      "options": [
+        {
+          "label": "Novice",
+          "value": "1"
+        },
+        {
+          "label": "Apprentice",
+          "value": "2"
+        },
+        {
+          "label": "Journeyman",
+          "value": "3"
+        },
+        {
+          "label": "Expert",
+          "value": "4"
+        },
+        {
+          "label": "Master",
+          "value": "5"
+        },
+        {
+          "label": "No Default Trades",
+          "value": "99"
+        }
+      ],
+      "type": "select",
+      "value": "2"
+    },
+    "villager_profession": {
+      "field": "VillagerData.profession",
+      "i": 26,
+      "label": "Profession",
+      "options": [
+        {
+          "label": "Armorer",
+          "value": "armorer"
+        },
+        {
+          "label": "Butcher",
+          "value": "butcher"
+        },
+        {
+          "label": "Cartographer",
+          "value": "cartographer"
+        },
+        {
+          "label": "Cleric",
+          "value": "cleric"
+        },
+        {
+          "label": "Farmer",
+          "value": "farmer"
+        },
+        {
+          "label": "Fisherman",
+          "value": "fisherman"
+        },
+        {
+          "label": "Fletcher",
+          "value": "fletcher"
+        },
+        {
+          "label": "Leatherworker",
+          "value": "leatherworker"
+        },
+        {
+          "label": "Librarian",
+          "value": "librarian"
+        },
+        {
+          "label": "Mason",
+          "value": "mason"
+        },
+        {
+          "label": "Nitwit",
+          "value": "nitwit"
+        },
+        {
+          "label": "Shepherd",
+          "value": "shepherd"
+        },
+        {
+          "label": "Toolsmith",
+          "value": "toolsmith"
+        },
+        {
+          "label": "Weaponsmith",
+          "value": "weaponsmith"
+        }
+      ],
+      "type": "select",
+      "value": "farmer"
+    },
+    "villager_type": {
+      "field": "VillagerData.type",
+      "i": 28,
+      "label": "Biome Type",
+      "options": [
+        {
+          "label": "Desert",
+          "value": "desert"
+        },
+        {
+          "label": "Jungle",
+          "value": "jungle"
+        },
+        {
+          "label": "Plains",
+          "value": "plains"
+        },
+        {
+          "label": "Savanna",
+          "value": "savanna"
+        },
+        {
+          "label": "Snow",
+          "value": "snow"
+        },
+        {
+          "label": "Swamp",
+          "value": "swamp"
+        },
+        {
+          "label": "Taiga",
+          "value": "taiga"
+        }
+      ],
+      "type": "select",
+      "value": "plains"
+    },
+    "wasongroung": {
+      "field": "wasOnGround",
+      "help": "Doesn't take fall damage",
+      "i": 25,
+      "label": "wasOnGround",
+      "type": "bool"
+    }
+  },
+  "version": "1.21.11"
+}

@@ -4,7 +4,7 @@ import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.gui.modifier.GuiModifier;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
@@ -67,7 +67,7 @@ public class GuiBannerPatternSelector extends GuiModifier<Holder<BannerPattern>>
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         // do nothing
     }
 
@@ -85,7 +85,7 @@ public class GuiBannerPatternSelector extends GuiModifier<Holder<BannerPattern>>
         addRenderableWidget(search);
 
         addRenderableWidget(new EEButton(width / 2 - 60, bottom - 24, 120, 20,
-                Component.translatable("gui.ee.cancel"), b -> mc.setScreen(parent)));
+                Component.translatable("gui.ee.cancel"), b -> mc.gui.setScreen(parent)));
     }
 
     @Override
@@ -100,8 +100,8 @@ public class GuiBannerPatternSelector extends GuiModifier<Holder<BannerPattern>>
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(graphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        super.extractBackground(graphics, mouseX, mouseY, delta);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
 
         int left = MARGIN;
@@ -148,7 +148,7 @@ public class GuiBannerPatternSelector extends GuiModifier<Holder<BannerPattern>>
             graphics.pose().pushMatrix();
             graphics.pose().translate(iconX, iconY);
             graphics.pose().scale(ICON_SCALE, ICON_SCALE);
-            graphics.renderItem(icon, 0, 0);
+            graphics.item(icon, 0, 0);
             graphics.pose().popMatrix();
 
             boolean hovered = GuiUtils.isHover(x, y, CELL - 2, CELL - 2, mouseX, mouseY);
@@ -160,13 +160,13 @@ public class GuiBannerPatternSelector extends GuiModifier<Holder<BannerPattern>>
             }
         }
 
-        super.render(graphics, mouseX, mouseY, delta);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
 
         if (hover != null) {
             List<Component> lines = List.of(
                     Component.literal(patternName(hover)),
                     Component.literal(patternId(hover)).withStyle(net.minecraft.ChatFormatting.GRAY));
-            GuiUtils.renderTooltip(graphics, font, lines, java.util.Optional.empty(), mouseX, mouseY);
+            GuiUtils.setTooltipForNextFrame(graphics, font, lines, java.util.Optional.empty(), mouseX, mouseY);
         }
     }
 
@@ -208,7 +208,7 @@ public class GuiBannerPatternSelector extends GuiModifier<Holder<BannerPattern>>
         Holder<BannerPattern> picked = filtered.get(idx);
         playClick();
         if (onSelect != null) onSelect.accept(picked);
-        mc.setScreen(parent);
+        mc.gui.setScreen(parent);
         return true;
     }
 
@@ -256,7 +256,7 @@ public class GuiBannerPatternSelector extends GuiModifier<Holder<BannerPattern>>
     }
 
     private ItemStack iconFor(Holder<BannerPattern> pattern) {
-        ItemStack stack = new ItemStack(Items.WHITE_BANNER);
+        ItemStack stack = new ItemStack(Items.BANNER.white());
         ItemUtils.setComponent(stack, DataComponents.BANNER_PATTERNS, new BannerPatternLayers(List.of(
                 new BannerPatternLayers.Layer(pattern, DyeColor.BLACK)
         )));

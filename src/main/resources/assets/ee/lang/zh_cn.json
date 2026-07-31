@@ -39,6 +39,7 @@
 
   "gui.ee.config": "配置",
   "gui.ee.disableToolTip": "禁用工具提示而不用 F3+H",
+  "gui.ee.showEETooltips": "Show EE tooltips",
 
   "gui.ee.menu.template": "模板",
   "gui.ee.menu.template.empty": "空白",
@@ -216,6 +217,7 @@
   "gui.ee.modifier.meta.adventure.modebtn.except": "Except",
   "gui.ee.modifier.meta.adventure.selectBlock": "Select a block",
   "gui.ee.modifier.meta.adventure.add": "Add block",
+  "gui.ee.modifier.meta.adventure.showTooltip": "Show tooltip",
   "cmd.ee.unbreakable": "设为不可损坏",
   "cmd.ee.palette": "调色板",
   "cmd.ee.instantclick": "立刻点击",

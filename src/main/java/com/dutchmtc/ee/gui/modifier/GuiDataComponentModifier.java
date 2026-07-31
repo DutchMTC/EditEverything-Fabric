@@ -8,7 +8,7 @@ import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.Tuple;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.component.DataComponentType;
@@ -59,7 +59,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
         }
 
         @Override
-        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
             String title = id;
             int maxWidth = getSizeX() - 4 - 174;
             if (maxWidth > 0 && font.width(title) > maxWidth) {
@@ -67,7 +67,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
                 title = font.plainSubstrByWidth(title, Math.max(0, maxWidth - dots)) + "...";
             }
 
-            GuiUtils.drawString(graphics, font, title, offsetX + 4, offsetY, Color.WHITE.getRGB(), 16);
+            GuiUtils.text(graphics, font, title, offsetX + 4, offsetY, Color.WHITE.getRGB(), 16);
 
             String summary = parent.describeComponentValue(type);
             if (summary != null && !summary.isBlank()) {
@@ -76,7 +76,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
                     int dots = font.width("...");
                     shown = font.plainSubstrByWidth(shown, Math.max(0, maxWidth - dots)) + "...";
                 }
-                GuiUtils.drawString(graphics, font, shown, offsetX + 4, offsetY + 16, Color.GRAY.getRGB(), 16);
+                GuiUtils.text(graphics, font, shown, offsetX + 4, offsetY + 16, Color.GRAY.getRGB(), 16);
             }
 
             super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
@@ -112,7 +112,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
         @Override
         public void init() {
             if (minecraft != null) {
-                minecraft.setScreen(next.get());
+                minecraft.gui.setScreen(next.get());
             }
         }
     }
@@ -191,7 +191,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
 
     private void removeComponent(DataComponentType<?> type) {
         ItemUtils.setComponent(stack, (DataComponentType<Object>) type, null);
-        getMinecraft().setScreen(new GuiDataComponentModifier(parent, stack));
+        getMinecraft().gui.setScreen(new GuiDataComponentModifier(parent, stack));
     }
 
     private void openAddSelector() {
@@ -203,18 +203,18 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
         }
         list.sort(Comparator.comparing(t -> t.a, String.CASE_INSENSITIVE_ORDER));
 
-        getMinecraft().setScreen(new GuiButtonListSelector<>(this,
+        getMinecraft().gui.setScreen(new GuiButtonListSelector<>(this,
                 Component.translatable("gui.ee.modifier.meta.dataComponents.add"),
                 list,
                 type -> buildEditorScreen(type)));
     }
 
     private void openEditor(DataComponentType<?> type) {
-        getMinecraft().setScreen(buildEditorScreen(type));
+        getMinecraft().gui.setScreen(buildEditorScreen(type));
     }
 
     private void openCloneSelector(DataComponentType<?> type) {
-        getMinecraft().setScreen(new com.dutchmtc.ee.gui.selector.GuiTypeListSelector(this,
+        getMinecraft().gui.setScreen(new com.dutchmtc.ee.gui.selector.GuiTypeListSelector(this,
                 Component.translatable("gui.ee.modifier.meta.dataComponents.cloneFrom"),
                 example -> {
                     Object exampleValue = ItemUtils.getComponent(example, (DataComponentType<Object>) type);

@@ -1961,6 +1961,52 @@
       ],
       "type": "mob"
     },
+    "sulfur_cube": {
+      "feature_sets": [],
+      "fields": [
+        "#size",
+        "#wasongroung",
+        {
+          "field": "from_bucket",
+          "help": "Sulfur cubes placed from buckets do not despawn naturally.",
+          "label": "From Bucket",
+          "type": "bool"
+        },
+        {
+          "field": "pickup_timer",
+          "help": "Ticks before the sulfur cube can be picked up with a bucket again.",
+          "label": "Pickup Timer",
+          "min": 0,
+          "type": "number"
+        },
+        {
+          "field": "fuse",
+          "help": "Ticks until an absorbed explosive block detonates. -1 means not primed.",
+          "label": "Fuse",
+          "min": -1,
+          "type": "number"
+        },
+        {
+          "field": "equipment.body.id",
+          "help": "Block absorbed inside the sulfur cube, stored as body equipment.",
+          "label": "Absorbed Block",
+          "type": "text-autocomplete-blocks"
+        },
+        {
+          "field": "equipment.body.count",
+          "help": "Item count for the absorbed block stack.",
+          "label": "Absorbed Block Count",
+          "min": 1,
+          "placeholder": "1",
+          "type": "number"
+        }
+      ],
+      "label": "Sulfur Cube",
+      "tags": [
+        "passive"
+      ],
+      "type": "mob"
+    },
     "small_fireball": {
       "feature_sets": [],
       "fields": [
@@ -3288,5 +3334,5 @@
       "type": "bool"
     }
   },
-  "version": "1.21.11"
+  "version": "26.2"
 }

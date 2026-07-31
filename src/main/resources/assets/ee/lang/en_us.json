@@ -90,7 +90,8 @@
   "gui.ee.armorstand.locks.hint": "These only affect slot interaction locks.",
 
   "gui.ee.config": "Config",
-  "gui.ee.disableToolTip": "Disable tool tip without F3+H",
+  "gui.ee.disableToolTip": "Only show EE tooltips with F3+H",
+  "gui.ee.showEETooltips": "Show EE tooltips",
 
   "gui.ee.menu.template": "Templates",
   "gui.ee.menu.template.empty": "Empty",
@@ -141,6 +142,7 @@
   "gui.ee.modifier.meta.adventure.modebtn.except": "Except",
   "gui.ee.modifier.meta.adventure.selectBlock": "Select a block",
   "gui.ee.modifier.meta.adventure.add": "Add block",
+  "gui.ee.modifier.meta.adventure.showTooltip": "Show tooltip",
   "gui.ee.modifier.meta.setColor": "Color editor",
   "gui.ee.modifier.meta.setColor.picker": "Picker",
   "gui.ee.modifier.meta.setColor.random": "Random",

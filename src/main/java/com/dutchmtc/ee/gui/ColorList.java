@@ -8,7 +8,7 @@ import com.dutchmtc.ee.utils.Tuple;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 
@@ -46,11 +46,11 @@ public class ColorList {
         return list.stream().mapToInt(i -> i).toArray();
     }
 
-    public void drawNext(GuiGraphics graphics, int mouseX, int mouseY, float zLevel) {
+    public void drawNext(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float zLevel) {
         drawNext(graphics, mouseX, mouseY, zLevel, 0, 0);
     }
 
-    public void drawNext(GuiGraphics graphics, int mouseX, int mouseY, float zLevel, int offsetX, int offsetY) {
+    public void drawNext(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float zLevel, int offsetX, int offsetY) {
         offsetX += this.x;
         offsetY += this.y + fontRenderer.lineHeight + 1;
         int i;
@@ -70,18 +70,18 @@ public class ColorList {
                 GuiUtils.drawBox(graphics, pos.a, pos.b, width, height, zLevel);
                 pos.b += 1;
                 text.forEach(s -> {
-                    GuiUtils.drawString(graphics, fontRenderer, s, pos.a, pos.b, 0xffffffff);
+                    GuiUtils.text(graphics, fontRenderer, s, pos.a, pos.b, 0xffffffff);
                     pos.b += 1 + fontRenderer.lineHeight;
                 });
             }
         }
     }
 
-    public void draw(GuiGraphics graphics, int mouseX, int mouseY, float zLevel) {
+    public void draw(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float zLevel) {
         draw(graphics, mouseX, mouseY, zLevel, 0, 0);
     }
 
-    public void draw(GuiGraphics graphics, int mouseX, int mouseY, float zLevel, int offsetX, int offsetY) {
+    public void draw(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float zLevel, int offsetX, int offsetY) {
         offsetX += this.x;
         offsetY += this.y;
         GuiUtils.drawCenterString(graphics, fontRenderer, title, offsetX + (sizeX * (16)) / 2, offsetY, 0xffffffff);
@@ -112,7 +112,7 @@ public class ColorList {
                 if (mouseButton == 0) {
                     int c = list.get(i);
                     int fi = i;
-                    mc.setScreen(new GuiColorModifier(parent, nc -> list.set(fi, nc), c, 0xffffff));
+                    mc.gui.setScreen(new GuiColorModifier(parent, nc -> list.set(fi, nc), c, 0xffffff));
                 } else if (mouseButton == 1)
                     list.remove(i);
                 else

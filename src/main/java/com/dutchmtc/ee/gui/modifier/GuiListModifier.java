@@ -8,7 +8,7 @@ import com.dutchmtc.ee.utils.Tuple;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -134,7 +134,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             return false;
         }
 
-        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
             buttonList.forEach(
                     b -> GuiUtils.drawRelative(graphics, b, offsetX, offsetY, mouseX, mouseY, partialTicks));
             fieldList.stream().filter(EditBox::isVisible).forEach(
@@ -224,7 +224,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         protected void otherActionPerformed(AbstractWidget button, int mouseButton) {
         }
 
-        public void drawNext(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY,
+        public void drawNext(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY,
                              float partialTicks) {
         }
 
@@ -478,7 +478,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         if (doneButton)
             addRenderableWidget(new EEButton(dl + 100 * (i + (cancelButton ? 1 : 0)), height - 21, 99, 20, Component.translatable("gui.done"), b -> {
                 set(get());
-                getMinecraft().setScreen(parent);
+                getMinecraft().gui.setScreen(parent);
             }));
         addRenderableWidget(lastPage = new EEButton(dl - 21, height - 21, 20, 20, Component.literal("<-"), b -> {
             page--;
@@ -592,13 +592,13 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
 
         for (int i = 0; i < visibleElements.length; i++) {
@@ -615,9 +615,9 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                 search.getHeight());
 
         // Draw widgets after header text so top tabs/buttons don't get covered by the title/search label.
-        super.render(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         // search.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
-        if (equals(getMinecraft().screen)) {
+        if (equals(getMinecraft().gui.screen())) {
             for (int i = 0; i < visibleElements.length; i++) {
                 int currentSize = dSize;
                 for (ListElement le : visibleElements[i]) {

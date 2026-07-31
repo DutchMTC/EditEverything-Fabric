@@ -10,7 +10,7 @@ import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -358,18 +358,18 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // allow multiple color modifiers
         updatePickerTexture(localHue);
         PickerLayout layout = createLayout();
         applyAdvancedFieldLayout(layout);
 
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
 
         if (!advanced) {
             // SV PICKER
@@ -415,9 +415,9 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.value") + ": ", tfv,
                     0xffffffff);
 
-            GuiUtils.drawString(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.intColor") + ":", intColor.getX(),
+            GuiUtils.text(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.intColor") + ":", intColor.getX(),
                     intColor.getY() - 4 - 10, 0xffffffff, 10);
-            GuiUtils.drawString(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.hexColor") + ":", hexColor.getX(),
+            GuiUtils.text(graphics, font, I18n.get("gui.ee.modifier.meta.setColor.hexColor") + ":", hexColor.getX(),
                     hexColor.getY() - 4 - 10, 0xffffffff, 10);
         }
         
@@ -452,7 +452,7 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
                     show = () -> GuiUtils.drawTextBox(graphics, font, mouseX, mouseY, width, height, getZLevel(),
                             I18n.get("item.minecraft.firework_star." + dyeColor.getName()));
                 }
-                GuiUtils.drawItemStack(graphics, new ItemStack(DyeItem.byColor(dyeColor)),
+                GuiUtils.drawItemStack(graphics, new ItemStack(dyeItem(dyeColor)),
                         x + (layout.dyeCellSize() - 16) / 2, y + (layout.dyeCellSize() - 16) / 2);
             }
         }
@@ -475,7 +475,7 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         GuiUtils.drawCenterString(graphics, font, "Undo", layout.deleteX() + layout.deleteWidth() / 2, layout.deleteY(),
                 0xFFFFFFFF, ROW_HEIGHT);
 
-        super.render(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
 
         setZLever(getZLevel() + 75);
         show.run();
@@ -506,7 +506,7 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
                 new EEButton(layout.buttonsX() + 2 * (layout.buttonWidth() + layout.buttonGap()), layout.buttonsY(),
                         layout.buttonWidth(), BUTTON_HEIGHT, Component.translatable("gui.done"), b -> {
                     complete();
-                    getMinecraft().setScreen(parent);
+                    getMinecraft().gui.setScreen(parent);
                 }));
 
         // Advanced fields
@@ -591,6 +591,10 @@ public class GuiColorModifier extends GuiModifier<OptionalInt> {
         updateControlsVisibility();
         updateColor(color); // sync picker color
         super.init();
+    }
+
+    private static net.minecraft.world.item.Item dyeItem(DyeColor color) {
+        return net.minecraft.world.item.Items.DYE.pick(color);
     }
 
     private void updateControlsVisibility() {

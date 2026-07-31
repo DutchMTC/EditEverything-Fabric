@@ -7,7 +7,7 @@ import com.dutchmtc.ee.gui.selector.GuiButtonListSelector;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.Tuple;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.Holder;
@@ -66,7 +66,7 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         // do nothing
     }
 
@@ -107,7 +107,7 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
         addRenderableWidget(new EEButton(width / 2 + 2, bottom - 25, 94, 20,
                 Component.translatable("gui.done"), b -> {
                     set(stack);
-                    mc.setScreen(parent);
+                    mc.gui.setScreen(parent);
                 }));
 
         // List actions
@@ -218,8 +218,8 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(graphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        super.extractBackground(graphics, mouseX, mouseY, delta);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
 
         int left = MARGIN;
@@ -258,10 +258,10 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
                 GuiUtils.COLOR_CONTAINER_BORDER | 0xFF000000);
 
         // List header (inside panel so it doesn't overlap action buttons)
-        GuiUtils.drawString(graphics, font, "Layers", listX + 4, listY + 4, 0xFFB0B0B0, font.lineHeight);
+        GuiUtils.text(graphics, font, "Layers", listX + 4, listY + 4, 0xFFB0B0B0, font.lineHeight);
         String limitText = I18n.get("gui.ee.banner.pattern_limit", layers.size(), MAX_PATTERNS);
         int limitColor = layers.size() >= MAX_PATTERNS ? 0xFFFF7777 : 0xFF7F7F7F;
-        GuiUtils.drawString(graphics, font, limitText, listX + LIST_W - 4 - font.width(limitText), listY + 4,
+        GuiUtils.text(graphics, font, limitText, listX + LIST_W - 4 - font.width(limitText), listY + 4,
                 limitColor, font.lineHeight);
 
         // Rows
@@ -272,7 +272,7 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
 
         if (layers.isEmpty()) {
-            GuiUtils.drawString(graphics, font, "(no patterns)", listX + 6, listContentY + 4, 0xFF7F7F7F, font.lineHeight);
+            GuiUtils.text(graphics, font, "(no patterns)", listX + 6, listContentY + 4, 0xFF7F7F7F, font.lineHeight);
         } else {
             for (int row = 0; row < visible; row++) {
                 int idx = scrollOffset + row;
@@ -294,7 +294,7 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
                 String label = (idx + 1) + ". " + layerLabel(layer);
                 int labelX = listX + 4 + 20;
                 label = trimToWidth(label, LIST_W - (labelX - listX) - 6);
-                GuiUtils.drawString(graphics, font, label, labelX, y + 5, fg, font.lineHeight);
+                GuiUtils.text(graphics, font, label, labelX, y + 5, fg, font.lineHeight);
             }
         }
 
@@ -303,27 +303,27 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
             int footerY = listY + listH - listFooterH;
             GuiUtils.drawRect(graphics, listX, footerY, listX + LIST_W, footerY + listFooterH, 0xFF151515);
             String warn = I18n.get("gui.ee.banner.pattern_limit.reached");
-            GuiUtils.drawString(graphics, font, warn, listX + 4, footerY + (listFooterH - font.lineHeight) / 2,
+            GuiUtils.text(graphics, font, warn, listX + 4, footerY + (listFooterH - font.lineHeight) / 2,
                     0xFFFF7777, font.lineHeight);
         }
 
         // Editor header (inside panel)
-        GuiUtils.drawString(graphics, font, "Editor", editorX + 4, editorHeaderY, 0xFFB0B0B0, font.lineHeight);
+        GuiUtils.text(graphics, font, "Editor", editorX + 4, editorHeaderY, 0xFFB0B0B0, font.lineHeight);
 
         if (hasSelection()) {
             BannerPatternLayers.Layer layer = layers.get(selectedIndex);
             String shown = layerLabel(layer);
             shown = trimToWidth(shown, Math.max(0, controlsW));
-            GuiUtils.drawString(graphics, font, shown, editorX + editorPadX, editorLineY, 0xFFE0E0E0, font.lineHeight);
+            GuiUtils.text(graphics, font, shown, editorX + editorPadX, editorLineY, 0xFFE0E0E0, font.lineHeight);
 
             // Pattern icon for the selected layer (left of "Color:")
             ItemStack icon = patternIcon(layer.pattern(), layer.color());
             int iconX = editorX + editorPadX;
             int iconY = dyeLabelY - 2;
             GuiUtils.drawItemStack(graphics, icon, iconX, iconY);
-            GuiUtils.drawString(graphics, font, "Color:", iconX + 20, dyeLabelY, 0xFFB0B0B0, font.lineHeight);
+            GuiUtils.text(graphics, font, "Color:", iconX + 20, dyeLabelY, 0xFFB0B0B0, font.lineHeight);
         } else {
-            GuiUtils.drawString(graphics, font, "Add a layer to edit", editorX + editorPadX, editorLineY, 0xFF7F7F7F, font.lineHeight);
+            GuiUtils.text(graphics, font, "Add a layer to edit", editorX + editorPadX, editorLineY, 0xFF7F7F7F, font.lineHeight);
         }
 
         // Preview
@@ -338,7 +338,7 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
             graphics.pose().pushMatrix();
             graphics.pose().translate(previewX, previewY);
             graphics.pose().scale(PREVIEW_SCALE, PREVIEW_SCALE);
-            graphics.renderItem(stack, 0, 0);
+            graphics.item(stack, 0, 0);
             graphics.pose().popMatrix();
         }
 
@@ -356,7 +356,7 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
             }
         }
 
-        super.render(graphics, mouseX, mouseY, delta);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
     }
 
     @Override
@@ -475,7 +475,7 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
         for (DyeColor c : DyeColor.values()) {
             entries.add(new Tuple<>(dyeName(c), c));
         }
-        mc.setScreen(new GuiButtonListSelector<>(this, Component.literal("Base Color"), entries, color -> {
+        mc.gui.setScreen(new GuiButtonListSelector<>(this, Component.literal("Base Color"), entries, color -> {
             applyLayersToStack();
             setBaseColor(color);
             return null;
@@ -503,7 +503,7 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
 
         Registry<BannerPattern> registry = bannerPatternRegistry();
         Holder<BannerPattern> current = layers.get(selectedIndex).pattern();
-        mc.setScreen(new GuiBannerPatternSelector(this, Component.literal("Pattern"), registry, current, holder -> {
+        mc.gui.setScreen(new GuiBannerPatternSelector(this, Component.literal("Pattern"), registry, current, holder -> {
             if (holder == null) return;
             BannerPatternLayers.Layer old = layers.get(selectedIndex);
             layers.set(selectedIndex, new BannerPatternLayers.Layer(holder, old.color()));
@@ -573,7 +573,7 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
     }
 
     private static ItemStack patternIcon(Holder<BannerPattern> pattern, DyeColor color) {
-        ItemStack stack = new ItemStack(Items.WHITE_BANNER);
+        ItemStack stack = new ItemStack(Items.BANNER.white());
         if (pattern == null || color == null) return stack;
         ItemUtils.setComponent(stack, DataComponents.BANNER_PATTERNS, new BannerPatternLayers(List.of(
                 new BannerPatternLayers.Layer(pattern, color)
@@ -634,45 +634,11 @@ public class GuiBannerEditor extends GuiModifier<ItemStack> {
     }
 
     private static Item dyeItem(DyeColor color) {
-        return switch (Objects.requireNonNull(color)) {
-            case WHITE -> Items.WHITE_DYE;
-            case ORANGE -> Items.ORANGE_DYE;
-            case MAGENTA -> Items.MAGENTA_DYE;
-            case LIGHT_BLUE -> Items.LIGHT_BLUE_DYE;
-            case YELLOW -> Items.YELLOW_DYE;
-            case LIME -> Items.LIME_DYE;
-            case PINK -> Items.PINK_DYE;
-            case GRAY -> Items.GRAY_DYE;
-            case LIGHT_GRAY -> Items.LIGHT_GRAY_DYE;
-            case CYAN -> Items.CYAN_DYE;
-            case PURPLE -> Items.PURPLE_DYE;
-            case BLUE -> Items.BLUE_DYE;
-            case BROWN -> Items.BROWN_DYE;
-            case GREEN -> Items.GREEN_DYE;
-            case RED -> Items.RED_DYE;
-            case BLACK -> Items.BLACK_DYE;
-        };
+        return Items.DYE.pick(Objects.requireNonNull(color));
     }
 
     private static Item bannerItem(DyeColor color) {
-        return switch (Objects.requireNonNull(color)) {
-            case WHITE -> Items.WHITE_BANNER;
-            case ORANGE -> Items.ORANGE_BANNER;
-            case MAGENTA -> Items.MAGENTA_BANNER;
-            case LIGHT_BLUE -> Items.LIGHT_BLUE_BANNER;
-            case YELLOW -> Items.YELLOW_BANNER;
-            case LIME -> Items.LIME_BANNER;
-            case PINK -> Items.PINK_BANNER;
-            case GRAY -> Items.GRAY_BANNER;
-            case LIGHT_GRAY -> Items.LIGHT_GRAY_BANNER;
-            case CYAN -> Items.CYAN_BANNER;
-            case PURPLE -> Items.PURPLE_BANNER;
-            case BLUE -> Items.BLUE_BANNER;
-            case BROWN -> Items.BROWN_BANNER;
-            case GREEN -> Items.GREEN_BANNER;
-            case RED -> Items.RED_BANNER;
-            case BLACK -> Items.BLACK_BANNER;
-        };
+        return Items.BANNER.pick(Objects.requireNonNull(color));
     }
 
     private String trimToWidth(String s, int maxWidth) {

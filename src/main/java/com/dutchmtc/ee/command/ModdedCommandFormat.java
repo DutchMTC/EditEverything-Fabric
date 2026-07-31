@@ -4,6 +4,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.dutchmtc.ee.command.ModdedCommandHelp.CommandClickOption;
 import com.dutchmtc.ee.command.arguments.StringListArgumentType;
+import com.dutchmtc.ee.utils.ChatUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
@@ -29,9 +30,9 @@ public class ModdedCommandFormat extends ModdedCommand {
                             "formatname");
                     for (ChatFormatting f : element) {
                         c.getSource().sendSuccess(() ->
-                                createText(f.getName() + " (&" + f.toString().substring(1) + ")", ChatFormatting.YELLOW)
+                                createText(ChatUtils.formattingName(f) + " (&" + ChatUtils.formattingCode(f) + ")", ChatFormatting.YELLOW)
                                         .append(createText(": ", ChatFormatting.DARK_GRAY))
-                                        .append(createText(f.getName(), f)),
+                                        .append(createText(ChatUtils.formattingName(f), f)),
                                 false);
                     }
 
@@ -47,13 +48,13 @@ public class ModdedCommandFormat extends ModdedCommand {
             int line = 0;
             for (ChatFormatting format : ChatFormatting.values()) {
                 HoverEvent he = new HoverEvent.ShowText(createText(
-                        format.getName() + " (&" + format.toString().substring(1) + ")", ChatFormatting.YELLOW));
+                        ChatUtils.formattingName(format) + " (&" + ChatUtils.formattingCode(format) + ")", ChatFormatting.YELLOW));
                 text = text.append(
-                        createText("&" + format.toString().substring(1) + " ", ChatFormatting.RESET).withStyle(s -> {
+                        createText("&" + ChatUtils.formattingCode(format) + " ", ChatFormatting.RESET).withStyle(s -> {
                             s.withHoverEvent(he); // setHoverEvent
                             return s;
                         })); // applyTextStyle
-                text = text.append(createText("&" + format.toString().substring(1), format).withStyle(s -> {
+                text = text.append(createText("&" + ChatUtils.formattingCode(format), format).withStyle(s -> {
                             s.withHoverEvent(he); // setHoverEvent
                             return s;
                         }) // applyTextStyle

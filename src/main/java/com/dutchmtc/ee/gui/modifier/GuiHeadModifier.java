@@ -8,7 +8,7 @@ import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -59,14 +59,14 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        super.render(graphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         List<String> err = new ArrayList<>();
         boolean flagLink = !((!link.getValue().isEmpty() && isValidHttpUrl(link.getValue()))
                 || link.getValue().isEmpty());
@@ -94,12 +94,12 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
             GuiUtils.drawCenterString(graphics, font, err.get(i), width / 2,
                     name.getY() - 2 - (font.lineHeight + 1) * (i + 1),
                     Color.RED.getRGB());
-        graphics.drawString(font, I18n.get("gui.ee.config.name") + " : ", width / 2 - 178,
+        graphics.text(font, I18n.get("gui.ee.config.name") + " : ", width / 2 - 178,
                 name.getY() + 10 - font.lineHeight / 2, (flagName ? Color.RED : Color.WHITE).getRGB());
-        graphics.drawString(font, I18n.get("gui.ee.uuid") + " : ", width / 2 - 178,
+        graphics.text(font, I18n.get("gui.ee.uuid") + " : ", width / 2 - 178,
                 uuid.getY() + 10 - font.lineHeight / 2,
                 (flagUuid ? Color.RED : Color.WHITE).getRGB());
-        graphics.drawString(font, I18n.get("gui.ee.link") + " : ", width / 2 - 178,
+        graphics.text(font, I18n.get("gui.ee.link") + " : ", width / 2 - 178,
                 link.getY() + 10 - font.lineHeight / 2,
                 (flagLink ? Color.RED : Color.WHITE).getRGB());
         // name.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
@@ -110,7 +110,7 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
         if (GuiUtils.isHover(uuid.getX() + uuid.getWidth() + 10, uuid.getY() + uuid.getHeight() / 2 - 16 / 2, 16, 16,
                 mouseX,
                 mouseY))
-            GuiUtils.renderTooltip(graphics, font, stack, mouseX, mouseY);
+            GuiUtils.setTooltipForNextFrame(graphics, font, stack, mouseX, mouseY);
     }
 
     @Override
@@ -262,7 +262,7 @@ public class GuiHeadModifier extends GuiModifier<ItemStack> {
         addRenderableWidget(
                 new EEButton(width / 2 + 1, height / 2 + 42, 179, 20, Component.translatable("gui.done"), b -> {
                     set(stack);
-                    getMinecraft().setScreen(parent);
+                    getMinecraft().gui.setScreen(parent);
                 }));
         loadHead();
         super.init();

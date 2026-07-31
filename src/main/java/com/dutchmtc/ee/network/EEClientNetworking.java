@@ -24,7 +24,7 @@ public final class EEClientNetworking {
                     Class<?> cls = Class.forName("com.dutchmtc.ee.gui.GuiGiver");
                     var ctor = cls.getConstructor(Screen.class, String.class);
                     Object screen = ctor.newInstance(null, payload.giveCode());
-                    Minecraft.getInstance().setScreen((Screen) screen);
+                    Minecraft.getInstance().gui.setScreen((Screen) screen);
                 } catch (Throwable t) {
                     EEMod.LOGGER.error("Failed to open giver GUI from server packet", t);
                 }
@@ -37,7 +37,7 @@ public final class EEClientNetworking {
                     Class<?> cls = Class.forName("com.dutchmtc.ee.gui.GuiMenu");
                     var ctor = cls.getConstructor(Screen.class);
                     Object screen = ctor.newInstance((Screen) null);
-                    Minecraft.getInstance().setScreen((Screen) screen);
+                    Minecraft.getInstance().gui.setScreen((Screen) screen);
                 } catch (Throwable t) {
                     EEMod.LOGGER.error("Failed to open menu GUI from server packet", t);
                 }
@@ -68,7 +68,7 @@ public final class EEClientNetworking {
                         int slot = 36 + mc.player.getInventory().getSelectedSlot();
                         ItemUtilsClient.give(ItemUtils.setGlobalColor(is, newColor), slot);
                     });
-                    Minecraft.getInstance().setScreen((Screen) screen);
+                    Minecraft.getInstance().gui.setScreen((Screen) screen);
                 } catch (Throwable t) {
                     EEMod.LOGGER.error("Failed to open color GUI from server packet", t);
                 }
@@ -98,9 +98,9 @@ public final class EEClientNetworking {
         ClientPlayNetworking.registerGlobalReceiver(EENetworking.OpenArmorStandEditorPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 var mc = Minecraft.getInstance();
-                Screen parent = mc.screen;
+                Screen parent = mc.gui.screen();
                 // This screen is currently only opened via the /ee armorstand command.
-                mc.setScreen(new GuiArmorStandEditor(parent, payload.entityId(), true));
+                mc.gui.setScreen(new GuiArmorStandEditor(parent, payload.entityId(), true));
             });
         });
     }

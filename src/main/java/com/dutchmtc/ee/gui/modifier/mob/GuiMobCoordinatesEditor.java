@@ -4,7 +4,7 @@ import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.mobdata.NbtPath;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
@@ -85,7 +85,7 @@ public class GuiMobCoordinatesEditor extends Screen {
                 b -> {
                     setter.accept(state.tag);
                     if (minecraft != null) {
-                        minecraft.setScreen(parent);
+                        minecraft.gui.setScreen(parent);
                     }
                 }));
     }
@@ -94,7 +94,7 @@ public class GuiMobCoordinatesEditor extends Screen {
         // revert this field only
         write(originalX, originalY, originalZ);
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 
@@ -174,10 +174,10 @@ public class GuiMobCoordinatesEditor extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(graphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        super.extractBackground(graphics, mouseX, mouseY, delta);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
-        super.render(graphics, mouseX, mouseY, delta);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
         GuiUtils.drawCenterString(graphics, font, label, width / 2, 10, 0xFFFFFFFF);
     }
 }

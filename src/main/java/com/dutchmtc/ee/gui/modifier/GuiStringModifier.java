@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.utils.ChatUtils;
 import com.dutchmtc.ee.utils.GuiUtils;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -32,14 +32,14 @@ public class GuiStringModifier extends GuiModifier<String> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        super.render(graphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.text") + " : ", field.getX(), field.getY(), Color.ORANGE.getRGB(),
                 field.getHeight());
     }
@@ -57,7 +57,7 @@ public class GuiStringModifier extends GuiModifier<String> {
                 Component.translatable("gui.ee.cancel"), b -> onCancel()));
         addRenderableWidget(new EEButton(width / 2 + 1, btnY, 99, 20, Component.translatable("gui.done"), b -> {
             set(value = ChatUtils.translateColorCodes(field.getValue()));
-            getMinecraft().setScreen(parent);
+            getMinecraft().gui.setScreen(parent);
         }));
         super.init();
     }

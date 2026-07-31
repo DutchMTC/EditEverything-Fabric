@@ -6,7 +6,7 @@ import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.utils.ChatUtils;
 import com.dutchmtc.ee.utils.GuiUtils;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -71,7 +71,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
                     for (int i = 0; i < result.length; i++)
                         result[i] = ChatUtils.translateColorCodes(values.get(i));
                     set(result);
-                    mc.setScreen(parent);
+                    mc.gui.setScreen(parent);
                 }));
         addRenderableWidget(last = new EEButton(width / 2 - 121, height - 21, 20, 20, Component.literal("<-"), b -> {
             page--;
@@ -156,17 +156,17 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        super.render(graphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         for (int i = page * elms; i < (page + 1) * elms && i < tfs.length; i++) {
             EditBox tf = tfs[i];
-            GuiUtils.drawRightString(graphics, font, i + " : ", tf.getX(), tf.getY(), Objects.requireNonNull(ChatFormatting.WHITE.getColor()), tf.getHeight());
+            GuiUtils.drawRightString(graphics, font, i + " : ", tf.getX(), tf.getY(), 0xFFFFFF, tf.getHeight());
             // tf.render(graphics, mouseX, mouseY, partialTicks);
         }
     }

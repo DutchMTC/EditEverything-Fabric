@@ -34,7 +34,7 @@ public class GuiNBTListModifier extends GuiListModifier<ListTag> {
                 if (base != null)
                     addListElement(getElements().size() - 1, NBTElement.getElementByBase(this, k, base));
             } else
-                getMinecraft().setScreen(GuiNBTModifier.addElement(getElements().size() - 1, this, k));
+                getMinecraft().gui.setScreen(GuiNBTModifier.addElement(getElements().size() - 1, this, k));
             return null;
         }));
         setPaddingLeft(5);

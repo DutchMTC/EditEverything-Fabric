@@ -22,11 +22,11 @@ public class ModdedCommandGive extends ModdedCommand {
                 .then(Commands.argument("givecount", IntegerArgumentType.integer()).executes(c -> {
                     var player = c.getSource().getPlayerOrException();
                     ServerItemOps.give(player, ItemArgument.getItem(c, "giveoption")
-                            .createItemStack(IntegerArgumentType.getInteger(c, "givecount"), false));
+                            .createItemStack(IntegerArgumentType.getInteger(c, "givecount")));
                     return 1;
                 })).executes(c -> {
                     var player = c.getSource().getPlayerOrException();
-                    ServerItemOps.give(player, ItemArgument.getItem(c, "giveoption").createItemStack(1, false));
+                    ServerItemOps.give(player, ItemArgument.getItem(c, "giveoption").createItemStack(1));
                     return 1;
                 }));
     }

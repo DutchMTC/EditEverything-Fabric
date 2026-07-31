@@ -4,6 +4,7 @@ import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.gui.modifier.GuiBooleanButton;
 import com.dutchmtc.ee.gui.modifier.GuiListModifier;
 import com.dutchmtc.ee.gui.modifier.nbt.GuiNBTIntArrayModifier;
+import com.dutchmtc.ee.gui.selector.GuiBlockTypeListSelector;
 import com.dutchmtc.ee.gui.selector.GuiButtonListSelector;
 import com.dutchmtc.ee.mobdata.FeatureSetRepository;
 import com.dutchmtc.ee.mobdata.MobDataRepository;
@@ -14,7 +15,6 @@ import com.dutchmtc.ee.utils.Tuple;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
@@ -24,7 +24,6 @@ import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -66,7 +65,7 @@ public class GuiMobFieldsEditor extends GuiListModifier<CompoundTag> {
         addRenderableWidget(fieldsTab);
 
         EEButton featuresTab = new EEButton(x0 + tabW + 2, y0, tabW, tabH, Component.literal("Feature Sets"), b -> {
-            getMinecraft().setScreen(new GuiMobFeatureSetsEditor(parent, setter, state));
+            getMinecraft().gui.setScreen(new GuiMobFeatureSetsEditor(parent, setter, state));
         });
         addRenderableWidget(featuresTab);
 
@@ -481,7 +480,7 @@ public class GuiMobFieldsEditor extends GuiListModifier<CompoundTag> {
                     options.add(new Tuple<>(label, o.value == null ? "" : o.value));
                 }
             }
-            getMinecraft().setScreen(new GuiButtonListSelector<>(GuiMobFieldsEditor.this,
+            getMinecraft().gui.setScreen(new GuiButtonListSelector<>(GuiMobFieldsEditor.this,
                     Component.literal(meta.label), options, selected -> {
                 applySelection(selected);
                 refreshLabel();
@@ -549,7 +548,7 @@ public class GuiMobFieldsEditor extends GuiListModifier<CompoundTag> {
             if (meta.options == null || meta.options.isEmpty()) {
                 return;
             }
-            getMinecraft().setScreen(new GuiMobChecklistEditor(GuiMobFieldsEditor.this, setter, state,
+            getMinecraft().gui.setScreen(new GuiMobChecklistEditor(GuiMobFieldsEditor.this, setter, state,
                     meta.fieldPath, meta.label, meta.options, meta.optionsAllInt));
         }
     }
@@ -565,7 +564,7 @@ public class GuiMobFieldsEditor extends GuiListModifier<CompoundTag> {
         }
 
         @Override
-        public void draw(net.minecraft.client.gui.GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        public void draw(net.minecraft.client.gui.GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
             int x1 = offsetX + 4;
             int x2 = offsetX + getSizeX() - 4;
             int y = offsetY + getSizeY() / 2;
@@ -581,7 +580,7 @@ public class GuiMobFieldsEditor extends GuiListModifier<CompoundTag> {
             EEButton btn = new EEButton(0, 0, 200, 20, Component.literal(meta.label), b -> {
                 CompoundTag parent = getParentExisting(parts);
                 int[] arr = parent != null ? ItemUtils.getIntArray(parent, parts[parts.length - 1]) : new int[0];
-                getMinecraft().setScreen(new GuiNBTIntArrayModifier(Component.literal(meta.label), GuiMobFieldsEditor.this,
+                getMinecraft().gui.setScreen(new GuiNBTIntArrayModifier(Component.literal(meta.label), GuiMobFieldsEditor.this,
                         out -> {
                             CompoundTag p = getOrCreateParent(parts);
                             ItemUtils.putIntArray(p, parts[parts.length - 1], out.getAsIntArray());
@@ -596,7 +595,7 @@ public class GuiMobFieldsEditor extends GuiListModifier<CompoundTag> {
         CoordinatesElement(FieldMeta meta) {
             super(meta);
             EEButton btn = new EEButton(0, 0, 200, 20, Component.literal(meta.label), b -> {
-                getMinecraft().setScreen(new GuiMobCoordinatesEditor(GuiMobFieldsEditor.this, setter, state, meta.fieldPath, meta.label));
+                getMinecraft().gui.setScreen(new GuiMobCoordinatesEditor(GuiMobFieldsEditor.this, setter, state, meta.fieldPath, meta.label));
             });
             applyHelp(btn::setTooltip);
             buttonList.add(btn);
@@ -635,13 +634,12 @@ public class GuiMobFieldsEditor extends GuiListModifier<CompoundTag> {
             if (meta.matrixGroups == null || meta.matrixGroups.isEmpty()) {
                 return;
             }
-            getMinecraft().setScreen(new GuiMobAdditiveMatrixEditor(GuiMobFieldsEditor.this, setter, state,
+            getMinecraft().gui.setScreen(new GuiMobAdditiveMatrixEditor(GuiMobFieldsEditor.this, setter, state,
                     meta.fieldPath, meta.label, meta.matrixGroups, meta.matrixDefault));
         }
     }
 
     private final class BlockAutocompleteElement extends BaseElement {
-        private static @Nullable List<Tuple<String, String>> cachedBlocks;
         private final EEButton button;
         private final String[] parts;
 
@@ -671,29 +669,15 @@ public class GuiMobFieldsEditor extends GuiListModifier<CompoundTag> {
             return ItemUtils.getString(parent, parts[parts.length - 1]);
         }
 
-        private static List<Tuple<String, String>> getBlocks() {
-            if (cachedBlocks != null) return cachedBlocks;
-            List<Tuple<String, String>> out = new ArrayList<>();
-            out.add(new Tuple<>("(unset)", ""));
-            BuiltInRegistries.BLOCK.keySet().stream()
-                    .sorted(Comparator.comparing(Identifier::toString))
-                    .forEach(id -> {
-                        String s = id.toString();
-                        out.add(new Tuple<>(s, s));
-                    });
-            cachedBlocks = out;
-            return out;
-        }
-
         private void openSelector() {
-            getMinecraft().setScreen(new GuiButtonListSelector<>(GuiMobFieldsEditor.this,
-                    Component.literal(meta.label), getBlocks(), selected -> {
+            getMinecraft().gui.setScreen(new GuiBlockTypeListSelector(GuiMobFieldsEditor.this,
+                    Component.literal(meta.label), selected -> {
                 CompoundTag parent = getOrCreateParent(parts);
                 String key = parts[parts.length - 1];
-                if (selected == null || selected.isEmpty()) {
+                if (selected == null) {
                     ItemUtils.remove(parent, key);
                 } else {
-                    ItemUtils.putString(parent, key, selected);
+                    ItemUtils.putString(parent, key, ItemUtils.getRegistry(selected).toString());
                 }
                 refreshLabel();
                 return GuiMobFieldsEditor.this;

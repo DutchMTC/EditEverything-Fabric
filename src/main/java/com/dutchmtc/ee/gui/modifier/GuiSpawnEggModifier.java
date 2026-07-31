@@ -13,7 +13,7 @@ import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.Tuple;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.NonNullList;
@@ -34,6 +34,7 @@ import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.item.component.TypedEntityData;
@@ -86,21 +87,21 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
-        super.render(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         
         // Draw Item Stack (Fixed at top)
         if (currentItemStack != null) {
             GuiUtils.drawItemStack(graphics, currentItemStack, width / 2 - 10, 20);
             if (GuiUtils.isHover(width / 2 - 10, 20, 20, 20, mouseX, mouseY))
-                GuiUtils.renderTooltip(graphics, font, currentItemStack, mouseX, mouseY);
+                GuiUtils.setTooltipForNextFrame(graphics, font, currentItemStack, mouseX, mouseY);
         }
         
         // Draw title
@@ -151,7 +152,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         addRenderableWidget(new EEButton(centerX + 1, height - 25, 99, 20,
                 Component.translatable("gui.done"), b -> {
             set(currentItemStack);
-            getMinecraft().setScreen(parent);
+            getMinecraft().gui.setScreen(parent);
         }));
     }
     
@@ -160,9 +161,12 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         addRenderableWidget(new EEButton(centerX - 100, currentY, 200, 20,
                 Component.literal("Set Spawn Egg Item"), b -> {
             List<Tuple<String, SpawnEggItem>> eggs = new ArrayList<>();
-            SpawnEggItem.eggs()
+            net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .stream()
+                    .filter(item -> item instanceof SpawnEggItem)
+                    .map(item -> (SpawnEggItem) item)
                     .forEach(egg -> eggs.add(new Tuple<>(egg.getName(new ItemStack(egg)).getString(), egg)));
-            getMinecraft().setScreen(new GuiButtonListSelector<>(GuiSpawnEggModifier.this,
+            getMinecraft().gui.setScreen(new GuiButtonListSelector<>(GuiSpawnEggModifier.this,
                     Component.literal("Set Spawn Egg Item"), eggs, egg -> {
                 ItemStack newStack = new ItemStack(egg);
                 TypedEntityData<EntityType<?>> oldData = ItemUtils.getComponent(currentItemStack, DataComponents.ENTITY_DATA);
@@ -189,7 +193,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                     .sorted(Comparator.comparing(t -> t.getDescription().getString()))
                     .forEach(type -> entities.add(new Tuple<>(type.getDescription().getString(), type)));
             
-            getMinecraft().setScreen(new GuiButtonListSelector<>(GuiSpawnEggModifier.this,
+            getMinecraft().gui.setScreen(new GuiButtonListSelector<>(GuiSpawnEggModifier.this,
                     Component.literal("Set Entity Type"), entities, type -> {
                 TypedEntityData<EntityType<?>> oldData = ItemUtils.getComponent(currentItemStack, DataComponents.ENTITY_DATA);
                 CompoundTag newTag = oldData != null ? oldData.copyTagWithoutId() : new CompoundTag();
@@ -225,7 +229,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
             }
 
             MobPropertyEditorState state = MobPropertyEditorState.createDefault(entityPath, tag, featureSets);
-            getMinecraft().setScreen(new GuiMobFieldsEditor(GuiSpawnEggModifier.this, this::setEntityTag, state));
+            getMinecraft().gui.setScreen(new GuiMobFieldsEditor(GuiSpawnEggModifier.this, this::setEntityTag, state));
         }));
         currentY += spacing;
 
@@ -283,7 +287,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                 Component.literal("Body"),
                 Component.literal("Saddle")
             );
-            getMinecraft().setScreen(new GuiSpawnEggEquipmentModifier(this, Component.literal("Equipment"), newData -> {
+            getMinecraft().gui.setScreen(new GuiSpawnEggEquipmentModifier(this, Component.literal("Equipment"), newData -> {
                 updateEntityTag(t -> {
                     setEquipmentData(t, newData.equipment());
                     setEquipmentDropChances(t, newData.dropChances());
@@ -308,7 +312,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                     attributes.add(ItemUtils.getCompound(list, i));
                 }
             }
-            getMinecraft().setScreen(new GuiEntityAttributeModifier(this, attributes, newAttrs -> {
+            getMinecraft().gui.setScreen(new GuiEntityAttributeModifier(this, attributes, newAttrs -> {
                 updateEntityTag(t -> {
                     ListTag list = new ListTag();
                     newAttrs.forEach(list::add);
@@ -335,7 +339,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                     effects.add(ItemUtils.getCompound(list, i));
                 }
             }
-            getMinecraft().setScreen(new GuiActiveEffectsModifier(this, effects, newEffects -> {
+            getMinecraft().gui.setScreen(new GuiActiveEffectsModifier(this, effects, newEffects -> {
                 updateEntityTag(t -> {
                     ListTag list = new ListTag();
                     newEffects.forEach(list::add);
@@ -350,7 +354,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
         addRenderableWidget(new EEButton(centerX - 100, currentY, 200, 20,
                 Component.translatable("gui.ee.modifier.tag.editor"), b -> {
             CompoundTag tag = getEntityTag();
-            getMinecraft().setScreen(new GuiNBTModifier(GuiSpawnEggModifier.this, newTag -> {
+            getMinecraft().gui.setScreen(new GuiNBTModifier(GuiSpawnEggModifier.this, newTag -> {
                 setEntityTag(newTag);
             }, tag));
         }));
@@ -378,7 +382,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
             // Defer opening to the next tick to avoid the screen being overwritten by other UI transitions
             // (e.g. chat closing), which can look like the GUI "opens for 1 frame then closes".
             var mc = getMinecraft();
-            mc.execute(() -> mc.setScreen(new GuiVillagerTradesEditor(this, recipes, newRecipes -> {
+            mc.execute(() -> mc.gui.setScreen(new GuiVillagerTradesEditor(this, recipes, newRecipes -> {
                 updateEntityTag(tag -> {
                     setTradeRecipes(tag, newRecipes);
                     ensureVillagerDataForTrading(tag);
@@ -391,7 +395,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                 Component.literal("Edit Offers NBT (raw)"), b -> {
             CompoundTag tag = getEntityTag();
             CompoundTag offers = tag.getCompound("Offers").orElse(new CompoundTag());
-            getMinecraft().setScreen(new GuiNBTModifier(Component.literal("Offers"), this, this::setOffersTag, offers));
+            getMinecraft().gui.setScreen(new GuiNBTModifier(Component.literal("Offers"), this, this::setOffersTag, offers));
         }));
     }
 
@@ -639,7 +643,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                 return egg.getType(stack);
             }
         }
-        return EntityType.PIG;
+        return EntityTypes.PIG;
     }
 
     private static EntityType<?> getCurrentEntityType(ItemStack stack) {
@@ -705,7 +709,7 @@ public class GuiSpawnEggModifier extends GuiModifier<ItemStack> {
                     if (code == 'r') {
                         formats.clear();
                         rgbColor = null;
-                    } else if (fmt.isColor()) {
+                    } else if (com.dutchmtc.ee.utils.ChatUtils.isColor(fmt)) {
                         formats.clear();
                         formats.add(fmt);
                         rgbColor = null;

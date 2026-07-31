@@ -9,7 +9,7 @@ import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ItemUtils.AttributeData;
 import com.dutchmtc.ee.utils.Tuple;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -58,7 +58,7 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
                     String s = I18n.get("item.modifiers." + slot.getName());
                     slots.add(new Tuple<>(s.endsWith(":") ? s.substring(0, s.length() - 1) : s, slot));
                 }
-                mc.setScreen(new GuiButtonListSelector<>(parent,
+                mc.gui.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.ee.modifier.attr.slot"), slots, s -> {
                     data.setSlot(s);
                     defineButtonText();
@@ -71,7 +71,7 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
                     String desc = atr.getDescriptionId();
                     attributes.add(new Tuple<>(I18n.get(desc), atr));
                 });
-                mc.setScreen(new GuiButtonListSelector<>(parent,
+                mc.gui.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.ee.modifier.attr.type"), attributes, atr -> {
                     data.setAttribute(atr);
                     defineButtonText();
@@ -83,7 +83,7 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
                 operations.add(new Tuple<>(I18n.get("gui.ee.modifier.attr.operation.0") + " (0)", 0));
                 operations.add(new Tuple<>(I18n.get("gui.ee.modifier.attr.operation.1") + " (1)", 1));
                 operations.add(new Tuple<>(I18n.get("gui.ee.modifier.attr.operation.2") + " (2)", 2));
-                mc.setScreen(new GuiButtonListSelector<>(parent,
+                mc.gui.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.ee.modifier.attr.operation"), operations, i -> {
                     AttributeListElement.this.operationValue = i;
                     defineButtonText();
@@ -112,7 +112,7 @@ public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
         }
 
         @Override
-        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
             GuiUtils.drawRelative(graphics, amount, offsetX, offsetY, mouseX, mouseY, partialTicks);
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.attr.amount") + " : ", amount,
                     (errAmount ? Color.RED : Color.WHITE).getRGB(), offsetX, offsetY);

@@ -6,7 +6,7 @@ import com.dutchmtc.ee.mobdata.NbtPath;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.Tuple;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -75,14 +75,14 @@ public class GuiMobAdditiveMatrixEditor extends Screen {
                     writeCurrentValue(computeValue());
                     setter.accept(state.tag);
                     if (minecraft != null) {
-                        minecraft.setScreen(parent);
+                        minecraft.gui.setScreen(parent);
                     }
                 }));
     }
 
     private void onCancel() {
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 
@@ -106,7 +106,7 @@ public class GuiMobAdditiveMatrixEditor extends Screen {
             opts.add(new Tuple<>(o.label(), o.value()));
         }
         if (minecraft == null) return;
-        minecraft.setScreen(new GuiButtonListSelector<>(this,
+        minecraft.gui.setScreen(new GuiButtonListSelector<>(this,
                 Component.literal(g.label()), opts, val -> {
                     selection[groupIndex] = val == null ? 0 : val;
                     writeCurrentValue(computeValue());
@@ -154,10 +154,10 @@ public class GuiMobAdditiveMatrixEditor extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(graphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        super.extractBackground(graphics, mouseX, mouseY, delta);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
-        super.render(graphics, mouseX, mouseY, delta);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
         GuiUtils.drawCenterString(graphics, font, label, width / 2, 10, 0xFFFFFFFF);
     }
 }

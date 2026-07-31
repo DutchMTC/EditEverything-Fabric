@@ -44,6 +44,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.item.component.Fireworks;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.component.ItemContainerContents;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -1060,7 +1061,12 @@ public class ItemUtils {
     }
 
     public static boolean isLeatherArmor(ItemStack stack) {
-        return stack.is(net.minecraft.tags.ItemTags.DYEABLE);
+        return stack.is(Items.LEATHER_HELMET)
+                || stack.is(Items.LEATHER_CHESTPLATE)
+                || stack.is(Items.LEATHER_LEGGINGS)
+                || stack.is(Items.LEATHER_BOOTS)
+                || stack.is(Items.LEATHER_HORSE_ARMOR)
+                || stack.is(Items.WOLF_ARMOR);
     }
 
     public static boolean canGlobalColorIt(ItemStack stack) {
@@ -1233,6 +1239,23 @@ public class ItemUtils {
             setComponent(stack, DataComponents.UNBREAKABLE, Unit.INSTANCE);
         } else {
             stack.remove(DataComponents.UNBREAKABLE);
+        }
+        return stack;
+    }
+
+    public static boolean isTooltipComponentVisible(ItemStack stack, DataComponentType<?> componentType) {
+        TooltipDisplay display = getComponent(stack, DataComponents.TOOLTIP_DISPLAY);
+        return display == null || !display.hiddenComponents().contains(componentType);
+    }
+
+    public static ItemStack setTooltipComponentVisible(ItemStack stack, DataComponentType<?> componentType, boolean visible) {
+        TooltipDisplay display = getComponent(stack, DataComponents.TOOLTIP_DISPLAY);
+        TooltipDisplay base = display != null ? display : TooltipDisplay.DEFAULT;
+        TooltipDisplay updated = base.withHidden(componentType, !visible);
+        if (updated.equals(TooltipDisplay.DEFAULT)) {
+            stack.remove(DataComponents.TOOLTIP_DISPLAY);
+        } else {
+            setComponent(stack, DataComponents.TOOLTIP_DISPLAY, updated);
         }
         return stack;
     }

@@ -27,7 +27,7 @@ public class GuiNBTModifier extends GuiListModifier<CompoundTag> {
             if (!key.isEmpty())
                 modifier.setParent(addElement(i == null ? lm.getElements().size() - 1 : i, lm, key));
         });
-        lm.getMinecraft().setScreen(modifier);
+        lm.getMinecraft().gui.setScreen(modifier);
     };
 
     public static GuiButtonListSelector<Tag> addElement(int i, GuiListModifier<?> lm, String key) {

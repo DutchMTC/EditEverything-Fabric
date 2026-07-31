@@ -15,7 +15,7 @@ public class NBTIntArrayElement extends NBTElement {
         super(parent, key, 200, 21);
         this.value = value;
         buttonList
-                .add(new EEButton(0, 0, 200, 20, Component.translatable("gui.ee.modifier.tag.editor.intArray"), b -> mc.setScreen(new GuiNBTIntArrayModifier(Component.literal(parent.getStringTitle() + key + "/"),
+                .add(new EEButton(0, 0, 200, 20, Component.translatable("gui.ee.modifier.tag.editor.intArray"), b -> mc.gui.setScreen(new GuiNBTIntArrayModifier(Component.literal(parent.getStringTitle() + key + "/"),
                         parent, tag -> NBTIntArrayElement.this.value = tag, value.copy()))));
     }
 

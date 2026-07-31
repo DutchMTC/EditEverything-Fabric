@@ -91,12 +91,10 @@ public class EEMod implements ModInitializer {
     // private static final PoseStack STACK = new PoseStack(); 
 
     @SuppressWarnings("unchecked")
-    public static final String[] DEFAULT_CUSTOM_ITEMS = {
-            ItemUtils.getGiveCode(
-                    ItemUtils.buildStack(Blocks.PINK_WOOL, 42, ChatFormatting.LIGHT_PURPLE + "Pink verity",
-                            new String[]{"" + ChatFormatting.GOLD + ChatFormatting.BOLD + "42 is life",
-                                    "" + ChatFormatting.GOLD + ChatFormatting.BOLD + "wait what ?"},
-                            new Tuple[0]))};
+    public static String[] getDefaultCustomItems() {
+        return new String[]{
+                "minecraft:pink_wool 42"};
+    }
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID.toUpperCase());
     
     // KeyMappings are client-side. We'll expose getters but they will be initialized in ClientModInitializer
@@ -108,6 +106,7 @@ public class EEMod implements ModInitializer {
     // public static KeyMapping giver, menu, edit; 
     
     private static final List<ItemStack> templates = new ArrayList<>();
+    private static boolean templatesInitialized = false;
     private static final Map<String, Map<String, Consumer<StringModifier>>> stringModifier = new HashMap<>();
     private static final Configuration config = new Configuration();
     private static final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
@@ -117,6 +116,10 @@ public class EEMod implements ModInitializer {
 
     public static boolean doesDisableToolTip() {
         return config.doesDisableToolTip();
+    }
+
+    public static boolean doesDisableEETooltips() {
+        return config.doesDisableEETooltips();
     }
 
     public static boolean doesResetPlayerAttributesOnEventWorldExit() {
@@ -144,6 +147,7 @@ public class EEMod implements ModInitializer {
     }
 
     public static Stream<ItemStack> getTemplates() {
+        initTemplates();
         return templates.stream().map(is -> {
             String lang = ItemUtils.getCustomTag(is, TEMPLATE_TAG_NAME + "Lang", null);
             Component display = (lang != null ? Component.translatable(lang) : is.getDisplayName());
@@ -167,6 +171,34 @@ public class EEMod implements ModInitializer {
                 TEMPLATE_TAG_NAME + "Lang", lang));
     }
 
+    private static void initTemplates() {
+        if (templatesInitialized) {
+            return;
+        }
+        templatesInitialized = true;
+
+        registerTemplate("gui.ee.menu.template.empty", new ItemStack(Items.PAPER), "");
+        registerTemplate("gui.ee.menu.template.stone", new ItemStack(Blocks.STONE),
+                ItemUtils.getGiveCode(new ItemStack(Blocks.STONE)));
+        registerTemplate("gui.ee.menu.template.potion", new ItemStack(Items.POTION),
+                ItemUtils.getGiveCode(new ItemStack(Items.POTION)));
+        registerTemplate("gui.ee.menu.template.fireworks", new ItemStack(Items.FIREWORK_ROCKET),
+                ItemUtils.getGiveCode(new ItemStack(Items.FIREWORK_ROCKET)));
+
+        Identifier headId = BuiltInRegistries.ITEM.getKey(Items.PLAYER_HEAD);
+        String headDesc = "item." + headId.getNamespace() + "." + headId.getPath().replace('/', '.');
+        registerTemplate(headDesc, new ItemStack(Items.PLAYER_HEAD),
+                ItemUtils.getGiveCode(new ItemStack(Items.PLAYER_HEAD)));
+
+        registerTemplate("gui.ee.menu.template.command", new ItemStack(Blocks.COMMAND_BLOCK),
+                ItemUtils.getGiveCode(new ItemStack(Blocks.COMMAND_BLOCK)));
+
+        Identifier eggId = BuiltInRegistries.ITEM.getKey(Items.EGG);
+        String eggDesc = "item." + eggId.getNamespace() + "." + eggId.getPath().replace('/', '.');
+        registerTemplate(eggDesc, new ItemStack(Items.EGG),
+                ItemUtils.getGiveCode(new ItemStack(Items.EGG)));
+    }
+
     public static void saveConfigs() {
         config.save();
     }
@@ -179,6 +211,10 @@ public class EEMod implements ModInitializer {
 
     public static void setDoesDisableToolTip(boolean doesDisableToolTip) {
         config.setDoesDisableToolTip(doesDisableToolTip);
+    }
+
+    public static void setDoesDisableEETooltips(boolean doesDisableEETooltips) {
+        config.setDoesDisableEETooltips(doesDisableEETooltips);
     }
 
     public static EEState getModState() {
@@ -279,28 +315,6 @@ public class EEMod implements ModInitializer {
             // Also register to our internal dispatcher if needed, or just use the main one
             registerCommandDispatcher(EEMod.dispatcher, context);
         });
-
-        // Register Templates
-        registerTemplate("gui.ee.menu.template.empty", new ItemStack(Items.PAPER), "");
-        registerTemplate("gui.ee.menu.template.stone", new ItemStack(Blocks.STONE),
-                ItemUtils.getGiveCode(new ItemStack(Blocks.STONE)));
-        registerTemplate("gui.ee.menu.template.potion", new ItemStack(Items.POTION),
-                ItemUtils.getGiveCode(new ItemStack(Items.POTION)));
-        registerTemplate("gui.ee.menu.template.fireworks", new ItemStack(Items.FIREWORK_ROCKET),
-                ItemUtils.getGiveCode(new ItemStack(Items.FIREWORK_ROCKET)));
-        
-        Identifier headId = BuiltInRegistries.ITEM.getKey(Items.PLAYER_HEAD);
-        String headDesc = "item." + headId.getNamespace() + "." + headId.getPath().replace('/', '.');
-        registerTemplate(headDesc, new ItemStack(Items.PLAYER_HEAD),
-                ItemUtils.getGiveCode(new ItemStack(Items.PLAYER_HEAD)));
-        
-        registerTemplate("gui.ee.menu.template.command", new ItemStack(Blocks.COMMAND_BLOCK),
-                ItemUtils.getGiveCode(new ItemStack(Blocks.COMMAND_BLOCK)));
-        
-        Identifier eggId = BuiltInRegistries.ITEM.getKey(Items.EGG);
-        String eggDesc = "item." + eggId.getNamespace() + "." + eggId.getPath().replace('/', '.');
-        registerTemplate(eggDesc, new ItemStack(Items.EGG),
-                ItemUtils.getGiveCode(new ItemStack(Items.EGG)));
 
         // Register Modifiers (using BuiltInRegistries)
         BuiltInRegistries.ITEM.entrySet().forEach(e -> {

@@ -4,7 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.dutchmtc.ee.EEMod;
 import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.gui.modifier.GuiBooleanButton;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -16,26 +16,30 @@ public class GuiConfig extends GuiEE {
 
     @Override
     protected void init() {
-        addRenderableWidget(new GuiBooleanButton(width / 2 - 100, height / 2 - 24, 200, 20,
+        int baseY = height / 2 - 36;
+        addRenderableWidget(new GuiBooleanButton(width / 2 - 100, baseY, 200, 20,
+                Component.translatable("gui.ee.showEETooltips"), value -> EEMod.setDoesDisableEETooltips(!value),
+                () -> !EEMod.doesDisableEETooltips()));
+        addRenderableWidget(new GuiBooleanButton(width / 2 - 100, baseY + 24, 200, 20,
                 Component.translatable("gui.ee.disableToolTip"), EEMod::setDoesDisableToolTip,
                 EEMod::doesDisableToolTip));
         addRenderableWidget(
-                new EEButton(width / 2 - 100, height / 2, 200, 20, Component.translatable("gui.done"), b -> {
+                new EEButton(width / 2 - 100, baseY + 48, 200, 20, Component.translatable("gui.done"), b -> {
                     EEMod.saveConfigs();
-                    mc.setScreen(parent);
+                    mc.gui.setScreen(parent);
                 }));
         super.init();
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        super.render(graphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 
 }

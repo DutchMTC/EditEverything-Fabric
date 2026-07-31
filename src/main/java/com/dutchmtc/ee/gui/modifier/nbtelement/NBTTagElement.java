@@ -14,7 +14,7 @@ public class NBTTagElement extends NBTElement {
     public NBTTagElement(GuiListModifier<?> parent, String key, CompoundTag value) {
         super(parent, key, 200, 21);
         this.value = value;
-        buttonList.add(new EEButton(0, 0, 200, 20, Component.translatable("gui.ee.modifier.tag.editor.tag"), b -> mc.setScreen(new GuiNBTModifier(Component.literal(parent.getStringTitle() + key + "/"), parent,
+        buttonList.add(new EEButton(0, 0, 200, 20, Component.translatable("gui.ee.modifier.tag.editor.tag"), b -> mc.gui.setScreen(new GuiNBTModifier(Component.literal(parent.getStringTitle() + key + "/"), parent,
                 tag -> NBTTagElement.this.value = tag, value.copy()))));
     }
 

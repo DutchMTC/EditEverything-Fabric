@@ -7,7 +7,7 @@ import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ItemUtils.PotionInformation;
 import com.dutchmtc.ee.utils.Tuple;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -70,7 +70,7 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
                     String desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
                     pots.add(new Tuple<>(I18n.get(desc), pot));
                 });
-                mc.setScreen(new GuiButtonListSelector<>(parent,
+                mc.gui.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.ee.modifier.meta.potion.type"), pots, pot -> {
                     potion = pot;
                     setButtonText();
@@ -91,7 +91,7 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
         }
 
         @Override
-        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
             GuiUtils.drawRelative(graphics, amplifier, offsetX, offsetY, mouseX, mouseY, partialTicks);
             GuiUtils.drawRelative(graphics, duration, offsetX, offsetY, mouseX, mouseY, partialTicks);
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.meta.potion.duration") + " : ", duration,
@@ -207,12 +207,12 @@ public class GuiPotionModifier extends GuiListModifier<PotionInformation> {
             super(400, 29);
             this.parent = parent;
             buttonList.add(new EEButton(0, 0, 200, 20, Component.translatable("gui.ee.modifier.meta.setColor"),
-                    b -> mc.setScreen(
+                    b -> mc.gui.setScreen(
                             new GuiColorModifier(parent, i -> parent.customColor = i, parent.customColor, true))));
             buttonList.add(type = new EEButton(201, 0, 199, 20, Component.literal(""), b -> {
                 List<Tuple<String, Potion>> pots = new ArrayList<>();
                 BuiltInRegistries.POTION.forEach(type -> pots.add(new Tuple<>(getPotionName(type), type)));
-                mc.setScreen(new GuiButtonListSelector<>(parent,
+                mc.gui.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.ee.modifier.meta.potion.type"), pots, pot -> {
                     parent.main = pot;
                     defineButton();

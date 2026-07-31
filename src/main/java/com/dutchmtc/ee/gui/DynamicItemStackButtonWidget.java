@@ -2,7 +2,7 @@ package com.dutchmtc.ee.gui;
 
 import com.dutchmtc.ee.utils.GuiUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.narration.NarratedElementType;
@@ -39,14 +39,14 @@ public class DynamicItemStackButtonWidget extends AbstractWidget {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (stack != null && !stack.isEmpty()) {
             GuiUtils.drawItemStack(graphics, stack, getX() + 1, getY() + 1);
         }
         if (isHoveredOrFocused()) {
             GuiUtils.drawRect(graphics, getX(), getY(), getX() + 18, getY() + 18, 0x55FFFFFF);
             if (stack != null && !stack.isEmpty()) {
-                GuiUtils.renderTooltip(graphics, Minecraft.getInstance().font, stack, mouseX, mouseY);
+                GuiUtils.setTooltipForNextFrame(graphics, Minecraft.getInstance().font, stack, mouseX, mouseY);
             }
         }
     }

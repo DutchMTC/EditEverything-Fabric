@@ -7,7 +7,7 @@ import com.dutchmtc.ee.utils.ChatUtils;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -21,8 +21,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.entity.BlockEntityTypes;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
@@ -58,14 +60,14 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
             CompoundTag tag = data != null ? data.copyTagWithoutId() : new CompoundTag();
             ItemUtils.putString(tag, "Command", ChatUtils.translateColorCodes(command.getValue()));
             ItemUtils.putByte(tag, "auto", (byte) (autoValue ? 1 : 0));
-            EntityType<?> type = data != null ? data.type() : EntityType.COMMAND_BLOCK_MINECART;
+            EntityType<?> type = data != null ? data.type() : EntityTypes.COMMAND_BLOCK_MINECART;
             ItemUtils.setComponent(stack, DataComponents.ENTITY_DATA, TypedEntityData.of(type, tag));
         } else {
             TypedEntityData<BlockEntityType<?>> data = ItemUtils.getComponent(stack, DataComponents.BLOCK_ENTITY_DATA);
             CompoundTag tag = data != null ? data.copyTagWithoutId() : new CompoundTag();
             ItemUtils.putString(tag, "Command", ChatUtils.translateColorCodes(command.getValue()));
             ItemUtils.putByte(tag, "auto", (byte) (autoValue ? 1 : 0));
-            BlockEntityType<?> type = data != null ? data.type() : BlockEntityType.COMMAND_BLOCK;
+            BlockEntityType<?> type = data != null ? data.type() : BlockEntityTypes.COMMAND_BLOCK;
             ItemUtils.setComponent(stack, DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(type, tag));
         }
     }
@@ -107,7 +109,7 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
             potionType.add(new ItemStack(Blocks.REPEATING_COMMAND_BLOCK));
             potionType.add(new ItemStack(Blocks.CHAIN_COMMAND_BLOCK));
             potionType.add(new ItemStack(Items.COMMAND_BLOCK_MINECART));
-            getMinecraft().setScreen(new GuiTypeListSelector(GuiCommandBlockModifier.this,
+            getMinecraft().gui.setScreen(new GuiTypeListSelector(GuiCommandBlockModifier.this,
                     Component.translatable("gui.ee.modifier.type"), is -> {
                 stack = ItemUtils.setItem(is.getItem(), stack);
                 return null;
@@ -119,30 +121,30 @@ public class GuiCommandBlockModifier extends GuiModifier<ItemStack> {
                 new EEButton(width / 2 + 1, height / 2 + 42, 149, 20, Component.translatable("gui.done"), b -> {
                     setData();
                     set(stack);
-                    getMinecraft().setScreen(parent);
+                    getMinecraft().gui.setScreen(parent);
                 }));
         loadData();
         super.init();
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        super.render(graphics, mouseX, mouseY, partialTicks);
-        GuiUtils.drawString(graphics, font, I18n.get("gui.ee.modifier.meta.command.cmd") + " : ", width / 2 - 150, command.getY(),
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
+        GuiUtils.text(graphics, font, I18n.get("gui.ee.modifier.meta.command.cmd") + " : ", width / 2 - 150, command.getY(),
                 Color.WHITE.getRGB(), command.getHeight());
-        GuiUtils.drawString(graphics, font, I18n.get("gui.ee.modifier.meta.command.name") + " : ", width / 2 - 150, name.getY(),
+        GuiUtils.text(graphics, font, I18n.get("gui.ee.modifier.meta.command.name") + " : ", width / 2 - 150, name.getY(),
                 Color.WHITE.getRGB(), name.getHeight());
         // command.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
         // name.render(graphics, mouseX, mouseY, partialTicks); // REMOVED
         GuiUtils.drawItemStack(graphics, stack, width / 2 - 10, name.getY() - 20);
         if (GuiUtils.isHover(width / 2 - 10, name.getY() - 20, 20, 20, mouseX, mouseY))
-            GuiUtils.renderTooltip(graphics, font, stack, mouseX, mouseY);
+            GuiUtils.setTooltipForNextFrame(graphics, font, stack, mouseX, mouseY);
     }
 
     @Override

@@ -11,7 +11,7 @@ import com.dutchmtc.ee.utils.ItemUtils;
 import com.google.gson.JsonObject;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
@@ -116,7 +116,7 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
                 Component.translatable("gui.done"), b -> {
                     applyEditorToSelected();
                     set(get());
-                    mc.setScreen(parent);
+                    mc.gui.setScreen(parent);
                 }));
 
         // List actions
@@ -158,12 +158,12 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
 
         int left = panelLeft();
@@ -184,44 +184,44 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
         GuiUtils.drawRect(graphics, listLeft - 2, listTop - 2, listRight + 2, listBottom + 2,
                 GuiUtils.COLOR_CONTAINER_SLOT | 0xFF000000);
 
-        GuiUtils.drawString(graphics, font, "Trades", listLeft, listTop - 12, 0xFFFFFFFF, font.lineHeight);
+        GuiUtils.text(graphics, font, "Trades", listLeft, listTop - 12, 0xFFFFFFFF, font.lineHeight);
 
         renderTradeList(graphics, listLeft, listTop, listRight, listBottom, mouseX, mouseY);
 
         // Editor heading
         int editorLeft = editorLeft();
-        GuiUtils.drawString(graphics, font, "Selected Trade", editorLeft, top + HEADER_H + 2, 0xFFFFFFFF, font.lineHeight);
+        GuiUtils.text(graphics, font, "Selected Trade", editorLeft, top + HEADER_H + 2, 0xFFFFFFFF, font.lineHeight);
 
         // Item row labels (text-only; avoids "disabled widget" hover cursor)
         if (buyAIcon != null && buyAIcon.visible) {
-            GuiUtils.drawString(graphics, font, "Buy (A)", editorTextLeft, buyAIcon.getY() + 5, 0xFFFFFFFF, font.lineHeight);
+            GuiUtils.text(graphics, font, "Buy (A)", editorTextLeft, buyAIcon.getY() + 5, 0xFFFFFFFF, font.lineHeight);
         }
         if (hasBuyBToggle != null) {
             // label is inside the toggle widget; no extra label
         }
         if (buyBIcon != null && buyBIcon.visible) {
-            GuiUtils.drawString(graphics, font, "Second cost item", editorTextLeft, buyBIcon.getY() + 5, 0xFFFFFFFF, font.lineHeight);
+            GuiUtils.text(graphics, font, "Second cost item", editorTextLeft, buyBIcon.getY() + 5, 0xFFFFFFFF, font.lineHeight);
         }
         if (sellIcon != null && sellIcon.visible) {
-            GuiUtils.drawString(graphics, font, "Sell", editorTextLeft, sellIcon.getY() + 5, 0xFFFFFFFF, font.lineHeight);
+            GuiUtils.text(graphics, font, "Sell", editorTextLeft, sellIcon.getY() + 5, 0xFFFFFFFF, font.lineHeight);
         }
 
         if (maxUses != null && maxUses.visible) {
-            GuiUtils.drawString(graphics, font, "Max Uses", editorLeft, maxUses.getY() + 5, 0xFFFFFFFF, font.lineHeight);
+            GuiUtils.text(graphics, font, "Max Uses", editorLeft, maxUses.getY() + 5, 0xFFFFFFFF, font.lineHeight);
         }
         if (priceMultiplier != null && priceMultiplier.visible) {
-            GuiUtils.drawString(graphics, font, "Price Multiplier", editorLeft, priceMultiplier.getY() + 5, 0xFFFFFFFF, font.lineHeight);
+            GuiUtils.text(graphics, font, "Price Multiplier", editorLeft, priceMultiplier.getY() + 5, 0xFFFFFFFF, font.lineHeight);
         }
         if (demand != null && demand.visible) {
-            GuiUtils.drawString(graphics, font, "Demand", editorLeft, demand.getY() + 5, 0xFFFFFFFF, font.lineHeight);
+            GuiUtils.text(graphics, font, "Demand", editorLeft, demand.getY() + 5, 0xFFFFFFFF, font.lineHeight);
         }
         if (specialPrice != null && specialPrice.visible) {
-            GuiUtils.drawString(graphics, font, "Special Price", editorLeft, specialPrice.getY() + 5, 0xFFFFFFFF, font.lineHeight);
+            GuiUtils.text(graphics, font, "Special Price", editorLeft, specialPrice.getY() + 5, 0xFFFFFFFF, font.lineHeight);
         }
 
         renderEditorScrollHint(graphics, editorLeft, top, bottom);
 
-        super.render(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
     }
 
     @Override
@@ -293,13 +293,13 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
-    private void renderTradeList(GuiGraphics graphics, int listLeft, int listTop, int listRight, int listBottom, int mouseX, int mouseY) {
+    private void renderTradeList(GuiGraphicsExtractor graphics, int listLeft, int listTop, int listRight, int listBottom, int mouseX, int mouseY) {
         int visible = visibleRows(listTop, listBottom);
         int maxOffset = Math.max(0, recipes.size() - visible);
         scrollOffset = Math.max(0, Math.min(scrollOffset, maxOffset));
 
         if (recipes.isEmpty()) {
-            GuiUtils.drawString(graphics, font, "(no trades)", listLeft + 6, listTop + 6, 0xFFAAAAAA, font.lineHeight);
+            GuiUtils.text(graphics, font, "(no trades)", listLeft + 6, listTop + 6, 0xFFAAAAAA, font.lineHeight);
             return;
         }
 
@@ -320,21 +320,21 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
             int buyX = listLeft + 4;
             int sellX = listLeft + 24;
             if (!buy.isEmpty()) {
-                graphics.renderItem(buy, buyX, iconY);
+                graphics.item(buy, buyX, iconY);
             }
             if (!sell.isEmpty()) {
-                graphics.renderItem(sell, sellX, iconY);
+                graphics.item(sell, sellX, iconY);
             }
 
             String label = "Trade " + (idx + 1) + ": " + itemLabel(recipe.getCompound("buy").orElse(new CompoundTag()))
                     + " \u2192 " + itemLabel(recipe.getCompound("sell").orElse(new CompoundTag()));
-            GuiUtils.drawString(graphics, font, trimToWidth(label, listRight - (listLeft + 44) - 6),
+            GuiUtils.text(graphics, font, trimToWidth(label, listRight - (listLeft + 44) - 6),
                     listLeft + 44, y + 7, 0xFFFFFFFF, font.lineHeight);
         }
 
         // Scroll hint
         if (recipes.size() > visible) {
-            GuiUtils.drawString(graphics, font, (scrollOffset + 1) + "-" + Math.min(recipes.size(), scrollOffset + visible) + " / " + recipes.size(),
+            GuiUtils.text(graphics, font, (scrollOffset + 1) + "-" + Math.min(recipes.size(), scrollOffset + visible) + " / " + recipes.size(),
                     listLeft + 6, listBottom + 4, 0xFF7F7F7F, font.lineHeight);
         }
     }
@@ -360,7 +360,6 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
         addRenderableWidget(buyAIcon);
         registerEditorWidget(buyAIcon);
         buyACount = new EditBox(font, countBoxX, y, 60, 18, Component.literal("Buy A Count"));
-        buyACount.setFilter(v -> v.isEmpty() || v.chars().allMatch(Character::isDigit));
         addRenderableWidget(buyACount);
         registerEditorWidget(buyACount);
         y += 24;
@@ -381,7 +380,6 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
         addRenderableWidget(buyBIcon);
         registerEditorWidget(buyBIcon);
         buyBCount = new EditBox(font, countBoxX, y, 60, 18, Component.literal("Buy B Count"));
-        buyBCount.setFilter(v -> v.isEmpty() || v.chars().allMatch(Character::isDigit));
         addRenderableWidget(buyBCount);
         registerEditorWidget(buyBCount);
         y += 24;
@@ -390,14 +388,12 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
         addRenderableWidget(sellIcon);
         registerEditorWidget(sellIcon);
         sellCount = new EditBox(font, countBoxX, y, 60, 18, Component.literal("Sell Count"));
-        sellCount.setFilter(v -> v.isEmpty() || v.chars().allMatch(Character::isDigit));
         addRenderableWidget(sellCount);
         registerEditorWidget(sellCount);
         y += 28;
 
         // Trade fields
         maxUses = new EditBox(font, x + 112, y, wValue, 18, Component.literal("Max Uses"));
-        maxUses.setFilter(v -> v.isEmpty() || v.equals("-") || v.chars().allMatch(ch -> Character.isDigit(ch) || ch == '-'));
         addRenderableWidget(maxUses);
         registerEditorWidget(maxUses);
         y += 22;
@@ -418,13 +414,11 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
         y += 22;
 
         demand = new EditBox(font, x + 112, y, wValue, 18, Component.literal("Demand"));
-        demand.setFilter(v -> v.isEmpty() || v.equals("-") || v.chars().allMatch(ch -> Character.isDigit(ch) || ch == '-'));
         addRenderableWidget(demand);
         registerEditorWidget(demand);
         y += 22;
 
         specialPrice = new EditBox(font, x + 112, y, wValue, 18, Component.literal("Special Price"));
-        specialPrice.setFilter(v -> v.isEmpty() || v.equals("-") || v.chars().allMatch(ch -> Character.isDigit(ch) || ch == '-'));
         addRenderableWidget(specialPrice);
         registerEditorWidget(specialPrice);
 
@@ -498,14 +492,14 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
         }
     }
 
-    private void renderEditorScrollHint(GuiGraphics graphics, int editorLeft, int top, int bottom) {
+    private void renderEditorScrollHint(GuiGraphicsExtractor graphics, int editorLeft, int top, int bottom) {
         int maxScroll = editorMaxScroll();
         if (maxScroll <= 0) {
             return;
         }
         int editorRight = panelRight() - PADDING;
         String txt = "Scroll";
-        GuiUtils.drawString(graphics, font, txt, editorRight - font.width(txt), bottom - 32, 0xFF7F7F7F, font.lineHeight);
+        GuiUtils.text(graphics, font, txt, editorRight - font.width(txt), bottom - 32, 0xFF7F7F7F, font.lineHeight);
         int barX = editorRight - 2;
         int barTop = top + HEADER_H + 24;
         int barBottom = bottom - 40;
@@ -632,7 +626,7 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
     private void pickItemFor(String key) {
         if (recipes.isEmpty()) return;
         applyEditorToSelected();
-        getMinecraft().setScreen(new GuiTypeListSelector(this, Component.literal("Select item"), is -> {
+        getMinecraft().gui.setScreen(new GuiTypeListSelector(this, Component.literal("Select item"), is -> {
             setItemFromStack(key, is);
             syncEditorFromSelected();
             return null;
@@ -722,7 +716,7 @@ public class GuiVillagerTradesEditor extends GuiModifier<List<CompoundTag>> {
         for (CompoundTag raw : in) {
             CompoundTag recipe = raw == null ? new CompoundTag() : raw.copy();
 
-            // 1.21.x trade format:
+            // Vanilla merchant recipe format:
             // - buy / buyB are ItemCost (fields like item/count/components predicate)
             // - sell is ItemStack (id/count/components)
             normalizeCostField(recipe, "buy", registryAccess);

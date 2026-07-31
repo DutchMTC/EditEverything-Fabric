@@ -58,7 +58,7 @@ public class GuiMobChecklistEditor extends GuiListModifier<CompoundTag> {
     @Override
     public void onCancel() {
         writeValues(originalValues);
-        getMinecraft().setScreen(parent);
+        getMinecraft().gui.setScreen(parent);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class GuiMobChecklistEditor extends GuiListModifier<CompoundTag> {
 
         EEButton done = new EEButton(width / 2 - 50, height - 25, 100, 20, Component.translatable("gui.done"), b -> {
             set(get());
-            getMinecraft().setScreen(parent);
+            getMinecraft().gui.setScreen(parent);
         });
         addRenderableWidget(done);
 

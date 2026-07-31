@@ -10,7 +10,7 @@ import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemReader;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ItemUtilsClient;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -81,19 +81,19 @@ public class GuiGiver extends GuiModifier<String> {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-        super.render(graphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         GuiUtils.drawCenterString(graphics, font, I18n.get("gui.ee.give"), width / 2, code.getY() - 21, Color.ORANGE.getRGB(), 20);
         if (currentItemStack != null) {
             GuiUtils.drawItemStack(graphics, currentItemStack, code.getX() + code.getWidth() + 5, code.getY() - 2);
             if (GuiUtils.isHover(code.getX() + code.getWidth() + 5, code.getY(), 20, 20, mouseX, mouseY))
-                GuiUtils.renderTooltip(graphics, font, currentItemStack, mouseX, mouseY);
+                GuiUtils.setTooltipForNextFrame(graphics, font, currentItemStack, mouseX, mouseY);
         }
     }
 
@@ -114,13 +114,13 @@ public class GuiGiver extends GuiModifier<String> {
                 Component.translatable("gui.ee.give.copy"), b -> GuiUtils.addToClipboard(code.getValue())));
         addRenderableWidget(
                 new EEButton(width / 2 - 180 + (deleteButton ? 2 * s1 + 1 : 0), height / 2 + 21 + (deleteButton ? 0 : 21),
-                        (deleteButton ? s1 - 1 : s2), 20, Component.translatable("gui.ee.give.editor"), b -> getMinecraft().setScreen(new GuiItemStackModifier(this, currentItemStack,
+                        (deleteButton ? s1 - 1 : s2), 20, Component.translatable("gui.ee.give.editor"), b -> getMinecraft().gui.setScreen(new GuiItemStackModifier(this, currentItemStack,
                                 this::setCurrent))));
         doneButton = addRenderableWidget(new EEButton(width / 2 - 179 + 2 * s2, height / 2 + 42, s2 - 1, 20,
                 Component.translatable("gui.done"), b -> {
             if (setter != null && currentItemStack != null)
                 setter.accept(code.getValue());
-            getMinecraft().setScreen(parent);
+            getMinecraft().gui.setScreen(parent);
         }));
         if (setter != null)
             addRenderableWidget(new EEButton(width / 2 - 58, height / 2 + 42, s2 - 2, 20,
@@ -131,19 +131,19 @@ public class GuiGiver extends GuiModifier<String> {
                 if (parent instanceof GuiMenu)
                     ((GuiMenu) parent).get();
                 EEMod.saveItem(code.getValue());
-                getMinecraft().setScreen(new GuiMenu(parent));
+                getMinecraft().gui.setScreen(new GuiMenu(parent));
             }));
         if (deleteButton)
             addRenderableWidget(new EEButton(width / 2 - 180, height / 2 + 42, s2, 20,
                     Component.translatable("gui.ee.delete"), b -> {
-                getMinecraft().setScreen(new GuiConfirmation(this,
+                getMinecraft().gui.setScreen(new GuiConfirmation(this,
                         Component.translatable("gui.ee.menu.delete_question"),
                         Component.translatable("gui.ee.delete"),
                         () -> {
                             setter.accept(null);
-                            getMinecraft().setScreen(parent);
+                            getMinecraft().gui.setScreen(parent);
                         },
-                        () -> getMinecraft().setScreen(this)));
+                        () -> getMinecraft().gui.setScreen(this)));
             }));
 
         super.init();

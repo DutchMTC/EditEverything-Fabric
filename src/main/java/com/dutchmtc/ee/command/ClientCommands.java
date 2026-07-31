@@ -3,6 +3,7 @@ package com.dutchmtc.ee.command;
 import com.dutchmtc.ee.EEMod;
 import com.dutchmtc.ee.EEModClient;
 import com.dutchmtc.ee.network.EENetworking;
+import com.dutchmtc.ee.utils.ChatUtils;
 import com.dutchmtc.ee.utils.ItemReader;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ItemUtilsClient;
@@ -10,9 +11,9 @@ import com.dutchmtc.ee.utils.VersionCompat;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.tree.LiteralCommandNode;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -46,6 +47,8 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import com.dutchmtc.ee.utils.Tuple;
 
 public class ClientCommands {
@@ -65,98 +68,113 @@ public class ClientCommands {
             ClientTickEvents.END_CLIENT_TICK.register(ClientCommands::onEndClientTick);
         }
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            // /ee
-            LiteralArgumentBuilder<FabricClientCommandSource> ee = ClientCommandManager.literal("ee");
-            
-            // /ee menu | /ee om
-            registerMenu(ee);
-            
-            // /ee give | /ee g
-            registerGive(ee, registryAccess);
-            
-            // /ee edit | /ee e
-            registerEdit(ee);
-            
-            // /ee opengiver
-            registerOpenGiver(ee);
-            
-            // /ee instantclick
-            registerInstantClick(ee);
-            
-            // /ee instantplace
-            registerInstantPlace(ee);
-            
-            // /ee color
-            registerColor(ee);
-            
-            // /ee enchant
-            registerEnchant(ee, registryAccess);
-            
-            // /ee rename
-            registerRename(ee);
-            
-            // /ee unbreakable
-            registerUnbreakable(ee);
-            
-            // /ee head
-            registerHead(ee);
-            
-            // /ee randomfireworks | /ee rfw
-            registerRandomFireworks(ee);
-            
-            // /ee info
-            registerInfo(ee);
-            
-            // /ee format
-            registerFormat(ee);
-            
-            // /ee palette
-            registerPalette(ee);
-            
-            // /ee armorstand | /ee as
-            registerArmorStand(ee);
-
-            // /ee spectatortp | /ee sptp
-            registerSpTp(ee);
-
-            // /ee help
-            ee.then(ClientCommandManager.literal("help").executes(c -> {
-                showHelp(c.getSource());
-                return 1;
-            }));
-            
-            // /ee (no args)
-            ee.executes(c -> {
-                showHelp(c.getSource());
-                return 1;
-            });
-
-            // Register /ee and aliases
-            LiteralCommandNode<FabricClientCommandSource> eeNode = dispatcher.register(ee);
-            dispatcher.register(ClientCommandManager.literal("editeverything").redirect(eeNode));
+            dispatcher.register(createEeRoot("ee", registryAccess));
+            dispatcher.register(createEeRoot("editeverything", registryAccess));
             
             // /gm
             registerGamemode(dispatcher);
         });
     }
 
+    private static LiteralArgumentBuilder<FabricClientCommandSource> createEeRoot(String rootLiteral,
+                                                                                   net.minecraft.commands.CommandBuildContext registryAccess) {
+        LiteralArgumentBuilder<FabricClientCommandSource> root = net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal(rootLiteral);
+
+        // /ee menu | /ee om
+        registerMenu(root);
+
+        // /ee give | /ee g
+        registerGive(root, registryAccess);
+
+        // /ee edit | /ee e
+        registerEdit(root);
+
+        // /ee opengiver
+        registerOpenGiver(root);
+
+        // /ee instantclick
+        registerInstantClick(root);
+
+        // /ee instantplace
+        registerInstantPlace(root);
+
+        // /ee color
+        registerColor(root);
+
+        // /ee enchant
+        registerEnchant(root, registryAccess);
+
+        // /ee rename
+        registerRename(root);
+
+        // /ee unbreakable
+        registerUnbreakable(root);
+
+        // /ee head
+        registerHead(root);
+
+        // /ee randomfireworks | /ee rfw
+        registerRandomFireworks(root);
+
+        // /ee info
+        registerInfo(root);
+
+        // /ee format
+        registerFormat(root);
+
+        // /ee palette
+        registerPalette(root);
+
+        // /ee armorstand | /ee as
+        registerArmorStand(root);
+
+        // /ee spectatortp | /ee sptp
+        registerSpTp(root);
+
+        // /ee help
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("help").executes(c -> {
+            showHelp(c.getSource());
+            return 1;
+        }));
+
+        // /ee (no args)
+        root.executes(c -> {
+            showHelp(c.getSource());
+            return 1;
+        });
+
+        return root;
+    }
+
+    private static void registerWithAliases(LiteralArgumentBuilder<FabricClientCommandSource> root,
+                                            String primary,
+                                            Consumer<LiteralArgumentBuilder<FabricClientCommandSource>> commandBuilder,
+                                            String... aliases) {
+        registerLiteral(root, primary, commandBuilder);
+        for (String alias : aliases) {
+            registerLiteral(root, alias, commandBuilder);
+        }
+    }
+
+    private static void registerLiteral(LiteralArgumentBuilder<FabricClientCommandSource> root,
+                                        String literal,
+                                        Consumer<LiteralArgumentBuilder<FabricClientCommandSource>> commandBuilder) {
+        LiteralArgumentBuilder<FabricClientCommandSource> command = net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal(literal);
+        commandBuilder.accept(command);
+        root.then(command);
+    }
+
     private static void registerMenu(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        var menu = ClientCommandManager.literal("menu")
+        registerWithAliases(root, "menu", command -> command
                 .executes(c -> {
                     openMenu("");
                     return 1;
                 })
-                .then(ClientCommandManager.argument("menuoptions", StringArgumentType.greedyString())
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("menuoptions", StringArgumentType.greedyString())
                         .executes(c -> {
                             openMenu(StringArgumentType.getString(c, "menuoptions"));
                             return 1;
-                        }));
-        
-        LiteralCommandNode<FabricClientCommandSource> menuNode = menu.build();
-        root.then(menu);
-        
-        // Alias /ee om
-        root.then(ClientCommandManager.literal("om").redirect(menuNode));
+                        })), "om");
     }
     
     private static void openMenu(String options) {
@@ -166,8 +184,9 @@ public class ClientCommands {
     }
 
     private static void registerGive(LiteralArgumentBuilder<FabricClientCommandSource> root, net.minecraft.commands.CommandBuildContext registryAccess) {
-        var give = ClientCommandManager.literal("give")
-                .then(ClientCommandManager.argument("args", StringArgumentType.greedyString())
+        registerWithAliases(root, "give", command -> command
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("args", StringArgumentType.greedyString())
+                        .suggests((c, b) -> suggestItemIds(registryAccess, b))
                         .executes(c -> {
                             String args = StringArgumentType.getString(c, "args");
                             ItemStack stack = new ItemReader(registryAccess).readItem(args);
@@ -177,28 +196,19 @@ public class ClientCommands {
                             }
                             c.getSource().sendError(Component.literal("Invalid item: " + args));
                             return 0;
-                        }));
-        
-        LiteralCommandNode<FabricClientCommandSource> giveNode = give.build();
-        root.then(give);
-        // Alias g
-        root.then(ClientCommandManager.literal("g").redirect(giveNode));
+                        })), "g");
     }
     
     private static void registerEdit(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        var edit = ClientCommandManager.literal("edit")
+        registerWithAliases(root, "edit", command -> command
                 .executes(c -> {
                     Minecraft.getInstance().execute(EEModClient::openGiver);
                     return 1;
-                });
-        
-        LiteralCommandNode<FabricClientCommandSource> editNode = edit.build();
-        root.then(edit);
-        root.then(ClientCommandManager.literal("e").redirect(editNode));
+                }), "e");
     }
     
     private static void registerOpenGiver(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("opengiver")
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("opengiver")
                 .executes(c -> {
                     Minecraft.getInstance().execute(() -> {
                         com.dutchmtc.ee.utils.GuiUtils.displayScreen(new com.dutchmtc.ee.gui.GuiGiver(null));
@@ -208,7 +218,7 @@ public class ClientCommands {
     }
     
     private static void registerInstantClick(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("instantclick")
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("instantclick")
                 .executes(c -> {
                     EEMod.setInstantMineEnabled(!EEMod.isInstantMineEnabled());
                     c.getSource().sendFeedback(Component.literal("Instant Click: " + EEMod.isInstantMineEnabled()));
@@ -217,7 +227,7 @@ public class ClientCommands {
     }
     
     private static void registerInstantPlace(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("instantplace")
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("instantplace")
                 .executes(c -> {
                     EEMod.setInstantPlaceEnabled(!EEMod.isInstantPlaceEnabled());
                     c.getSource().sendFeedback(Component.literal("Instant Place: " + EEMod.isInstantPlaceEnabled()));
@@ -226,7 +236,7 @@ public class ClientCommands {
     }
     
     private static void registerColor(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("color")
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("color")
                 .executes(c -> {
                     Minecraft.getInstance().execute(() -> {
                         try {
@@ -242,7 +252,7 @@ public class ClientCommands {
                                 int slot = 36 + mc.player.getInventory().getSelectedSlot();
                                 ItemUtilsClient.give(ItemUtils.setGlobalColor(stack, newColor), slot);
                             }, currentColor);
-                            Minecraft.getInstance().setScreen(screen);
+                            Minecraft.getInstance().gui.setScreen(screen);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -252,10 +262,10 @@ public class ClientCommands {
     }
     
     private static void registerEnchant(LiteralArgumentBuilder<FabricClientCommandSource> root, net.minecraft.commands.CommandBuildContext registryAccess) {
-        root.then(ClientCommandManager.literal("enchant")
-                .then(ClientCommandManager.argument("enchantment", StringArgumentType.string())
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("enchant")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("enchantment", StringArgumentType.string())
                         .suggests((c, b) -> SharedSuggestionProvider.suggestResource(registryAccess.lookupOrThrow(Registries.ENCHANTMENT).listElementIds().map(ResourceKey::identifier), b))
-                        .then(ClientCommandManager.argument("level", IntegerArgumentType.integer())
+                        .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("level", IntegerArgumentType.integer())
                                 .executes(c -> {
                                     String idStr = StringArgumentType.getString(c, "enchantment");
                                     Identifier id = Identifier.tryParse(idStr);
@@ -309,8 +319,8 @@ public class ClientCommands {
     }
     
     private static void registerRename(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("rename")
-                .then(ClientCommandManager.argument("name", StringArgumentType.greedyString())
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("rename")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("name", StringArgumentType.greedyString())
                         .executes(c -> {
                             String name = StringArgumentType.getString(c, "name");
                             Minecraft mc = Minecraft.getInstance();
@@ -326,14 +336,14 @@ public class ClientCommands {
     }
 
     private static void registerFormat(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("format")
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("format")
                 .executes(c -> {
                     MutableComponent text = Component.literal("");
                     int element = 0;
                     int line = 0;
                     for (ChatFormatting format : ChatFormatting.values()) {
                         HoverEvent he = new HoverEvent.ShowText(Component.literal(
-                                format.getName() + " (&" + format.toString().substring(1) + ")").withStyle(ChatFormatting.YELLOW));
+                                ChatUtils.formattingName(format) + " (&" + ChatUtils.formattingCode(format) + ")").withStyle(ChatFormatting.YELLOW));
                         text = text.append(
                                 Component.literal("&" + format.toString().substring(1) + " ").withStyle(s -> {
                                     s.withHoverEvent(he);
@@ -359,7 +369,7 @@ public class ClientCommands {
     }
 
     private static void registerPalette(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("palette")
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("palette")
                 .executes(c -> {
                     c.getSource().sendFeedback(Component.translatable("cmd.ee.palette").withStyle(ChatFormatting.GOLD)
                             .append(Component.literal(":").withStyle(ChatFormatting.DARK_GRAY)));
@@ -367,9 +377,9 @@ public class ClientCommands {
                     MutableComponent row = Component.literal("");
                     int count = 0;
                     for (var cf : ChatFormatting.values()) {
-                        if (!cf.isColor()) continue;
+                        if (!ChatUtils.isColor(cf)) continue;
                         
-                        String code = "&" + cf.getChar();
+                        String code = "&" + ChatUtils.formattingCode(cf);
                         MutableComponent colorBlock = Component.literal(" \u2588 ").withStyle(cf);
                         MutableComponent codeText = Component.literal(code).withStyle(ChatFormatting.WHITE);
                         
@@ -398,7 +408,7 @@ public class ClientCommands {
     }
 
     private static void registerArmorStand(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        var armorStand = ClientCommandManager.literal("armorstand")
+        registerWithAliases(root, "armorstand", command -> command
                 .executes(c -> {
                     // Don't forward via sendCommand("ee ..."): Fabric client commands will intercept it and recurse.
                     // Instead, do the raytrace client-side and open the GUI directly.
@@ -434,13 +444,7 @@ public class ClientCommands {
                     // after the command executes and overwrite setScreen() (observed on 1.21.10).
                     pendingArmorStandOpen = new PendingArmorStandOpen(entityId, true);
                     return 1;
-                });
-
-        LiteralCommandNode<FabricClientCommandSource> armorStandNode = armorStand.build();
-        root.then(armorStand);
-
-        // Alias /ee as
-        root.then(ClientCommandManager.literal("as").redirect(armorStandNode));
+                }), "as");
     }
 
     private static ArmorStand findLookedAtArmorStand(Player player, double reach) {
@@ -465,8 +469,8 @@ public class ClientCommands {
         pendingArmorStandOpen = null;
 
         client.execute(() -> {
-            Screen parent = client.screen;
-            client.setScreen(new com.dutchmtc.ee.gui.GuiArmorStandEditor(parent, pending.entityId(), pending.showGetAsItemButton()));
+            Screen parent = client.gui.screen();
+            client.gui.setScreen(new com.dutchmtc.ee.gui.GuiArmorStandEditor(parent, pending.entityId(), pending.showGetAsItemButton()));
         });
     }
 
@@ -537,8 +541,9 @@ public class ClientCommands {
     }
 
     private static void registerSpTp(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        var sptp = ClientCommandManager.literal("spectatortp")
-                .then(ClientCommandManager.argument("player", StringArgumentType.word())
+        registerWithAliases(root, "spectatortp", command -> command
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("player", StringArgumentType.word())
+                        .suggests((c, b) -> suggestOnlinePlayers(b))
                         .executes(c -> {
                             String playerName = StringArgumentType.getString(c, "player");
                             Minecraft mc = Minecraft.getInstance();
@@ -546,14 +551,12 @@ public class ClientCommands {
                                 mc.getConnection().sendCommand("tp " + playerName);
                             }
                             return 1;
-                        }));
-        root.then(sptp);
-        root.then(ClientCommandManager.literal("sptp").redirect(sptp.build()));
+                        })), "sptp");
     }
     
     private static void registerUnbreakable(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("unbreakable")
-                .then(ClientCommandManager.argument("value", BoolArgumentType.bool())
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("unbreakable")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("value", BoolArgumentType.bool())
                         .executes(c -> {
                             boolean value = BoolArgumentType.getBool(c, "value");
                             setUnbreakable(value);
@@ -577,8 +580,9 @@ public class ClientCommands {
     }
     
     private static void registerHead(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("head")
-                .then(ClientCommandManager.argument("name", StringArgumentType.greedyString())
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("head")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("name", StringArgumentType.word())
+                        .suggests((c, b) -> suggestOnlinePlayers(b))
                         .executes(c -> {
                             String name = StringArgumentType.getString(c, "name");
                             try {
@@ -604,19 +608,40 @@ public class ClientCommands {
     }
     
     private static void registerRandomFireworks(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        var rfw = ClientCommandManager.literal("randomfireworks")
+        registerWithAliases(root, "randomfireworks", command -> command
                 .executes(c -> {
                     ItemUtilsClient.give(ItemUtils.getRandomFireworks());
                     return 1;
-                });
-        
-        LiteralCommandNode<FabricClientCommandSource> rfwNode = rfw.build();
-        root.then(rfw);
-        root.then(ClientCommandManager.literal("rfw").redirect(rfwNode));
+                }), "rfw");
+    }
+
+    private static CompletableFuture<Suggestions> suggestOnlinePlayers(SuggestionsBuilder builder) {
+        return SharedSuggestionProvider.suggest(getOnlinePlayerNames(), builder);
+    }
+
+    private static List<String> getOnlinePlayerNames() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.getConnection() == null) {
+            return List.of();
+        }
+        List<String> names = new ArrayList<>();
+        mc.getConnection().getOnlinePlayers().forEach(player -> names.add(player.getProfile().name()));
+        return names;
+    }
+
+    private static CompletableFuture<Suggestions> suggestItemIds(net.minecraft.commands.CommandBuildContext registryAccess,
+                                                                 SuggestionsBuilder builder) {
+        String remaining = builder.getRemaining();
+        // Only suggest the first token; once extra args are present, keep vanilla behavior.
+        if (remaining.indexOf(' ') >= 0) {
+            return Suggestions.empty();
+        }
+        return SharedSuggestionProvider.suggestResource(
+                registryAccess.lookupOrThrow(Registries.ITEM).listElementIds().map(ResourceKey::identifier), builder);
     }
     
     private static void registerInfo(LiteralArgumentBuilder<FabricClientCommandSource> root) {
-        root.then(ClientCommandManager.literal("info")
+        root.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("info")
                 .executes(c -> {
                     FabricClientCommandSource src = c.getSource();
                     src.sendFeedback(Component.translatable("cmd.ee.info.title").withStyle(ChatFormatting.GOLD)
@@ -648,21 +673,21 @@ public class ClientCommands {
 
     private static void registerGamemode(com.mojang.brigadier.CommandDispatcher<FabricClientCommandSource> dispatcher) {
         // /gm <gamemode>
-        var gm = ClientCommandManager.literal("gm");
+        var gm = net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("gm");
         
         for (GameType gametype : GameType.values()) {
             gm.then(clientGamemodeLiteral(gametype.getName(), gametype.getName()));
         }
         
         // /gm <int>
-        gm.then(ClientCommandManager.argument("gamemodeid", IntegerArgumentType.integer(0, GameType.values().length - 1))
+        gm.then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("gamemodeid", IntegerArgumentType.integer(0, GameType.values().length - 1))
                 .executes(c -> {
                     int id = IntegerArgumentType.getInteger(c, "gamemodeid");
                     GameType type = GameType.byId(id);
                     sendGamemodeCommand(type.getName());
                     return 1;
                 })
-                .then(ClientCommandManager.argument("player", StringArgumentType.word()).executes(c -> {
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("player", StringArgumentType.word()).executes(c -> {
                     int id = IntegerArgumentType.getInteger(c, "gamemodeid");
                     GameType type = GameType.byId(id);
                     String player = StringArgumentType.getString(c, "player");
@@ -710,12 +735,12 @@ public class ClientCommands {
 
     private static LiteralArgumentBuilder<FabricClientCommandSource> clientGamemodeLiteral(String literal,
                                                                                            String gamemode) {
-        return ClientCommandManager.literal(literal)
+        return net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal(literal)
                 .executes(c -> {
                     sendGamemodeCommand(gamemode);
                     return 1;
                 })
-                .then(ClientCommandManager.argument("player", StringArgumentType.word()).executes(c -> {
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("player", StringArgumentType.word()).executes(c -> {
                     String player = StringArgumentType.getString(c, "player");
                     sendGamemodeCommand(gamemode, player);
                     return 1;

@@ -25,7 +25,7 @@ public final class NbtCompat {
     }
 
     private static boolean invokeRemove(CompoundTag tag, String key) {
-        // 1.21.11 mappings: CompoundTag#remove(String) -> intermediary method_10551, return type changed across patches.
+        // Keep the intermediary fallback for jars migrated from pre-26.1 mappings.
         for (String name : new String[]{"remove", "method_10551"}) {
             try {
                 Method method = tag.getClass().getMethod(name, String.class);
@@ -83,4 +83,3 @@ public final class NbtCompat {
         return null;
     }
 }
-

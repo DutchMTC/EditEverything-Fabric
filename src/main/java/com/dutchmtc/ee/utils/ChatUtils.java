@@ -16,8 +16,10 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -88,7 +90,7 @@ public class ChatUtils {
             send(getPrefix().append(Component.translatable("gui.ee.give.msg").append(": ")
                     .withStyle(ChatFormatting.GOLD).append(itemStack.getDisplayName().copy().withStyle(style -> {
                         style.withHoverEvent(
-                                new HoverEvent.ShowItem(itemStack));
+                                new HoverEvent.ShowItem(ItemStackTemplate.fromNonEmptyStack(itemStack)));
                         style.withClickEvent(new ClickEvent.RunCommand(
                                 "/" + EEMod.getModCommand().getName() + " " + EEMod.getModCommand().SC_OPEN_GIVER.getName()
                                         + " " + ItemUtils.getGiveCode(itemStack)));
@@ -110,7 +112,7 @@ public class ChatUtils {
     public static void send(Component message) {
         var mc = Minecraft.getInstance();
         if (mc.gui != null) {
-            mc.gui.getChat().addMessage(message);
+            mc.gui.chatListener().handleSystemMessage(message, false);
         }
     }
 
@@ -232,7 +234,7 @@ public class ChatUtils {
 
                     if (fmt == ChatFormatting.RESET) {
                         current = base;
-                    } else if (fmt.isColor()) {
+                    } else if (isColor(fmt)) {
                         current = base.applyFormat(fmt);
                     } else {
                         current = current.applyFormat(fmt);
@@ -368,12 +370,47 @@ public class ChatUtils {
 
     private static ChatFormatting legacyCodeToFormatting(char code) {
         for (ChatFormatting f : ChatFormatting.values()) {
-            String s = f.toString();
-            if (s.length() >= 2 && Character.toLowerCase(s.charAt(1)) == Character.toLowerCase(code)) {
+            if (formattingCode(f) == Character.toLowerCase(code)) {
                 return f;
             }
         }
         return null;
+    }
+
+    public static String formattingName(ChatFormatting formatting) {
+        return formatting.name().toLowerCase(Locale.ROOT);
+    }
+
+    public static char formattingCode(ChatFormatting formatting) {
+        String s = formatting.toString();
+        return s.length() >= 2 ? Character.toLowerCase(s.charAt(1)) : '\0';
+    }
+
+    public static boolean isColor(ChatFormatting formatting) {
+        char code = formattingCode(formatting);
+        return (code >= '0' && code <= '9') || (code >= 'a' && code <= 'f');
+    }
+
+    public static Integer colorRgb(ChatFormatting formatting) {
+        return switch (formatting) {
+            case BLACK -> 0x000000;
+            case DARK_BLUE -> 0x0000AA;
+            case DARK_GREEN -> 0x00AA00;
+            case DARK_AQUA -> 0x00AAAA;
+            case DARK_RED -> 0xAA0000;
+            case DARK_PURPLE -> 0xAA00AA;
+            case GOLD -> 0xFFAA00;
+            case GRAY -> 0xAAAAAA;
+            case DARK_GRAY -> 0x555555;
+            case BLUE -> 0x5555FF;
+            case GREEN -> 0x55FF55;
+            case AQUA -> 0x55FFFF;
+            case RED -> 0xFF5555;
+            case LIGHT_PURPLE -> 0xFF55FF;
+            case YELLOW -> 0xFFFF55;
+            case WHITE -> 0xFFFFFF;
+            default -> null;
+        };
     }
 
     private static String tryReadSectionHex(String s, int sectionIndex) {
@@ -434,8 +471,9 @@ public class ChatUtils {
     private static Map<Integer, Character> createLegacyColorByRgb() {
         Map<Integer, Character> map = new HashMap<>();
         for (ChatFormatting formatting : ChatFormatting.values()) {
-            if (!formatting.isColor() || formatting.getColor() == null) continue;
-            map.put(formatting.getColor() & 0xFFFFFF, formatting.getChar());
+            Integer rgb = colorRgb(formatting);
+            if (rgb == null) continue;
+            map.put(rgb & 0xFFFFFF, formattingCode(formatting));
         }
         return map;
     }

@@ -6,11 +6,9 @@ import com.dutchmtc.ee.internalcommand.InternalCommandModule;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 
 /**
@@ -41,10 +39,10 @@ public class CommandUtils {
         }
         List<PlayerInfo> networkPlayerInfos = new ArrayList<>(
                 player.connection.getOnlinePlayers());
-        networkPlayerInfos.sort((o1, o2) -> Objects.requireNonNull(o1.getGameMode()).getName().compareToIgnoreCase(Objects.requireNonNull(o2.getGameMode()).getName()));
+        networkPlayerInfos.sort((o1, o2) -> o1.getProfile().name().compareToIgnoreCase(o2.getProfile().name()));
         List<String> players = new ArrayList<>();
         for (PlayerInfo info : networkPlayerInfos) {
-            players.add(Objects.requireNonNull(info.getGameMode()).getName());
+            players.add(info.getProfile().name());
         }
         return players;
     }

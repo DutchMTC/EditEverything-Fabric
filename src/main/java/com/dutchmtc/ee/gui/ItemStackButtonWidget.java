@@ -1,7 +1,7 @@
 package com.dutchmtc.ee.gui;
 
 import com.dutchmtc.ee.utils.GuiUtils;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.narration.NarratedElementType;
@@ -35,7 +35,7 @@ public class ItemStackButtonWidget extends AbstractWidget {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (stack != null && !stack.isEmpty()) {
             GuiUtils.drawItemStack(graphics, stack, getX() + 1, getY() + 1);
         }

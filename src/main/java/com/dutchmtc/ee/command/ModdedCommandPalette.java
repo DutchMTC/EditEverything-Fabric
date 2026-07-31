@@ -2,6 +2,7 @@ package com.dutchmtc.ee.command;
 
 import com.mojang.brigadier.Command;
 import com.dutchmtc.ee.command.ModdedCommandHelp.CommandClickOption;
+import com.dutchmtc.ee.utils.ChatUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.ClickEvent;
@@ -24,9 +25,9 @@ public class ModdedCommandPalette extends ModdedCommand {
             MutableComponent row = Component.literal("");
             int count = 0;
             for (var cf : ChatFormatting.values()) {
-                if (!cf.isColor()) continue;
+                if (!ChatUtils.isColor(cf)) continue;
                 
-                String code = "&" + cf.getChar();
+                String code = "&" + ChatUtils.formattingCode(cf);
                 MutableComponent colorBlock = Component.literal(" \u2588 ").withStyle(cf);
                 MutableComponent codeText = Component.literal(code).withStyle(ChatFormatting.WHITE);
                 

@@ -4,7 +4,7 @@ import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ReflectionUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -80,7 +80,7 @@ public class GuiEE extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         if (devMode) {
             var entries = new ArrayList<ACTDevInfo>();
             entries.add(devInfo(ChatFormatting.BOLD + "ACT Dev")); // header
@@ -99,15 +99,15 @@ public class GuiEE extends Screen {
             GuiUtils.drawGradientRect(graphics, x - 4, 0, width, y + lines * (font.lineHeight + 2) + 4, 0x44000000,
                     0x44000000);
             for (var dev : entries) {
-                GuiUtils.drawCenterString(graphics, font, dev.title(), x + w / 2, y, Objects.requireNonNull(ChatFormatting.RED.getColor()));
+                GuiUtils.drawCenterString(graphics, font, dev.title(), x + w / 2, y, 0xFF5555);
                 y += font.lineHeight + 2;
                 for (var element : dev.elements()) {
-                    GuiUtils.drawString(graphics, font, element, x, y, 0xFFFFFFFF, font.lineHeight);
+                    GuiUtils.text(graphics, font, element, x, y, 0xFFFFFFFF, font.lineHeight);
                     y += font.lineHeight + 2;
                 }
             }
         }
-        super.render(graphics, mouseX, mouseY, delta);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
     }
 
     /**

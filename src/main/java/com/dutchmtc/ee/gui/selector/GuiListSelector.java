@@ -37,7 +37,7 @@ public class GuiListSelector<T> extends GuiListModifier<T> {
     public void select(T t) {
         playClick();
         Screen screen = selector.apply(t);
-        getMinecraft().setScreen(screen == null ? parent : screen);
+        getMinecraft().gui.setScreen(screen == null ? parent : screen);
     }
 
 }

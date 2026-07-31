@@ -2,7 +2,7 @@ package com.dutchmtc.ee;
 
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.Tuple;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
+import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -30,7 +30,7 @@ public class EditEverything {
     private CreativeModeTab tab;
 
     public void buildSubItems() {
-        // This is heavy and might not work well in 1.21 without proper context.
+        // This is heavy and might not work well without a fully built creative-tab context.
         // I'll simplify it to just add items that are not in any other tab if possible,
         // or just skip the auto-discovery for now to prevent crashes.
         
@@ -96,7 +96,7 @@ public class EditEverything {
     }
 
     public void register() {
-        tab = FabricItemGroup.builder()
+        tab = FabricCreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.ee"))
                 .icon(this::makeIcon)
                 .displayItems(this::accept)
@@ -106,8 +106,7 @@ public class EditEverything {
     }
     
     public void refresh() {
-        // In 1.21, tabs are dynamic. We might not need to do anything if we use the event correctly.
-        // But since we use a static list 'subItems', we might need to clear and rebuild it.
+        // Creative tabs are dynamic; rebuild the backing list when custom entries change.
         buildSubItems();
     }
 

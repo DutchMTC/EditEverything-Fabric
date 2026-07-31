@@ -5,7 +5,7 @@ import com.dutchmtc.ee.gui.selector.GuiButtonListSelector;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.Tuple;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -29,6 +29,12 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>> {
+    private static final String AMPLIFIER_KEY = "amplifier";
+    private static final String DURATION_KEY = "duration";
+    private static final String AMBIENT_KEY = "ambient";
+    private static final String SHOW_PARTICLES_KEY = "show_particles";
+    private static final String SHOW_ICON_KEY = "show_icon";
+
     private final List<CompoundTag> originalEffects;
 
     static class ActiveEffectListElement extends ListElement {
@@ -57,11 +63,11 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
                 this.potion = MobEffects.SPEED.value();
             }
 
-            this.amplifierValue = ItemUtils.getByte(tag, "Amplifier");
-            this.durationTime = ItemUtils.getInt(tag, "Duration");
-            this.ambient = ItemUtils.getBoolean(tag, "Ambient");
-            this.showParticles = ItemUtils.hasTag(tag, "ShowParticles", 1) ? ItemUtils.getBoolean(tag, "ShowParticles") : true;
-            this.showIcon = ItemUtils.hasTag(tag, "ShowIcon", 1) ? ItemUtils.getBoolean(tag, "ShowIcon") : true;
+            this.amplifierValue = readAmplifier(tag);
+            this.durationTime = readInt(tag, DURATION_KEY, "Duration", 0);
+            this.ambient = readBoolean(tag, AMBIENT_KEY, "Ambient", false);
+            this.showParticles = readBoolean(tag, SHOW_PARTICLES_KEY, "ShowParticles", true);
+            this.showIcon = readBoolean(tag, SHOW_ICON_KEY, "ShowIcon", true);
 
             int l = 5 + Math.max(font.width(I18n.get("gui.ee.modifier.meta.potion.duration") + " : "),
                     font.width(I18n.get("gui.ee.modifier.meta.potion.amplifier") + " : "));
@@ -79,7 +85,7 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
                     String desc = "effect." + id.getNamespace() + "." + id.getPath().replace('/', '.');
                     pots.add(new Tuple<>(I18n.get(desc), pot));
                 });
-                mc.setScreen(new GuiButtonListSelector<>(parent,
+                mc.gui.setScreen(new GuiButtonListSelector<>(parent,
                         Component.translatable("gui.ee.modifier.meta.potion.type"), pots, pot -> {
                     potion = pot;
                     setButtonText();
@@ -114,7 +120,7 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
         }
 
         @Override
-        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
             GuiUtils.drawRelative(graphics, amplifier, offsetX, offsetY, mouseX, mouseY, partialTicks);
             GuiUtils.drawRelative(graphics, duration, offsetX, offsetY, mouseX, mouseY, partialTicks);
             GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.meta.potion.duration") + " : ", duration,
@@ -185,7 +191,7 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
             }
             try {
                 int i = Integer.parseInt(amplifier.getValue());
-                if (!(errAmp = i < -128 || i > 127))
+                if (!(errAmp = i < 0 || i > 255))
                     amplifierValue = i;
             } catch (Exception e) {
                 errAmp = true;
@@ -199,11 +205,11 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
             if (id != null) {
                 tag.putString("id", id.toString());
             }
-            tag.putByte("Amplifier", (byte) amplifierValue);
-            tag.putInt("Duration", durationTime);
-            tag.putBoolean("Ambient", ambient);
-            tag.putBoolean("ShowParticles", showParticles);
-            tag.putBoolean("ShowIcon", showIcon);
+            tag.putInt(AMPLIFIER_KEY, amplifierValue);
+            tag.putInt(DURATION_KEY, durationTime);
+            tag.putBoolean(AMBIENT_KEY, ambient);
+            tag.putBoolean(SHOW_PARTICLES_KEY, showParticles);
+            tag.putBoolean(SHOW_ICON_KEY, showIcon);
             return tag;
         }
     }
@@ -211,11 +217,11 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
     private final Supplier<ListElement> supplier = () -> {
         CompoundTag tag = new CompoundTag();
         tag.putString("id", BuiltInRegistries.MOB_EFFECT.getKey(MobEffects.SPEED.value()).toString());
-        tag.putByte("Amplifier", (byte) 0);
-        tag.putInt("Duration", 200);
-        tag.putBoolean("Ambient", false);
-        tag.putBoolean("ShowParticles", true);
-        tag.putBoolean("ShowIcon", true);
+        tag.putInt(AMPLIFIER_KEY, 0);
+        tag.putInt(DURATION_KEY, 200);
+        tag.putBoolean(AMBIENT_KEY, false);
+        tag.putBoolean(SHOW_PARTICLES_KEY, true);
+        tag.putBoolean(SHOW_ICON_KEY, true);
         return new ActiveEffectListElement(this, tag);
     };
 
@@ -268,14 +274,44 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
         if (id != null) {
             normalized.putString("id", id.toString());
         }
-        normalized.putByte("Amplifier", (byte) ItemUtils.getByte(tag, "Amplifier"));
-        normalized.putInt("Duration", ItemUtils.getInt(tag, "Duration"));
-        normalized.putBoolean("Ambient", ItemUtils.getBoolean(tag, "Ambient"));
-        boolean showParticles = ItemUtils.hasTag(tag, "ShowParticles", 1) ? ItemUtils.getBoolean(tag, "ShowParticles") : true;
-        boolean showIcon = ItemUtils.hasTag(tag, "ShowIcon", 1) ? ItemUtils.getBoolean(tag, "ShowIcon") : true;
-        normalized.putBoolean("ShowParticles", showParticles);
-        normalized.putBoolean("ShowIcon", showIcon);
+        normalized.putInt(AMPLIFIER_KEY, readAmplifier(tag));
+        normalized.putInt(DURATION_KEY, readInt(tag, DURATION_KEY, "Duration", 0));
+        normalized.putBoolean(AMBIENT_KEY, readBoolean(tag, AMBIENT_KEY, "Ambient", false));
+        normalized.putBoolean(SHOW_PARTICLES_KEY,
+                readBoolean(tag, SHOW_PARTICLES_KEY, "ShowParticles", true));
+        normalized.putBoolean(SHOW_ICON_KEY, readBoolean(tag, SHOW_ICON_KEY, "ShowIcon", true));
         return normalized;
+    }
+
+    private static int readAmplifier(CompoundTag tag) {
+        String key = tag.contains(AMPLIFIER_KEY) ? AMPLIFIER_KEY : "Amplifier";
+        if (!tag.contains(key)) {
+            return 0;
+        }
+        if (ItemUtils.hasTag(tag, key, net.minecraft.nbt.Tag.TAG_BYTE)) {
+            return Byte.toUnsignedInt(ItemUtils.getByte(tag, key));
+        }
+        return ItemUtils.getInt(tag, key);
+    }
+
+    private static int readInt(CompoundTag tag, String modernKey, String legacyKey, int defaultValue) {
+        if (tag.contains(modernKey)) {
+            return ItemUtils.getInt(tag, modernKey);
+        }
+        if (tag.contains(legacyKey)) {
+            return ItemUtils.getInt(tag, legacyKey);
+        }
+        return defaultValue;
+    }
+
+    private static boolean readBoolean(CompoundTag tag, String modernKey, String legacyKey, boolean defaultValue) {
+        if (tag.contains(modernKey)) {
+            return ItemUtils.getBoolean(tag, modernKey);
+        }
+        if (tag.contains(legacyKey)) {
+            return ItemUtils.getBoolean(tag, legacyKey);
+        }
+        return defaultValue;
     }
 
     @Override

@@ -17,7 +17,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Checkbox;
@@ -147,14 +147,14 @@ public class GuiArmorStandEditor extends Screen {
         recomputeLayout();
 
         if (minecraft == null || minecraft.level == null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
             return;
         }
 
         HolderLookup.Provider registryAccess = minecraft.level.registryAccess();
         Entity target = minecraft.level.getEntity(targetEntityId);
         if (!(target instanceof ArmorStand armorStand)) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
             return;
         }
 
@@ -219,12 +219,12 @@ public class GuiArmorStandEditor extends Screen {
             return;
         }
         if (isModified()) {
-            minecraft.setScreen(new GuiConfirmation(this,
+            minecraft.gui.setScreen(new GuiConfirmation(this,
                     Component.translatable("gui.ee.discard_changes_question"),
-                    () -> minecraft.setScreen(parent),
-                    () -> minecraft.setScreen(this)));
+                    () -> minecraft.gui.setScreen(parent),
+                    () -> minecraft.gui.setScreen(this)));
         } else {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 
@@ -320,7 +320,7 @@ public class GuiArmorStandEditor extends Screen {
         addRenderableWidget(new EEButton(x3, bottomY, actionBtnW, BTN_H,
                 Component.translatable("gui.ee.armorstand.apply").withStyle(ChatFormatting.GREEN), b -> {
                     EEClientNetworking.sendApplyArmorStandEdits(targetEntityId, currentState);
-                    minecraft.setScreen(parent);
+                    minecraft.gui.setScreen(parent);
                 }));
     }
 
@@ -513,9 +513,6 @@ public class GuiArmorStandEditor extends Screen {
             int mask = 1 << slot.getFilterBit(offset);
             boolean selected = (current & mask) != 0;
 
-            boolean lockAll = (current & (1 << slot.getFilterBit(0))) != 0;
-            boolean enabled = offset == 0 || !lockAll;
-
             Checkbox cb = Checkbox.builder(Component.empty(), font)
                     .pos(gridX + i * colW, y)
                     .selected(selected)
@@ -530,7 +527,6 @@ public class GuiArmorStandEditor extends Screen {
                         rebuildUi();
                     })
                     .build();
-            cb.active = enabled;
             addRenderableWidget(cb);
         }
     }
@@ -634,13 +630,13 @@ public class GuiArmorStandEditor extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(graphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        super.extractBackground(graphics, mouseX, mouseY, delta);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
 
         // Panel background
@@ -671,10 +667,10 @@ public class GuiArmorStandEditor extends Screen {
 
         renderTabText(graphics);
 
-        super.render(graphics, mouseX, mouseY, delta);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
     }
 
-    private void renderTabText(GuiGraphics graphics) {
+    private void renderTabText(GuiGraphicsExtractor graphics) {
         int controlsLeft = previewLeft + previewWidth + PAD;
         int controlsTop = panelTop;
         int controlsW = panelLeft + panelWidth - PAD - controlsLeft;
@@ -692,52 +688,52 @@ public class GuiArmorStandEditor extends Screen {
                 int labelYOffset = (slot - font.lineHeight) / 2;
 
                 int y0 = y;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.slot.head").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.slot.head").withStyle(ChatFormatting.GRAY),
                         leftColX + slot + labelGap, y0 + labelYOffset, 0xFFFFFFFF);
                 y0 += rowH;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.slot.chest").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.slot.chest").withStyle(ChatFormatting.GRAY),
                         leftColX + slot + labelGap, y0 + labelYOffset, 0xFFFFFFFF);
                 y0 += rowH;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.slot.legs").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.slot.legs").withStyle(ChatFormatting.GRAY),
                         leftColX + slot + labelGap, y0 + labelYOffset, 0xFFFFFFFF);
                 y0 += rowH;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.slot.feet").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.slot.feet").withStyle(ChatFormatting.GRAY),
                         leftColX + slot + labelGap, y0 + labelYOffset, 0xFFFFFFFF);
 
                 int handsY = y + rowH;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.slot.mainhand").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.slot.mainhand").withStyle(ChatFormatting.GRAY),
                         rightColX + slot + labelGap, handsY + labelYOffset, 0xFFFFFFFF);
                 handsY += rowH;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.slot.offhand").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.slot.offhand").withStyle(ChatFormatting.GRAY),
                         rightColX + slot + labelGap, handsY + labelYOffset, 0xFFFFFFFF);
 
                 int hintY = y + rowH * 4 + 6;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.equipment.hint").withStyle(ChatFormatting.DARK_GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.equipment.hint").withStyle(ChatFormatting.DARK_GRAY),
                         x, hintY, 0xFFFFFFFF);
             }
             case LOCKS -> {
                 int rowY = y + 20;
                 int rowLabelY = rowY + (BTN_H - font.lineHeight) / 2;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.locks.remove").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.locks.remove").withStyle(ChatFormatting.GRAY),
                         x, rowLabelY, 0xFFFFFFFF);
 
                 rowY += 20;
                 rowLabelY = rowY + (BTN_H - font.lineHeight) / 2;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.locks.replace").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.locks.replace").withStyle(ChatFormatting.GRAY),
                         x, rowLabelY, 0xFFFFFFFF);
 
                 rowY += 20;
                 rowLabelY = rowY + (BTN_H - font.lineHeight) / 2;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.locks.place").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.locks.place").withStyle(ChatFormatting.GRAY),
                         x, rowLabelY, 0xFFFFFFFF);
 
                 rowY += 22;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.locks.hint").withStyle(ChatFormatting.DARK_GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.locks.hint").withStyle(ChatFormatting.DARK_GRAY),
                         x, rowY, 0xFFFFFFFF);
             }
             case OPTIONS -> {
                 int nameLabelY = y + 3 * (BTN_H + 4) + BTN_H + 8;
-                graphics.drawString(font, Component.translatable("gui.ee.armorstand.name").withStyle(ChatFormatting.GRAY),
+                graphics.text(font, Component.translatable("gui.ee.armorstand.name").withStyle(ChatFormatting.GRAY),
                         x, nameLabelY, 0xFFFFFFFF);
             }
             default -> {
@@ -745,7 +741,7 @@ public class GuiArmorStandEditor extends Screen {
         }
     }
 
-    private void renderLockHeaderIcons(GuiGraphics graphics) {
+    private void renderLockHeaderIcons(GuiGraphicsExtractor graphics) {
         ItemStack[] icons = lockIcons();
         for (int i = 0; i < icons.length; i++) {
             int x = lockHeaderX[i];
@@ -868,7 +864,7 @@ public class GuiArmorStandEditor extends Screen {
             }
 
             ItemStack current = getter.get();
-            Objects.requireNonNull(minecraft).setScreen(new GuiItemStackModifier(GuiArmorStandEditor.this, current.copy(), newItem -> {
+            Objects.requireNonNull(minecraft).gui.setScreen(new GuiItemStackModifier(GuiArmorStandEditor.this, current.copy(), newItem -> {
                 ItemStack sanitized = newItem == null ? ItemStack.EMPTY : newItem;
                 if (!sanitized.isEmpty() && sanitized.getCount() <= 0) {
                     sanitized.setCount(1);
@@ -880,7 +876,7 @@ public class GuiArmorStandEditor extends Screen {
         }
 
         @Override
-        protected void renderContents(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             if (!VersionCompat.is12111OrNewer()) {
                 return;
             }
@@ -896,17 +892,17 @@ public class GuiArmorStandEditor extends Screen {
             if (isHoveredOrFocused()) {
                 GuiUtils.drawRect(graphics, getX(), getY(), getX() + 18, getY() + 18, 0x55FFFFFF);
                 if (!stack.isEmpty()) {
-                    GuiUtils.renderTooltip(graphics, Objects.requireNonNull(minecraft).font, stack, mouseX, mouseY);
+                    GuiUtils.setTooltipForNextFrame(graphics, Objects.requireNonNull(minecraft).font, stack, mouseX, mouseY);
                 } else {
-                    GuiUtils.renderTooltip(graphics, Objects.requireNonNull(minecraft).font,
+                    GuiUtils.setTooltipForNextFrame(graphics, Objects.requireNonNull(minecraft).font,
                             java.util.List.of(getMessage()), java.util.Optional.empty(), mouseX, mouseY);
                 }
             }
         }
 
-        // 1.21.10: AbstractButton renders the label via renderString(...) instead of renderContents(...).
+        // 1.21.10: AbstractButton renders the label via renderString(...) instead of extractContents(...).
         @SuppressWarnings("unused")
-        protected void renderString(GuiGraphics graphics, Font font, int color) {
+        protected void renderString(GuiGraphicsExtractor graphics, Font font, int color) {
             if (VersionCompat.is12111OrNewer()) {
                 return;
             }
@@ -914,7 +910,7 @@ public class GuiArmorStandEditor extends Screen {
         }
 
         @SuppressWarnings("unused")
-        protected void renderString(GuiGraphics graphics, Font font, int x, int y, int color) {
+        protected void renderString(GuiGraphicsExtractor graphics, Font font, int x, int y, int color) {
             if (VersionCompat.is12111OrNewer()) {
                 return;
             }
@@ -922,14 +918,14 @@ public class GuiArmorStandEditor extends Screen {
         }
 
         @SuppressWarnings("unused")
-        protected void renderString(GuiGraphics graphics, int x, int y, int color) {
+        protected void renderString(GuiGraphicsExtractor graphics, int x, int y, int color) {
             if (VersionCompat.is12111OrNewer()) {
                 return;
             }
             renderSlotOnly(graphics);
         }
 
-        private void renderSlotOnly(GuiGraphics graphics) {
+        private void renderSlotOnly(GuiGraphicsExtractor graphics) {
             ItemStack stack = getter.get();
             if (stack == null) {
                 stack = ItemStack.EMPTY;

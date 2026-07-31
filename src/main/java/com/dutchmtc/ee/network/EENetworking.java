@@ -20,15 +20,15 @@ public final class EENetworking {
     }
 
     public static void initCommon() {
-        PayloadTypeRegistry.playS2C().register(OpenGiverPayload.TYPE, OpenGiverPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(OpenMenuPayload.TYPE, OpenMenuPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(OpenEditorPayload.TYPE, OpenEditorPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(OpenColorPickerPayload.TYPE, OpenColorPickerPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(InstantClickPayload.TYPE, InstantClickPayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(InstantPlacePayload.TYPE, InstantPlacePayload.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(OpenArmorStandEditorPayload.TYPE, OpenArmorStandEditorPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(OpenGiverPayload.TYPE, OpenGiverPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(OpenMenuPayload.TYPE, OpenMenuPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(OpenEditorPayload.TYPE, OpenEditorPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(OpenColorPickerPayload.TYPE, OpenColorPickerPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(InstantClickPayload.TYPE, InstantClickPayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(InstantPlacePayload.TYPE, InstantPlacePayload.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(OpenArmorStandEditorPayload.TYPE, OpenArmorStandEditorPayload.STREAM_CODEC);
 
-        PayloadTypeRegistry.playC2S().register(ApplyArmorStandEditsPayload.TYPE, ApplyArmorStandEditsPayload.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ApplyArmorStandEditsPayload.TYPE, ApplyArmorStandEditsPayload.STREAM_CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(ApplyArmorStandEditsPayload.TYPE, (payload, context) -> {
             context.server().execute(() -> applyArmorStandEdits(payload, context.player()));

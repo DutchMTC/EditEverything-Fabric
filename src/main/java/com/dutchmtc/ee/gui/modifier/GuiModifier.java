@@ -3,7 +3,7 @@ package com.dutchmtc.ee.gui.modifier;
 import com.dutchmtc.ee.gui.GuiEE;
 import com.dutchmtc.ee.gui.GuiConfirmation;
 import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
@@ -38,11 +38,11 @@ public class GuiModifier<T> extends GuiEE {
 
     public void onCancel() {
         if (isModified()) {
-            getMinecraft().setScreen(new GuiConfirmation(this, Component.translatable("gui.ee.discard_changes_question"),
-                    () -> getMinecraft().setScreen(parent),
-                    () -> getMinecraft().setScreen(this)));
+            getMinecraft().gui.setScreen(new GuiConfirmation(this, Component.translatable("gui.ee.discard_changes_question"),
+                    () -> getMinecraft().gui.setScreen(parent),
+                    () -> getMinecraft().gui.setScreen(this)));
         } else {
-            getMinecraft().setScreen(parent);
+            getMinecraft().gui.setScreen(parent);
         }
     }
 

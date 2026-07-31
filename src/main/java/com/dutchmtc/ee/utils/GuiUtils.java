@@ -7,7 +7,7 @@ import com.dutchmtc.ee.internalcommand.InternalCommandModule;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.ChatScreen;
@@ -62,7 +62,7 @@ public class GuiUtils {
         }
 
         void renderScreen() {
-            Minecraft.getInstance().setScreen(screen);
+            Minecraft.getInstance().gui.setScreen(screen);
         }
     }
 
@@ -82,7 +82,7 @@ public class GuiUtils {
         Minecraft.getInstance().execute(call);
     }
 
-    public static void renderTooltip(GuiGraphics graphics, Font font, ItemStack stack, int mouseX, int mouseY) {
+    public static void setTooltipForNextFrame(GuiGraphicsExtractor graphics, Font font, ItemStack stack, int mouseX, int mouseY) {
         List<ClientTooltipComponent> components = new ArrayList<>();
         var mc = Minecraft.getInstance();
         var ctx = mc.level != null ? net.minecraft.world.item.Item.TooltipContext.of(mc.level) : net.minecraft.world.item.Item.TooltipContext.EMPTY;
@@ -90,17 +90,17 @@ public class GuiUtils {
             components.add(ClientTooltipComponent.create(line.getVisualOrderText()));
         }
         stack.getTooltipImage().ifPresent(img -> components.add(ClientTooltipComponent.create(img)));
-        graphics.renderTooltip(font, components, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
+        graphics.tooltip(font, components, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
     }
 
-    public static void renderTooltip(GuiGraphics graphics, Font font, List<net.minecraft.network.chat.Component> lines,
+    public static void setTooltipForNextFrame(GuiGraphicsExtractor graphics, Font font, List<net.minecraft.network.chat.Component> lines,
                                      Optional<TooltipComponent> tooltipImage, int mouseX, int mouseY) {
         List<ClientTooltipComponent> components = new ArrayList<>(lines.size() + 1);
         for (var line : lines) {
             components.add(ClientTooltipComponent.create(line.getVisualOrderText()));
         }
         tooltipImage.ifPresent(img -> components.add(ClientTooltipComponent.create(img)));
-        graphics.renderTooltip(font, components, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
+        graphics.tooltip(font, components, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
     }
 
     public static int blueToRed(int color) {
@@ -210,10 +210,10 @@ public class GuiUtils {
 
     public static void displayScreen(Screen screen, boolean forceDelay) {
         Minecraft mc = Minecraft.getInstance();
-        if (forceDelay || mc.screen instanceof ChatScreen)
+        if (forceDelay || mc.gui.screen() instanceof ChatScreen)
             DELAYED_SCREENS.add(new DelayScreen(screen, 20));
         else
-            mc.setScreen(screen);
+            mc.gui.setScreen(screen);
     }
 
     public static int getRandomColor() {
@@ -225,7 +225,7 @@ public class GuiUtils {
                 saturation, lightness);
     }
 
-    public static void drawBox(GuiGraphics graphics, int x, int y, int width, int height, float z) {
+    public static void drawBox(GuiGraphicsExtractor graphics, int x, int y, int width, int height, float z) {
         graphics.pose().pushMatrix();
         
         drawGradientRect(graphics, x - 3, y - 4, x + width + 3, y - 3, 0xF0100010, 0xF0100010);
@@ -246,85 +246,85 @@ public class GuiUtils {
         GL11.glColor4f(r, g, b, 1.0f);
     }
 
-    public static void drawCenterString(GuiGraphics graphics, Font font, String text, int x, int y, int color) {
+    public static void drawCenterString(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color) {
         drawCenterString(graphics, font, text, x, y, color, font.lineHeight);
     }
 
-    public static void drawCenterString(GuiGraphics graphics, Font font, String text, int x, int y, int color, int height) {
-        drawString(graphics, font, text, x - font.width(text) / 2, y, color, height);
+    public static void drawCenterString(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color, int height) {
+        text(graphics, font, text, x - font.width(text) / 2, y, color, height);
     }
 
-    public static void drawGradientRect(GuiGraphics graphics, int left, int top, int right, int bottom, int startColor,
+    public static void drawGradientRect(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int startColor,
                                         int endColor) {
         graphics.fillGradient(left, top, right, bottom, startColor, endColor);
     }
 
-    public static void drawGradientRect(GuiGraphics graphics, int left, int top, int right, int bottom, int rightTopColor,
+    public static void drawGradientRect(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int rightTopColor,
                                         int leftTopColor, int leftBottomColor, int rightBottomColor) {
         // Approximate with vertical gradient
         graphics.fillGradient(left, top, right, bottom, leftTopColor, leftBottomColor);
     }
 
-    public static void drawItemStack(GuiGraphics graphics, ItemStack itemstack, int x, int y) {
+    public static void drawItemStack(GuiGraphicsExtractor graphics, ItemStack itemstack, int x, int y) {
         if (itemstack == null || itemstack.isEmpty())
             return;
-        graphics.renderItem(itemstack, x, y);
-        graphics.renderItemDecorations(Minecraft.getInstance().font, itemstack, x, y);
+        graphics.item(itemstack, x, y);
+        graphics.itemDecorations(Minecraft.getInstance().font, itemstack, x, y);
     }
 
-    public static void drawRect(GuiGraphics graphics, int left, int top, int right, int bottom, int color) {
+    public static void drawRect(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int color) {
         graphics.fill(left, top, right, bottom, color);
     }
 
-    public static void drawHoverableRect(GuiGraphics graphics, int left, int top, int right, int bottom, int color,
+    public static void drawHoverableRect(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom, int color,
                                          int colorHovered, int mouseX, int mouseY) {
         var c = (isHover(left, top, right - left, bottom - top, mouseX, mouseY) ? colorHovered : color);
         drawRect(graphics, left, top, right, bottom, c);
     }
 
-    public static void drawRelative(GuiGraphics graphics, AbstractWidget widget, int offsetX, int offsetY, int mouseX,
+    public static void drawRelative(GuiGraphicsExtractor graphics, AbstractWidget widget, int offsetX, int offsetY, int mouseX,
                                     int mouseY, float partialTicks) {
         widget.setX(widget.getX() + offsetX);
         widget.setY(widget.getY() + offsetY);
-        widget.render(graphics, mouseX + offsetX, mouseY + offsetY, partialTicks);
+        widget.extractRenderState(graphics, mouseX + offsetX, mouseY + offsetY, partialTicks);
         widget.setX(widget.getX() - offsetX);
         widget.setY(widget.getY() - offsetY);
     }
 
-    public static void drawRightString(GuiGraphics graphics, Font font, String text, int x, int y, int color) {
+    public static void drawRightString(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color) {
         drawRightString(graphics, font, text, x, y, color, font.lineHeight);
     }
 
-    public static void drawRightString(GuiGraphics graphics, Font font, String text, int x, int y, int color, int height) {
-        drawString(graphics, font, text, x - font.width(text), y, color, height);
+    public static void drawRightString(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color, int height) {
+        text(graphics, font, text, x - font.width(text), y, color, height);
     }
 
-    public static void drawRightString(GuiGraphics graphics, Font font, String text, AbstractWidget field, int color) {
+    public static void drawRightString(GuiGraphicsExtractor graphics, Font font, String text, AbstractWidget field, int color) {
         drawRightString(graphics, font, text, field.getX(), field.getY(), color, field.getHeight());
     }
 
-    public static void drawRightString(GuiGraphics graphics, Font font, String text, AbstractWidget field, int color, int offsetX,
+    public static void drawRightString(GuiGraphicsExtractor graphics, Font font, String text, AbstractWidget field, int color, int offsetX,
                                        int offsetY) {
         drawRightString(graphics, font, text, field.getX() + offsetX, field.getY() + offsetY, color, field.getHeight());
     }
 
-    public static void drawScaledCustomSizeModalRect(GuiGraphics graphics, int x, int y, float u, float v, int uWidth, int vHeight, int width,
+    public static void drawScaledCustomSizeModalRect(GuiGraphicsExtractor graphics, int x, int y, float u, float v, int uWidth, int vHeight, int width,
                                                      int height, float tileWidth, float tileHeight) {
         drawScaledCustomSizeModalRect(graphics, x, y, u, v, uWidth, vHeight, width, height, tileWidth, tileHeight, 0xffffff);
     }
 
-    public static void drawScaledCustomSizeModalRect(GuiGraphics graphics, int x, int y, float u, float v, int uWidth, int vHeight, int width,
+    public static void drawScaledCustomSizeModalRect(GuiGraphicsExtractor graphics, int x, int y, float u, float v, int uWidth, int vHeight, int width,
                                                      int height, float tileWidth, float tileHeight, int color) {
         drawScaledCustomSizeModalRect(graphics, x, y, u, v, uWidth, vHeight, width, height, tileWidth, tileHeight, color, false);
     }
 
-    public static void drawScaledCustomSizeModalRect(GuiGraphics graphics, int x, int y, float u, float v, int uWidth, int vHeight, int width,
+    public static void drawScaledCustomSizeModalRect(GuiGraphicsExtractor graphics, int x, int y, float u, float v, int uWidth, int vHeight, int width,
                                                      int height, float tileWidth, float tileHeight, int color, boolean useAlpha) {
         // Use blit with scaling
-        // This requires a texture to be bound. GuiGraphics.blit assumes the texture is already set in RenderSystem?
-        // No, GuiGraphics.blit usually takes a ResourceLocation.
+        // This requires a texture to be bound. GuiGraphicsExtractor.blit assumes the texture is already set in RenderSystem?
+        // No, GuiGraphicsExtractor.blit usually takes a ResourceLocation.
         // But here we are drawing a custom rect, possibly from the currently bound texture.
-        // GuiGraphics doesn't expose a method to draw from currently bound texture easily without ResourceLocation.
+        // GuiGraphicsExtractor doesn't expose a method to draw from currently bound texture easily without ResourceLocation.
         // However, we can use Tesselator as before, but we need to be careful with shaders.
         // Or we can pass the ResourceLocation if we know it.
         // The caller (GuiColorModifier) sets the texture before calling this.
@@ -337,7 +337,6 @@ public class GuiUtils {
         int blue = color & 0xFF;
         int alpha = useAlpha ? (color >> 24) : 0xff;
         
-        Tesselator tesselator = Tesselator.getInstance();
         // BufferBuilder bufferbuilder = tesselator.getBuilder(); // getBuilder() is gone?
         // In 1.21, we use Tesselator.getInstance().begin(...) which returns BufferBuilder?
         // No, Tesselator.getInstance() returns Tesselator.
@@ -348,15 +347,15 @@ public class GuiUtils {
         // Or I can try to use `graphics.blit` if I change the signature to accept ResourceLocation.
     }
 
-    public static void drawString(GuiGraphics graphics, Font font, String text, int x, int y, int color, int height) {
-        graphics.drawString(font, text, x, y + height / 2 - font.lineHeight / 2, color);
+    public static void text(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color, int height) {
+        graphics.text(font, text, x, y + height / 2 - font.lineHeight / 2, color);
     }
 
-    public static void drawString(GuiGraphics graphics, Font font, String text, int x, int y, int color) {
-        graphics.drawString(font, text, x, y, color);
+    public static void text(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color) {
+        graphics.text(font, text, x, y, color);
     }
 
-    public static void drawTextBox(GuiGraphics graphics, Font font, int x, int y, int parentWidth, int parentHeight,
+    public static void drawTextBox(GuiGraphicsExtractor graphics, Font font, int x, int y, int parentWidth, int parentHeight,
                                    float zLevel, String... args) {
         List<String> text = Arrays.asList(args);
         int width = text.isEmpty() ? 0 : text.stream().mapToInt(font::width).max().getAsInt();
@@ -365,7 +364,7 @@ public class GuiUtils {
         drawBox(graphics, pos.a, pos.b, width, height, zLevel);
         int currentY = pos.b;
         for (String l : text) {
-            graphics.drawString(font, l, pos.a, currentY, 0xffffffff);
+            graphics.text(font, l, pos.a, currentY, 0xffffffff);
             currentY += (1 + font.lineHeight);
         }
     }
@@ -416,7 +415,7 @@ public class GuiUtils {
         tm.register(resource, new DynamicTexture(() -> modId + ":" + resource, img));
     }
 
-    public static void renderInventory(GuiGraphics graphics, Font font, int x, int y, ItemStack stack, int screenWidth, int screenHeight) {
+    public static void renderInventory(GuiGraphicsExtractor graphics, Font font, int x, int y, ItemStack stack, int screenWidth, int screenHeight) {
         var data = ItemUtils.fetchContainerData(stack);
         if (data == null)
             return;
@@ -440,7 +439,7 @@ public class GuiUtils {
 
         drawBox(graphics, rx + 4, ry + 3, width, height, 1);
 
-        graphics.drawString(font, stack.getHoverName().getString(), cx, cy, 0xFFFFFFFF);
+        graphics.text(font, stack.getHoverName().getString(), cx, cy, 0xFFFFFFFF);
         
         cy += 2 + font.lineHeight;
         drawRect(graphics, itemX - 1, cy - 1, itemX + size.sizeX() * 18 + 1, cy + size.sizeY() * 18 + 1,
@@ -452,8 +451,8 @@ public class GuiUtils {
                 var item = stacks.get(slot);
                 var sx = itemX + 18 * i + 1;
                 drawRect(graphics, sx, cy + 1, sx + 16, cy + 1 + 16, COLOR_CONTAINER_SLOT | 0xFF000000);
-                graphics.renderItem(item, sx, cy + 1);
-                graphics.renderItemDecorations(font, item, sx, cy + 1);
+                graphics.item(item, sx, cy + 1);
+                graphics.itemDecorations(font, item, sx, cy + 1);
             }
             cy += 18;
         }

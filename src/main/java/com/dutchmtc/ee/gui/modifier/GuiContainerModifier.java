@@ -6,7 +6,7 @@ import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ItemUtils.ContainerData;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -46,19 +46,19 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
         addRenderableWidget(
                 new EEButton(width / 2 + 2, height / 2 + 60, 94, 20, Component.translatable("gui.done"), b -> {
                     set(data);
-                    mc.setScreen(parent);
+                    mc.gui.setScreen(parent);
                 }));
         super.init();
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(graphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        super.extractBackground(graphics, mouseX, mouseY, delta);
         var size = data.size();
         var stacks = data.stacks();
         var cy = height / 2 - size.sizeY() * 18 / 2;
@@ -73,15 +73,15 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
         int hoverSlot = -1;
 
         assert minecraft != null;
-        // var ir = minecraft.getItemRenderer(); // Use GuiGraphics
+        // var ir = minecraft.getItemRenderer(); // Use GuiGraphicsExtractor
         for (var j = 0; j < size.sizeY(); j++) {
             for (var i = 0; i < size.sizeX(); i++) {
                 var slot = size.indexOf(i, j);
                 var item = stacks.get(slot);
                 var sx = cx + 18 * i + 1;
                 GuiUtils.drawRect(graphics, sx, cy + 1, sx + 16, cy + 1 + 16, GuiUtils.COLOR_CONTAINER_SLOT | 0xFF000000);
-                graphics.renderItem(item, sx, cy + 1);
-                graphics.renderItemDecorations(font, item, sx, cy + 1);
+                graphics.item(item, sx, cy + 1);
+                graphics.itemDecorations(font, item, sx, cy + 1);
                 if (GuiUtils.isHover(sx, cy + 1, 16, 16, mouseX, mouseY)) {
                     GuiUtils.drawRect(graphics, sx, cy, sx + 18, cy + 18, GuiUtils.COLOR_CONTAINER_SLOT | 0x66000000);
                     hoverStack = item;
@@ -90,14 +90,14 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
             }
             cy += 18;
         }
-        super.render(graphics, mouseX, mouseY, delta);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
         if (hoverStack != null) {
                 if (hoverStack.getItem() != Items.AIR) {
                     graphics.pose().pushMatrix();
-                    GuiUtils.renderTooltip(graphics, font, hoverStack, mouseX, mouseY);
+                    GuiUtils.setTooltipForNextFrame(graphics, font, hoverStack, mouseX, mouseY);
                     graphics.pose().popMatrix();
                 } else if (slotNames != null && hoverSlot >= 0 && hoverSlot < slotNames.size()) {
-                    GuiUtils.renderTooltip(graphics, font, List.of(slotNames.get(hoverSlot)), java.util.Optional.empty(), mouseX, mouseY);
+                    GuiUtils.setTooltipForNextFrame(graphics, font, List.of(slotNames.get(hoverSlot)), java.util.Optional.empty(), mouseX, mouseY);
                 }
         }
     }
@@ -118,7 +118,7 @@ public class GuiContainerModifier extends GuiModifier<ContainerData> {
                 var sx = cx + 18 * i + 1;
                 if (GuiUtils.isHover(sx, cy + 1, 16, 16, (int) mouseX, (int) mouseY)) {
                     playClick();
-                    mc.setScreen(new GuiItemStackModifier(this, item, newItem -> {
+                    mc.gui.setScreen(new GuiItemStackModifier(this, item, newItem -> {
                         stacks.set(slot, newItem);
                     }));
                     return true;

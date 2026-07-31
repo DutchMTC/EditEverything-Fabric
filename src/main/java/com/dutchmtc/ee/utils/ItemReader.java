@@ -45,11 +45,11 @@ public class ItemReader {
                                 .<StackReference, Integer>argument("count", IntegerArgumentType.integer())
                                 .executes(ctx -> {
                                     ctx.getSource().stack = ItemArgument.getItem(ctx, "item")
-                                            .createItemStack(IntegerArgumentType.getInteger(ctx, "count"), false);
+                                            .createItemStack(IntegerArgumentType.getInteger(ctx, "count"));
                                     return 1;
                                 }))
                         .executes(ctx -> {
-                            ctx.getSource().stack = ItemArgument.getItem(ctx, "item").createItemStack(1, false);
+                            ctx.getSource().stack = ItemArgument.getItem(ctx, "item").createItemStack(1);
                             return 1;
                         })));
     }

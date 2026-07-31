@@ -3,6 +3,7 @@ package com.dutchmtc.ee.utils;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.TypedEntityData;
 
@@ -46,7 +47,7 @@ public final class ArmorStandItemUtils {
             return false;
         }
         TypedEntityData<EntityType<?>> data = stack.get(DataComponents.ENTITY_DATA);
-        return data != null && data.type() == EntityType.ARMOR_STAND;
+        return data != null && data.type() == EntityTypes.ARMOR_STAND;
     }
 
     public static CompoundTag getArmorStandEntityTag(ItemStack stack) {
@@ -54,7 +55,7 @@ public final class ArmorStandItemUtils {
             return new CompoundTag();
         }
         TypedEntityData<EntityType<?>> data = stack.get(DataComponents.ENTITY_DATA);
-        if (data == null || data.type() != EntityType.ARMOR_STAND) {
+        if (data == null || data.type() != EntityTypes.ARMOR_STAND) {
             return new CompoundTag();
         }
         return sanitizeArmorStandEntityTag(data.copyTagWithoutId());
@@ -65,6 +66,6 @@ public final class ArmorStandItemUtils {
             return;
         }
         CompoundTag safe = sanitizeArmorStandEntityTag(tag);
-        stack.set(DataComponents.ENTITY_DATA, TypedEntityData.of(EntityType.ARMOR_STAND, safe));
+        stack.set(DataComponents.ENTITY_DATA, TypedEntityData.of(EntityTypes.ARMOR_STAND, safe));
     }
 }

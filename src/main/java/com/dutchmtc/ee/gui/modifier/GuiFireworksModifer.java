@@ -9,7 +9,7 @@ import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ItemUtils.ExplosionInformation;
 import com.dutchmtc.ee.utils.Tuple;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -60,9 +60,9 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
         }
 
         @Override
-        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
             GuiUtils.drawRelative(graphics, flight, offsetX, offsetY, mouseX, mouseY, partialTicks);
-            GuiUtils.drawString(graphics, font, title, offsetX, offsetY, (err ? Color.RED : Color.WHITE).getRGB(),
+            GuiUtils.text(graphics, font, title, offsetX, offsetY, (err ? Color.RED : Color.WHITE).getRGB(),
                     flight.getHeight());
             super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         }
@@ -115,7 +115,7 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
             this.exp = ItemUtils.getExplosionInformation(expData);
             this.parent = parent;
             buttonList.add(new EEButton(0, 0, 100, 20, Component.translatable("gui.ee.modifier.meta.explosion"),
-                    b -> mc.setScreen(
+                    b -> mc.gui.setScreen(
                             new GuiExplosionModifier(parent, exp -> ExplosionListElement.this.exp = exp, exp))));
             buttonList.add(new RemoveElementButton(parent, 101, 0, 20, 20, this));
             buttonList.add(new AddElementButton(parent, 122, 0, 20, 20, this, parent.builder));
@@ -136,7 +136,7 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
         }
 
         @Override
-        public void drawNext(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY,
+        public void drawNext(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY,
                              float partialTicks) {
             if (GuiUtils.isHover(0, 0, 200, 20, mouseX, mouseY)) {
                 List<String> data = new ArrayList<>();
@@ -173,7 +173,7 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
                 pos.b += 2;
                 int i;
                 for (i = 0; i < data.size(); i++)
-                    graphics.drawString(font, data.get(i), pos.a, pos.b + i * (font.lineHeight + 1), 0xffffffff);
+                    graphics.text(font, data.get(i), pos.a, pos.b + i * (font.lineHeight + 1), 0xffffffff);
                 if (exp.getFadeColors().length != 0) {
                     i -= 1;
                     int x = pos.a + font.width(fadeColor);
@@ -238,7 +238,7 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
                         List<Tuple<String, Shape>> elements = new ArrayList<>(Shape.values().length);
                         for (Shape s : Shape.values())
                             elements.add(new Tuple<>(I18n.get("item.minecraft.firework_star.shape." + s.getSerializedName()), s));
-                        mc.setScreen(new GuiButtonListSelector<>(GuiExplosionModifier.this,
+                        mc.gui.setScreen(new GuiButtonListSelector<>(GuiExplosionModifier.this,
                                 Component.translatable("gui.ee.modifier.meta.explosion.shape"), elements, s -> {
                             exp.type(s);
                             defineButton();
@@ -255,21 +255,21 @@ public class GuiFireworksModifer extends GuiListModifier<CompoundTag> {
             addRenderableWidget(
                     new EEButton(width / 2 + 1, height / 2 + 21, 99, 20, Component.translatable("gui.done"), b -> {
                         set(exp.colors(colors.getColors()).fadeColors(fadeColors.getColors()));
-                        getMinecraft().setScreen(parent);
+                        getMinecraft().gui.setScreen(parent);
                     }));
             defineButton();
             super.init();
         }
 
         @Override
-        public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+        public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
             // do nothing
         }
 
         @Override
-        public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-            super.renderBackground(graphics, mouseX, mouseY, partialTicks);
-            super.render(graphics, mouseX, mouseY, partialTicks);
+        public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+            super.extractBackground(graphics, mouseX, mouseY, partialTicks);
+            super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
             colors.draw(graphics, mouseX, mouseY, getZLevel()); // Need to update ColorList
             fadeColors.draw(graphics, mouseX, mouseY, getZLevel());
             colors.drawNext(graphics, mouseX, mouseY, getZLevel());

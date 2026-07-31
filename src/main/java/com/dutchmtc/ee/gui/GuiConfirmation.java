@@ -2,7 +2,7 @@ package com.dutchmtc.ee.gui;
 
 import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.utils.GuiUtils;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -44,8 +44,8 @@ public class GuiConfirmation extends GuiEE {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        super.render(graphics, mouseX, mouseY, partialTicks);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         GuiUtils.drawCenterString(graphics, font, message.getString(), width / 2, height / 2 - 20, 0xFFFFFFFF);
     }
 }

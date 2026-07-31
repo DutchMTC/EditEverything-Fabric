@@ -11,7 +11,7 @@ public class NBTIntegerElement extends NBTNumericElement<Integer> {
 
     public NBTIntegerElement(GuiListModifier<?> parent, String key, int value) {
         super("int", parent, key, 200, 42, value);
-        buttonList.add(new EEButton(0, 21, 200, 20, Component.translatable("gui.ee.modifier.meta.setColor"), b -> mc.setScreen(new GuiColorModifier(parent, this::updateValue, getValue(), 0xffffff))));
+        buttonList.add(new EEButton(0, 21, 200, 20, Component.translatable("gui.ee.modifier.meta.setColor"), b -> mc.gui.setScreen(new GuiColorModifier(parent, this::updateValue, getValue(), 0xffffff))));
     }
 
     @Override

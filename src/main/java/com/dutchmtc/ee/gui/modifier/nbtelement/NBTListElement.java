@@ -14,7 +14,7 @@ public class NBTListElement extends NBTElement {
     public NBTListElement(GuiListModifier<?> parent, String key, ListTag value) {
         super(parent, key, 200, 21);
         this.value = value;
-        buttonList.add(new EEButton(0, 0, 200, 20, Component.translatable("gui.ee.modifier.tag.editor.list"), b -> mc.setScreen(new GuiNBTListModifier(Component.literal(parent.getStringTitle() + key + "/"), parent,
+        buttonList.add(new EEButton(0, 0, 200, 20, Component.translatable("gui.ee.modifier.tag.editor.list"), b -> mc.gui.setScreen(new GuiNBTListModifier(Component.literal(parent.getStringTitle() + key + "/"), parent,
                 tag -> NBTListElement.this.value = tag, value.copy()))));
     }
 

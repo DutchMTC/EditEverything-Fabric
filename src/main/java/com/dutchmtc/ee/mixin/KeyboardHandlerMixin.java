@@ -36,11 +36,11 @@ public class KeyboardHandlerMixin {
         if (GLFW.glfwGetKey(windowHandle, GLFW.GLFW_KEY_F3) != GLFW.GLFW_PRESS) {
             return;
         }
-        if (!minecraft.canSwitchGameMode() || minecraft.level == null || minecraft.screen != null) {
+        if (!minecraft.canSwitchGameMode() || minecraft.level == null || minecraft.gui.screen() != null) {
             return;
         }
 
-        minecraft.setScreen(new GameModeSwitcherScreen());
+        minecraft.gui.setScreen(new GameModeSwitcherScreen());
         cir.setReturnValue(true);
     }
 }

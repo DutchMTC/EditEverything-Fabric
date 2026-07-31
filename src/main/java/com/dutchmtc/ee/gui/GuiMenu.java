@@ -13,7 +13,7 @@ import com.dutchmtc.ee.utils.ItemUtilsClient;
 import com.dutchmtc.ee.utils.Tuple;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.player.LocalPlayer;
@@ -44,17 +44,17 @@ public class GuiMenu extends GuiListModifier<Object> {
         }
 
         @Override
-        public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+        public void draw(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
             GuiUtils.drawItemStack(graphics, stack, offsetX + 1, offsetY + 1);
             super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         }
 
         @Override
-        public void drawNext(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY,
+        public void drawNext(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY,
                              float partialTicks) {
             if (GuiUtils.isHover(0, 0, 18, 18, mouseX, mouseY)) {
                 GuiUtils.drawRect(graphics, offsetX, offsetY, offsetX + 18, offsetY + 18, 0x55cccccc);
-                GuiUtils.renderTooltip(graphics, parent.getMinecraft().font,
+                GuiUtils.setTooltipForNextFrame(graphics, parent.getMinecraft().font,
                         stack.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(parent.getMinecraft().level), parent.getMinecraft().player, net.minecraft.world.item.TooltipFlag.NORMAL),
                         stack.getTooltipImage(),
                         mouseX + offsetX, mouseY + offsetY);
@@ -81,7 +81,7 @@ public class GuiMenu extends GuiListModifier<Object> {
                         int i = parent.getElements().indexOf(this);
                         parent.addListElement(i, new MenuListElement(parent, stack.copy()));
                     } else
-                        mc.setScreen(new GuiGiver(parent, stack, s -> {
+                        mc.gui.setScreen(new GuiGiver(parent, stack, s -> {
                             ItemStack is = ItemUtils.getFromGiveCode(s, parent.registryAccess());
                             if (is != null)
                                 stack = is;
@@ -100,14 +100,14 @@ public class GuiMenu extends GuiListModifier<Object> {
 
     private boolean initialized = false;
     private void openDeleteConfirmation(MenuListElement element) {
-        getMinecraft().setScreen(new GuiConfirmation(this,
+        getMinecraft().gui.setScreen(new GuiConfirmation(this,
                 Component.translatable("gui.ee.menu.delete_question"),
                 Component.translatable("gui.ee.delete"),
                 () -> {
                     removeListElement(element);
-                    getMinecraft().setScreen(this);
+                    getMinecraft().gui.setScreen(this);
                 },
-                () -> getMinecraft().setScreen(this)));
+                () -> getMinecraft().gui.setScreen(this)));
     }
 
     private final Consumer<String> ADD_STACK = i -> {
@@ -126,23 +126,23 @@ public class GuiMenu extends GuiListModifier<Object> {
         Tuple<?, ?> btn1 = new Tuple<String, Tuple<Runnable, Runnable>>(I18n.get("cmd.ee.edit"), new Tuple<>(() -> {
             assert player != null;
             final int slot = player.getInventory().getSelectedSlot();
-            getMinecraft().setScreen(new GuiItemStackModifier(this, player.getMainHandItem().copy(),
+            getMinecraft().gui.setScreen(new GuiItemStackModifier(this, player.getMainHandItem().copy(),
                     is -> ItemUtilsClient.give(is, 36 + slot)));
         }, () -> {
         }));
         Tuple<?, ?> btn2 = new Tuple<String, Tuple<Runnable, Runnable>>(I18n.get("key.ee.giver"),
-                new Tuple<>(() -> Minecraft.getInstance().setScreen(new GuiGiver(this)), () -> {
+                new Tuple<>(() -> Minecraft.getInstance().gui.setScreen(new GuiGiver(this)), () -> {
                 }));
 
         Tuple<?, ?> btn3 = new Tuple<String, Tuple<Runnable, Runnable>>(I18n.get("gui.ee.config"),
-                new Tuple<>(() -> mc.setScreen(new GuiConfig(this)), null));
+                new Tuple<>(() -> mc.gui.setScreen(new GuiConfig(this)), null));
         buttons = player == null ? new Tuple[]{btn2, btn3}
                 : new Tuple[]{btn1, btn2, btn3};
-        Runnable ADD = () -> getMinecraft().setScreen(
+        Runnable ADD = () -> getMinecraft().gui.setScreen(
                 new GuiTypeListSelector(this, Component.translatable("gui.ee.modifier.attr.type"), is -> {
                     GuiGiver giver = new GuiGiver(this, (ItemStack) null, ADD_STACK, false);
-                    if (getMinecraft().screen instanceof GuiTypeListSelector)
-                        ((GuiTypeListSelector) getMinecraft().screen).setParent(giver);
+                    if (getMinecraft().gui.screen() instanceof GuiTypeListSelector)
+                        ((GuiTypeListSelector) getMinecraft().gui.screen()).setParent(giver);
                     giver.setPreText(ItemUtils.getCustomTag(is, EEMod.TEMPLATE_TAG_NAME, ""));
                     return null;
                 }, EEMod.getTemplates()));

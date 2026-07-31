@@ -81,6 +81,7 @@
 
   "gui.ee.config": "Config",
   "gui.ee.disableToolTip": "Desactivé sans F3+H le tooltip",
+  "gui.ee.showEETooltips": "Show EE tooltips",
 
   "gui.ee.menu.template": "Modèles",
   "gui.ee.menu.template.empty": "Vide",
@@ -122,6 +123,7 @@
   "gui.ee.modifier.meta.adventure.modebtn.except": "Except",
   "gui.ee.modifier.meta.adventure.selectBlock": "Select a block",
   "gui.ee.modifier.meta.adventure.add": "Add block",
+  "gui.ee.modifier.meta.adventure.showTooltip": "Show tooltip",
   "gui.ee.modifier.meta.setColor": "Editeur de couleur",
   "gui.ee.modifier.meta.setColor.picker": "Picker",
   "gui.ee.modifier.meta.setColor.random": "Aléatoire",

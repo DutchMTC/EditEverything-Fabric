@@ -37,6 +37,9 @@ public class Configuration {
     public static class ConfigData {
         public List<String> items = new ArrayList<>();
         public boolean disableToolTip = false;
+        public boolean disableEETooltips = false;
+        // Backward compatibility for a short-lived key name.
+        public boolean disableAllItemTooltips = false;
         /**
          * If true and {@link #eventWorldId} is set, player attributes are reset when leaving that world.
          */
@@ -50,6 +53,10 @@ public class Configuration {
 
     public boolean doesDisableToolTip() {
         return data.disableToolTip;
+    }
+
+    public boolean doesDisableEETooltips() {
+        return data.disableEETooltips || data.disableAllItemTooltips;
     }
 
     public boolean doesResetPlayerAttributesOnEventWorldExit() {
@@ -81,6 +88,13 @@ public class Configuration {
         data.disableToolTip = doesDisableToolTip;
     }
 
+    public void setDoesDisableEETooltips(boolean doesDisableEETooltips) {
+        data.disableEETooltips = doesDisableEETooltips;
+        if (!doesDisableEETooltips) {
+            data.disableAllItemTooltips = false;
+        }
+    }
+
     public void sync(File path) {
         sync(path.toPath());
     }
@@ -93,13 +107,17 @@ public class Configuration {
             try (FileReader reader = new FileReader(file)) {
                 data = GSON.fromJson(reader, ConfigData.class);
                 if (data == null) data = new ConfigData();
+                if (data.disableAllItemTooltips) {
+                    data.disableEETooltips = true;
+                    data.disableAllItemTooltips = false;
+                }
             } catch (Exception e) {
                 EEMod.LOGGER.error("Failed to load config", e);
                 data = new ConfigData();
             }
         } else {
             // Defaults
-            data.items = new ArrayList<>(List.of(EEMod.DEFAULT_CUSTOM_ITEMS));
+            data.items = new ArrayList<>(List.of(EEMod.getDefaultCustomItems()));
         }
 
         eventWorldIdParsed = Optional.ofNullable(data.eventWorldId)

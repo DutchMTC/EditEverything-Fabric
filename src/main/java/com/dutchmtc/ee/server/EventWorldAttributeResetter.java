@@ -1,7 +1,7 @@
 package com.dutchmtc.ee.server;
 
 import com.dutchmtc.ee.EEMod;
-import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityLevelChangeEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,7 +19,7 @@ public final class EventWorldAttributeResetter {
         if (initialized) return;
         initialized = true;
 
-        ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register(EventWorldAttributeResetter::onPlayerChangedWorld);
+        ServerEntityLevelChangeEvents.AFTER_PLAYER_CHANGE_LEVEL.register(EventWorldAttributeResetter::onPlayerChangedWorld);
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             var player = handler.getPlayer();
             if (player == null) return;

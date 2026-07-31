@@ -1,7 +1,9 @@
 package com.dutchmtc.ee.utils;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -16,10 +18,12 @@ import org.joml.Vector3f;
  * Helpers for rendering entities inside a fixed UI box.
  */
 public final class GuiEntityPreviewUtils {
+    private static final AtomicInteger NEXT_PREVIEW_ENTITY_ID = new AtomicInteger(1_000_000_000);
+
     private GuiEntityPreviewUtils() {
     }
 
-    public static void renderLivingEntityInBox(GuiGraphics graphics, int x, int y, int width, int height, int scale, float yOffset,
+    public static void renderLivingEntityInBox(GuiGraphicsExtractor graphics, int x, int y, int width, int height, int scale, float yOffset,
                                               float yawOffsetDeg, float pitchDeg, LivingEntity entity) {
         if (graphics == null || entity == null) {
             return;
@@ -55,11 +59,12 @@ public final class GuiEntityPreviewUtils {
         base.mul(pitchRot);
 
         Vector3f translate = new Vector3f(0.0f, state.boundingBoxHeight / 2.0f + yOffset, 0.0f);
-        // GuiGraphics.submitEntityRenderState takes x0/y0/x1/y1 (not width/height)
-        graphics.submitEntityRenderState(state, (float) scale, translate, base, pitchRot, x, y, x + width, y + height);
+        graphics.entity(state, (float) scale, translate, base, pitchRot, x, y, x + width, y + height);
     }
 
     private static EntityRenderState extractRenderState(LivingEntity entity) {
+        ensurePreviewEntityId(entity);
+
         EntityRenderDispatcher dispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
         @SuppressWarnings("rawtypes")
         EntityRenderer renderer = dispatcher.getRenderer(entity);
@@ -70,5 +75,15 @@ public final class GuiEntityPreviewUtils {
         state.shadowPieces.clear();
         state.outlineColor = 0;
         return state;
+    }
+
+    private static void ensurePreviewEntityId(LivingEntity entity) {
+        try {
+            entity.getId();
+        } catch (IllegalStateException ignored) {
+            // 26.2 render-state extraction reads the entity id for item model state.
+            // GUI preview entities are never spawned into a level, so assign a local id first.
+            entity.setId(NEXT_PREVIEW_ENTITY_ID.getAndIncrement());
+        }
     }
 }

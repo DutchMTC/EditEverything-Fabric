@@ -10,7 +10,7 @@ import com.dutchmtc.ee.gui.modifier.GuiStringModifier;
 import com.dutchmtc.ee.gui.modifier.nbt.GuiNBTModifier;
 import com.dutchmtc.ee.utils.GuiUtils;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.*;
 import net.minecraft.network.chat.Component;
@@ -48,7 +48,7 @@ public abstract class NBTElement extends ListElement implements Cloneable {
         if (!isList(parent))
             buttonList
                     .add(new RunElementButton(sizeX + 1, 21, 79, 20, Component.translatable("gui.ee.config.name"),
-                            () -> mc.setScreen(new GuiStringModifier(parent,
+                            () -> mc.gui.setScreen(new GuiStringModifier(parent,
                                     Component.translatable("gui.ee.config.name"), getKey(), nk -> this.key = nk)),
                             null));
     }
@@ -57,7 +57,7 @@ public abstract class NBTElement extends ListElement implements Cloneable {
     public abstract NBTElement clone();
 
     @Override
-    public void draw(GuiGraphics graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+    public void draw(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
         GuiUtils.drawGradientRect(graphics, offsetX - 2, offsetY - (6 + font.lineHeight), offsetX + getSizeX() - 1,
                 offsetY - 2, 0x88dddddd, 0x88aaaaaa);
         GuiUtils.drawGradientRect(graphics, offsetX - 2, offsetY - 2, offsetX + getSizeX() - 1,
@@ -65,7 +65,7 @@ public abstract class NBTElement extends ListElement implements Cloneable {
         String s = getType();
         if (!isList(parent))
             s = key + " (" + s + ")";
-        GuiUtils.drawString(graphics, font, s, offsetX + 2, offsetY - font.lineHeight - 4, 0xffffffff, font.lineHeight + 2);
+        GuiUtils.text(graphics, font, s, offsetX + 2, offsetY - font.lineHeight - 4, 0xffffffff, font.lineHeight + 2);
         super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
     }
 

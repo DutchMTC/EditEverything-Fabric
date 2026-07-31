@@ -4,7 +4,7 @@ import com.dutchmtc.ee.gui.components.EEButton;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ItemUtils.ContainerData;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -138,7 +138,7 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
                 new EEButton(width / 2 + 2, top + panelHeight - 26, 94, 20, Component.translatable("gui.done"), b -> {
                     applyAmountsFromFields();
                     set(data);
-                    mc.setScreen(parent);
+                    mc.gui.setScreen(parent);
                 }));
 
         for (int slot = 0; slot < ROW_COUNT; slot++) {
@@ -147,7 +147,6 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
             int finalSlot = slot;
             EditBox amount = new EditBox(font, amountX(left), y, AMOUNT_W, 18, Component.literal("Amount"));
             amount.setMaxLength(3);
-            amount.setFilter(v -> v.isEmpty() || v.chars().allMatch(Character::isDigit));
             amount.setResponder(v -> onAmountEdited(finalSlot, v));
             addRenderableWidget(amount);
             amountFields.add(amount);
@@ -162,13 +161,13 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         // do nothing
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.renderBackground(graphics, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        super.extractBackground(graphics, mouseX, mouseY, delta);
 
         int left = panelLeft();
         int top = panelTop();
@@ -179,9 +178,9 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
         GuiUtils.drawCenterString(graphics, font, title.getString(), width / 2, top + 8, 0xFF7F7F7F);
 
         int headerY = top + PANEL_HEADER_Y_OFF;
-        GuiUtils.drawString(graphics, font, "Slot", left + PANEL_PADDING_X, headerY, 0xFF7F7F7F, font.lineHeight);
-        GuiUtils.drawString(graphics, font, "Drop %", sliderX(left), headerY, 0xFF7F7F7F, font.lineHeight);
-        GuiUtils.drawString(graphics, font, "Amount", amountX(left), headerY, 0xFF7F7F7F, font.lineHeight);
+        GuiUtils.text(graphics, font, "Slot", left + PANEL_PADDING_X, headerY, 0xFF7F7F7F, font.lineHeight);
+        GuiUtils.text(graphics, font, "Drop %", sliderX(left), headerY, 0xFF7F7F7F, font.lineHeight);
+        GuiUtils.text(graphics, font, "Amount", amountX(left), headerY, 0xFF7F7F7F, font.lineHeight);
 
         ItemStack hoverStack = null;
         Component hoverName = null;
@@ -197,12 +196,12 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
 
             ItemStack stack = data.equipment().stacks().get(slot);
             if (!stack.isEmpty()) {
-                graphics.renderItem(stack, iconX, iconY);
-                graphics.renderItemDecorations(font, stack, iconX, iconY);
+                graphics.item(stack, iconX, iconY);
+                graphics.itemDecorations(font, stack, iconX, iconY);
             }
 
             if (slotNames != null && slot < slotNames.size()) {
-                GuiUtils.drawString(graphics, font, slotNames.get(slot).getString(), iconX + 22, y + 4, 0xFFE0E0E0,
+                GuiUtils.text(graphics, font, slotNames.get(slot).getString(), iconX + 22, y + 4, 0xFFE0E0E0,
                         font.lineHeight);
             }
 
@@ -215,14 +214,14 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
             }
         }
 
-        super.render(graphics, mouseX, mouseY, delta);
+        super.extractRenderState(graphics, mouseX, mouseY, delta);
 
         if (hoverStack != null) {
             graphics.pose().pushMatrix();
-            GuiUtils.renderTooltip(graphics, font, hoverStack, mouseX, mouseY);
+            GuiUtils.setTooltipForNextFrame(graphics, font, hoverStack, mouseX, mouseY);
             graphics.pose().popMatrix();
         } else if (hoverName != null) {
-            GuiUtils.renderTooltip(graphics, font, List.of(hoverName), java.util.Optional.empty(), mouseX, mouseY);
+            GuiUtils.setTooltipForNextFrame(graphics, font, List.of(hoverName), java.util.Optional.empty(), mouseX, mouseY);
         }
     }
 
@@ -261,7 +260,7 @@ public class GuiSpawnEggEquipmentModifier extends GuiModifier<GuiSpawnEggEquipme
 
     private void openItemEditor(int slot) {
         ItemStack current = data.equipment().stacks().get(slot);
-        mc.setScreen(new GuiItemStackModifier(this, current, newItem -> {
+        mc.gui.setScreen(new GuiItemStackModifier(this, current, newItem -> {
             ItemStack sanitized = newItem == null ? ItemStack.EMPTY : newItem;
             if (!sanitized.isEmpty() && sanitized.getCount() <= 0) {
                 sanitized.setCount(1);

@@ -8,6 +8,7 @@ import com.dutchmtc.ee.EEMod;
 import com.dutchmtc.ee.command.ModdedCommandHelp.CommandClickOption;
 import com.dutchmtc.ee.network.EENetworking;
 import com.dutchmtc.ee.utils.ColorMath;
+import com.dutchmtc.ee.utils.ChatUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.ServerItemOps;
 import net.minecraft.ChatFormatting;
@@ -141,11 +142,12 @@ public class ModdedCommandColor extends ModdedCommand {
         });
 
         for (ChatFormatting formatting : ChatFormatting.values()) {
-            if (!formatting.isColor() || formatting.getColor() == null) {
+            Integer color = ChatUtils.colorRgb(formatting);
+            if (color == null) {
                 continue;
             }
-            String name = formatting.getName().toLowerCase();
-            int rgb = formatting.getColor() & 0xFFFFFF;
+            String name = ChatUtils.formattingName(formatting);
+            int rgb = color & 0xFFFFFF;
             registerSubCommand(new ModdedCommand(name) {
                 @Override
                 protected Command<CommandSourceStack> onNoArgument() {

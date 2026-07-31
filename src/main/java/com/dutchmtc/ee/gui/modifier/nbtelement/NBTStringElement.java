@@ -69,7 +69,7 @@ public class NBTStringElement extends NBTElement {
                         })));
                     }
                     root.setElements(rootButtons);
-                    mc.setScreen(root);
+                    mc.gui.setScreen(root);
                 }));
         field.setMaxLength(Integer.MAX_VALUE);
         field.setValue(this.value);

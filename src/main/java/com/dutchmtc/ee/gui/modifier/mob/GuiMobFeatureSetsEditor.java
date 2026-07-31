@@ -49,7 +49,7 @@ public class GuiMobFeatureSetsEditor extends GuiListModifier<CompoundTag> {
         int y0 = 0;
 
         EEButton fieldsTab = new EEButton(x0, y0, tabW, tabH, Component.literal("Fields"), b -> {
-            getMinecraft().setScreen(new GuiMobFieldsEditor(parent, setter, state));
+            getMinecraft().gui.setScreen(new GuiMobFieldsEditor(parent, setter, state));
         });
         addRenderableWidget(fieldsTab);
 

@@ -183,6 +183,11 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
 
         @Override
         public void update() {
+            syncFieldValues();
+            super.update();
+        }
+
+        private void syncFieldValues() {
             try {
                 durationTime = Integer.parseInt(duration.getValue());
                 errDur = false;
@@ -196,16 +201,19 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
             } catch (Exception e) {
                 errAmp = true;
             }
-            super.update();
         }
 
         public CompoundTag getData() {
+            // The Done button may be clicked before the next screen tick, so read the
+            // text boxes here instead of relying only on update().
+            syncFieldValues();
             CompoundTag tag = new CompoundTag();
             Identifier id = BuiltInRegistries.MOB_EFFECT.getKey(potion);
             if (id != null) {
                 tag.putString("id", id.toString());
             }
-            tag.putInt(AMPLIFIER_KEY, amplifierValue);
+            // Minecraft uses ExtraCodecs.UNSIGNED_BYTE for effect amplifiers.
+            tag.putByte(AMPLIFIER_KEY, (byte) amplifierValue);
             tag.putInt(DURATION_KEY, durationTime);
             tag.putBoolean(AMBIENT_KEY, ambient);
             tag.putBoolean(SHOW_PARTICLES_KEY, showParticles);
@@ -217,7 +225,7 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
     private final Supplier<ListElement> supplier = () -> {
         CompoundTag tag = new CompoundTag();
         tag.putString("id", BuiltInRegistries.MOB_EFFECT.getKey(MobEffects.SPEED.value()).toString());
-        tag.putInt(AMPLIFIER_KEY, 0);
+        tag.putByte(AMPLIFIER_KEY, (byte) 0);
         tag.putInt(DURATION_KEY, 200);
         tag.putBoolean(AMBIENT_KEY, false);
         tag.putBoolean(SHOW_PARTICLES_KEY, true);
@@ -274,7 +282,7 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
         if (id != null) {
             normalized.putString("id", id.toString());
         }
-        normalized.putInt(AMPLIFIER_KEY, readAmplifier(tag));
+        normalized.putByte(AMPLIFIER_KEY, (byte) readAmplifier(tag));
         normalized.putInt(DURATION_KEY, readInt(tag, DURATION_KEY, "Duration", 0));
         normalized.putBoolean(AMBIENT_KEY, readBoolean(tag, AMBIENT_KEY, "Ambient", false));
         normalized.putBoolean(SHOW_PARTICLES_KEY,

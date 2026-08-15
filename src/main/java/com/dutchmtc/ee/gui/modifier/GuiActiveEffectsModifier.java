@@ -212,8 +212,8 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
             if (id != null) {
                 tag.putString("id", id.toString());
             }
-            // Minecraft uses ExtraCodecs.UNSIGNED_BYTE for effect amplifiers.
-            tag.putByte(AMPLIFIER_KEY, (byte) amplifierValue);
+            // Keep the modern entity-data SNBT form (for example, amplifier:50).
+            tag.putInt(AMPLIFIER_KEY, amplifierValue);
             tag.putInt(DURATION_KEY, durationTime);
             tag.putBoolean(AMBIENT_KEY, ambient);
             tag.putBoolean(SHOW_PARTICLES_KEY, showParticles);
@@ -225,7 +225,7 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
     private final Supplier<ListElement> supplier = () -> {
         CompoundTag tag = new CompoundTag();
         tag.putString("id", BuiltInRegistries.MOB_EFFECT.getKey(MobEffects.SPEED.value()).toString());
-        tag.putByte(AMPLIFIER_KEY, (byte) 0);
+        tag.putInt(AMPLIFIER_KEY, 0);
         tag.putInt(DURATION_KEY, 200);
         tag.putBoolean(AMBIENT_KEY, false);
         tag.putBoolean(SHOW_PARTICLES_KEY, true);
@@ -282,7 +282,7 @@ public class GuiActiveEffectsModifier extends GuiListModifier<List<CompoundTag>>
         if (id != null) {
             normalized.putString("id", id.toString());
         }
-        normalized.putByte(AMPLIFIER_KEY, (byte) readAmplifier(tag));
+        normalized.putInt(AMPLIFIER_KEY, readAmplifier(tag));
         normalized.putInt(DURATION_KEY, readInt(tag, DURATION_KEY, "Duration", 0));
         normalized.putBoolean(AMBIENT_KEY, readBoolean(tag, AMBIENT_KEY, "Ambient", false));
         normalized.putBoolean(SHOW_PARTICLES_KEY,

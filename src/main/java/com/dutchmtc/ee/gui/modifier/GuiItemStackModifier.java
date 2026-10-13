@@ -6,6 +6,7 @@ import com.dutchmtc.ee.gui.selector.GuiButtonListSelector;
 import com.dutchmtc.ee.gui.selector.GuiTypeListSelector;
 import com.dutchmtc.ee.utils.ChatUtils;
 import com.dutchmtc.ee.utils.GuiUtils;
+import com.dutchmtc.ee.utils.AdventureBlockLore;
 import com.dutchmtc.ee.utils.ItemUtils;
 import com.dutchmtc.ee.utils.Tuple;
 import net.minecraft.ChatFormatting;
@@ -23,10 +24,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.components.Button;
 
 public class GuiItemStackModifier extends GuiModifier<ItemStack> {
     private ItemStack currentItemStack;
     private ItemStack originalItemStack;
+    private Function<ItemStack, String> saveValidation = value -> null;
+    private Button saveButton;
+
+    public GuiItemStackModifier withSaveValidation(Function<ItemStack, String> validation) {
+        saveValidation = validation;
+        return this;
+    }
+
+    private void refreshSave() {
+        if (saveButton == null) return;
+        String reason = saveValidation.apply(currentItemStack);
+        saveButton.active = reason == null;
+        saveButton.setTooltip(reason == null ? null : Tooltip.create(Component.literal(reason)));
+    }
+
+    @Override public void tick() { refreshSave(); }
 
     public GuiItemStackModifier(Screen parent, ItemStack currentItemStack, Consumer<ItemStack> setter) {
         super(parent, Component.translatable("gui.ee.give.editor"), setter);
@@ -69,23 +89,21 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
 
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2 - 42, 100, 20,
                 Component.translatable("gui.ee.modifier.name"),
-                b -> getMinecraft().gui.setScreen(new GuiStringModifier(
+                b -> getMinecraft().gui.setScreen(new GuiStyledTextEditor(
                         GuiItemStackModifier.this,
-                        Component.translatable("gui.ee.modifier.name"),
+                        "Item name",
                         ItemUtils.getComponent(currentItemStack, DataComponents.CUSTOM_NAME) != null
-                                ? ChatUtils.componentToLegacyCodes(ItemUtils.getComponent(currentItemStack, DataComponents.CUSTOM_NAME))
-                                : ChatUtils.untranslateColorCodes(currentItemStack.getHoverName().getString()),
-                        newName -> currentItemStack.set(DataComponents.CUSTOM_NAME, newName.isEmpty() ? null
-                                : ChatUtils.parseLegacyFormattingComponent(newName))))));
+                                ? ItemUtils.getComponent(currentItemStack, DataComponents.CUSTOM_NAME)
+                                : Component.literal(currentItemStack.getHoverName().getString()),
+                        256, newName -> currentItemStack.set(DataComponents.CUSTOM_NAME,
+                                newName.getString().isEmpty() ? null : newName)))));
 
         addRenderableWidget(new EEButton(width / 2 + 1, height / 2 - 42, 99, 20,
-                Component.translatable("gui.ee.modifier.lore"), b -> getMinecraft().gui.setScreen(new GuiStringArrayModifier(GuiItemStackModifier.this,
-                Component.translatable("gui.ee.modifier.lore"), ItemUtils.getLore(currentItemStack),
-                value -> {
-                    for (int i = 0; i < value.length; i++)
-                        value[i] = ChatUtils.translateColorCodes(value[i]);
-                    ItemUtils.setLore(currentItemStack, value);
-                }))));
+                Component.translatable("gui.ee.modifier.lore"), b -> {
+            getMinecraft().gui.setScreen(new GuiLoreEditor(GuiItemStackModifier.this,
+                    AdventureBlockLore.editableLore(currentItemStack), AdventureBlockLore.editableLimit(currentItemStack),
+                    value -> ItemUtils.setLoreComponents(currentItemStack, value)));
+        }));
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2 - 21, 100, 20,
                 Component.translatable("gui.ee.modifier.ench"), b -> getMinecraft().gui.setScreen(
                 new GuiEnchModifier(GuiItemStackModifier.this, ItemUtils.getEnchantments(currentItemStack),
@@ -97,20 +115,13 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                 list -> ItemUtils.setAttributes(list, currentItemStack)))));
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2, 100, 20,
                 Component.translatable("gui.ee.modifier.type"), b -> getMinecraft().gui.setScreen(new GuiTypeListSelector(GuiItemStackModifier.this,
-                Component.translatable("gui.ee.modifier.type"), (is, keep) -> {
-            if (keep) {
-                currentItemStack = ItemUtils.setItem(is.getItem(), currentItemStack);
-            } else {
-                currentItemStack = is.copy();
-            }
-            if (currentItemStack.getCount() == 0) {
-                currentItemStack.setCount(1);
-            }
+                Component.translatable("gui.ee.modifier.type"), is -> {
+            currentItemStack = is.copy();
             return GuiItemStackModifier.this;
-        }))));
+        }, currentItemStack))));
         addRenderableWidget(
-                new EEButton(width / 2 + 1, height / 2, 99, 20, Component.translatable("gui.ee.modifier.meta"), b -> getMinecraft().gui.setScreen(new GuiMetaModifier(GuiItemStackModifier.this, is -> currentItemStack = is,
-                        currentItemStack.copy()))));
+                new EEButton(width / 2 + 1, height / 2, 99, 20, Component.literal("Item settings"), b -> getMinecraft().gui.setScreen(new GuiItemSettingsEditor(GuiItemStackModifier.this,
+                        currentItemStack, is -> currentItemStack = is.copy()))));
         int i = 1;
         if (ItemUtils.isLeatherArmor(currentItemStack))
             addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
@@ -124,31 +135,18 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
                     b -> getMinecraft().gui.setScreen(new GuiEnchModifier(GuiItemStackModifier.this,
                             ItemUtils.getEnchantments(currentItemStack, true),
                             list -> ItemUtils.setEnchantments(list, currentItemStack, true,
-                                    getMinecraft().level != null ? getMinecraft().level.registryAccess() : null)))));
+                                    getMinecraft().level != null ? getMinecraft().level.registryAccess() : null), true))));
+        else if (com.dutchmtc.ee.utils.BookEditorData.supports(currentItemStack))
+            addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
+                    Component.literal("Edit book"), b -> getMinecraft().gui.setScreen(new GuiBookEditor(this,
+                    currentItemStack, edited -> currentItemStack = edited))));
         else if (currentItemStack.getItem().equals(Items.POTION)
                 || currentItemStack.getItem().equals(Items.SPLASH_POTION)
                 || currentItemStack.getItem().equals(Items.LINGERING_POTION)
                 || currentItemStack.getItem().equals(Items.TIPPED_ARROW)) {
-            addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 100, 20,
-                    Component.translatable("gui.ee.modifier.meta.potion"), b -> getMinecraft().gui.setScreen(new GuiPotionModifier(GuiItemStackModifier.this,
-                    pi -> ItemUtils.setPotionInformation(currentItemStack, pi),
-                    ItemUtils.getPotionInformation(currentItemStack)))));
-            addRenderableWidget(new EEButton(width / 2 + 1, height / 2 + 21, 99, 20,
-                    Component.translatable("gui.ee.modifier.meta.potionType"), b -> {
-                NonNullList<ItemStack> potionType = NonNullList.create();
-                potionType.add(new ItemStack(Items.POTION));
-                potionType.add(new ItemStack(Items.SPLASH_POTION));
-                potionType.add(new ItemStack(Items.LINGERING_POTION));
-                potionType.add(new ItemStack(Items.TIPPED_ARROW));
-                getMinecraft().gui.setScreen(new GuiTypeListSelector(GuiItemStackModifier.this,
-                        Component.translatable("gui.ee.modifier.meta.potionType"), is -> {
-                    currentItemStack = ItemUtils.setItem(is.getItem(), currentItemStack);
-                    if (currentItemStack.getCount() == 0) {
-                        currentItemStack.setCount(1);
-                    }
-                    return GuiItemStackModifier.this;
-                }, potionType));
-            }));
+            addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
+                    Component.literal("Potion editor"), b -> getMinecraft().gui.setScreen(
+                    new GuiPotionModifier(this, currentItemStack, edited -> currentItemStack = edited))));
         } else if (currentItemStack.getItem().equals(Items.PLAYER_HEAD))
             addRenderableWidget(
                     new EEButton(width / 2 - 100, height / 2 + 21, 200, 20, Items.PLAYER_HEAD.getName(new ItemStack(Items.PLAYER_HEAD)), b -> getMinecraft().gui.setScreen(new GuiHeadModifier(GuiItemStackModifier.this,
@@ -165,7 +163,12 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
             addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
                     Component.translatable("gui.ee.modifier.meta.command"), b -> getMinecraft().gui.setScreen(new GuiCommandBlockModifier(GuiItemStackModifier.this,
                     is -> currentItemStack = is, currentItemStack))));
-        } else if (currentItemStack.getItem() instanceof SpawnEggItem)
+        } else if (GuiSignEditor.supports(currentItemStack))
+            addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
+                    Component.literal("Edit sign"), b -> getMinecraft().gui.setScreen(
+                    new GuiSignEditor(GuiItemStackModifier.this, currentItemStack,
+                            edited -> currentItemStack = edited))));
+        else if (currentItemStack.getItem() instanceof SpawnEggItem)
             addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
                     Component.translatable("gui.ee.modifier.meta.setEntity"), b -> getMinecraft().gui.setScreen(new GuiSpawnEggModifier(GuiItemStackModifier.this,
                     is -> currentItemStack = is, currentItemStack))));
@@ -205,16 +208,21 @@ public class GuiItemStackModifier extends GuiModifier<ItemStack> {
         } else if (ItemUtils.isContainer(currentItemStack))
             addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 21, 200, 20,
                     Component.translatable("gui.ee.modifier.inventory"), b -> getMinecraft()
-                    .gui.setScreen(new GuiContainerModifier(this, currentItemStack.getHoverName(), data -> ItemUtils.setContainerData(currentItemStack, data), Objects.requireNonNull(ItemUtils.fetchContainerData(currentItemStack))))));
+                    .gui.setScreen(new GuiContainerModifier(this, currentItemStack.getHoverName(), data -> ItemUtils.setContainerData(currentItemStack, data), Objects.requireNonNull(ItemUtils.fetchContainerData(currentItemStack)),
+                            currentItemStack.getItem() instanceof BlockItem blockItem
+                                    && blockItem.getBlock() instanceof net.minecraft.world.level.block.AbstractFurnaceBlock
+                                    ? List.of(Component.literal("Input"), Component.literal("Fuel"), Component.literal("Output")) : null))));
         else
             i = 0;
         addRenderableWidget(new EEButton(width / 2 - 100, height / 2 + 25 + 21 * i, 100, 20,
                 Component.translatable("gui.ee.cancel"), b -> onCancel()));
-        addRenderableWidget(new EEButton(width / 2 + 1, height / 2 + 25 + 21 * i, 99, 20,
+        saveButton = addRenderableWidget(new EEButton(width / 2 + 1, height / 2 + 25 + 21 * i, 99, 20,
                 Component.translatable("gui.done"), b -> {
+            if (saveValidation.apply(currentItemStack) != null) return;
             set(currentItemStack);
             getMinecraft().gui.setScreen(parent);
         }));
         super.init();
+        refreshSave();
     }
 }

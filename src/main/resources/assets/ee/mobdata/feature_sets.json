@@ -1,21 +1,37 @@
 {
   "feature_sets": {
+    "ageable": [
+      "#age",
+      "#forced_age",
+      "#age_locked"
+    ],
     "breedable": [
-      "#bred"
+      "#in_love",
+      "#love_cause"
     ],
-    "bucket": [
-      "#frombucket"
-    ],
-    "raid": [],
     "tameable": [
-      "#tame",
-      "#collar_color"
+      "#owner"
+    ],
+    "mob": [
+      "#mob_home",
+      "#mob_home_radius",
+      "#loot_table",
+      "#loot_seed",
+      "#leash"
+    ],
+    "anger": [
+      "#anger_target",
+      "#anger_end"
     ],
     "trader": [
-      "#villager_profession",
       "#villager_type",
+      "#villager_profession",
       "#villager_level"
+    ],
+    "health": [
+      "#health",
+      "#absorption"
     ]
   },
-  "version": "26.2"
+  "version": "26.3"
 }

@@ -109,11 +109,11 @@ public class ColorList {
             int x = this.x + (16) * (i % sizeX);
             int y = this.y + fontRenderer.lineHeight + 1 + (16) * (i / sizeX);
             if (GuiUtils.isHover(x, y, 15, 15, mouseX, mouseY)) {
-                if (mouseButton == 0) {
+                if (GuiUtils.isLeftMouseButton(mouseButton)) {
                     int c = list.get(i);
                     int fi = i;
                     mc.gui.setScreen(new GuiColorModifier(parent, nc -> list.set(fi, nc), c, 0xffffff));
-                } else if (mouseButton == 1)
+                } else if (GuiUtils.isRightMouseButton(mouseButton))
                     list.remove(i);
                 else
                     return;
@@ -121,7 +121,7 @@ public class ColorList {
                 return;
             }
         }
-        if (i < maxElement && mouseButton == 0) {
+        if (i < maxElement && GuiUtils.isLeftMouseButton(mouseButton)) {
             int ex = this.x + (16) * (i % sizeX);
             int ey = this.y + fontRenderer.lineHeight + 1 + (16) * (i / sizeX);
             if (GuiUtils.isHover(ex, ey, 15, 15, mouseX, mouseY)) {

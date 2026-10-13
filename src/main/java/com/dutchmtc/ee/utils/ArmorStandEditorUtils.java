@@ -6,7 +6,10 @@ import net.minecraft.core.Rotations;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
@@ -19,6 +22,7 @@ public final class ArmorStandEditorUtils {
     }
 
     public static final String KEY_NAME = "CustomName";
+    public static final String KEY_NAME_COMPONENT = "CustomNameComponent";
     public static final String KEY_NAME_VISIBLE = "CustomNameVisible";
     public static final String KEY_INVISIBLE = "Invisible";
     public static final String KEY_GLOWING = "Glowing";
@@ -52,7 +56,9 @@ public final class ArmorStandEditorUtils {
         CompoundTag tag = new CompoundTag();
 
         var name = stand.getCustomName();
-        tag.putString(KEY_NAME, name != null ? name.getString() : "");
+        tag.putString(KEY_NAME, name != null ? ChatUtils.componentToLegacyCodes(name) : "");
+        if (name != null) ComponentSerialization.CODEC.encodeStart(NbtOps.INSTANCE, name).result()
+                .ifPresent(component -> tag.put(KEY_NAME_COMPONENT, component));
         tag.putBoolean(KEY_NAME_VISIBLE, stand.isCustomNameVisible());
 
         tag.putBoolean(KEY_INVISIBLE, stand.isInvisible());
@@ -94,11 +100,10 @@ public final class ArmorStandEditorUtils {
         }
 
         String raw = tag.getStringOr(KEY_NAME, "");
-        if (!raw.isBlank()) {
-            stand.setCustomName(ChatUtils.parseLegacyFormattingComponent(raw));
-        } else {
-            stand.setCustomName(null);
-        }
+        Component name = raw.isBlank() ? null : ChatUtils.parseLegacyFormattingComponent(raw);
+        Tag styledName = tag.get(KEY_NAME_COMPONENT);
+        if (styledName != null) name = ComponentSerialization.CODEC.parse(NbtOps.INSTANCE, styledName).result().orElse(name);
+        stand.setCustomName(name);
 
         if (tag.getBoolean(KEY_NAME_VISIBLE).isPresent()) {
             stand.setCustomNameVisible(tag.getBooleanOr(KEY_NAME_VISIBLE, false));
@@ -114,7 +119,7 @@ public final class ArmorStandEditorUtils {
             stand.setNoGravity(tag.getBooleanOr(KEY_NO_GRAVITY, false));
         }
         if (tag.getBoolean(KEY_INVULNERABLE).isPresent()) {
-            stand.setInvulnerable(tag.getBooleanOr(KEY_INVULNERABLE, false));
+            stand.setPermanentlyInvulnerable(tag.getBooleanOr(KEY_INVULNERABLE, false));
         }
 
         if (tag.getBoolean(KEY_SMALL).isPresent()) {

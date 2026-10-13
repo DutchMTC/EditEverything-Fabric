@@ -281,18 +281,26 @@ public class ItemUtils {
     }
 
     public static class AttributeData {
-        private EquipmentSlot slot;
+        private EquipmentSlotGroup slotGroup;
+        private ItemAttributeModifiers.Display display;
         private AttributeModifier modifier;
         private Attribute attribute;
 
         public AttributeData(EquipmentSlot slot, AttributeModifier modifier, Attribute attribute) {
-            this.slot = slot;
+            this(slot == null ? EquipmentSlotGroup.ANY : EquipmentSlotGroup.bySlot(slot), modifier, attribute,
+                    ItemAttributeModifiers.Display.attributeModifiers());
+        }
+
+        public AttributeData(EquipmentSlotGroup slotGroup, AttributeModifier modifier, Attribute attribute,
+                             ItemAttributeModifiers.Display display) {
+            this.slotGroup = slotGroup;
+            this.display = display;
             this.modifier = modifier;
             this.attribute = attribute;
         }
 
         public void setSlot(EquipmentSlot slot) {
-            this.slot = slot;
+            this.slotGroup = slot == null ? EquipmentSlotGroup.ANY : EquipmentSlotGroup.bySlot(slot);
         }
 
         public void setModifier(AttributeModifier modifier) {
@@ -312,8 +320,13 @@ public class ItemUtils {
         }
 
         public EquipmentSlot getSlot() {
-            return slot;
+            return slotGroup.slots().size() == 1 ? slotGroup.slots().getFirst() : null;
         }
+
+        public EquipmentSlotGroup getSlotGroup() { return slotGroup; }
+        public void setSlotGroup(EquipmentSlotGroup group) { slotGroup = group; }
+        public ItemAttributeModifiers.Display getDisplay() { return display; }
+        public AttributeData copy() { return new AttributeData(slotGroup, modifier, attribute, display); }
 
         @Override
         public boolean equals(Object o) {
@@ -322,14 +335,14 @@ public class ItemUtils {
             if (o == null || getClass() != o.getClass())
                 return false;
             AttributeData that = (AttributeData) o;
-            return Objects.equals(slot, that.slot) &&
+            return Objects.equals(slotGroup, that.slotGroup) && Objects.equals(display, that.display) &&
                     Objects.equals(modifier, that.modifier) &&
                     Objects.equals(attribute, that.attribute);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(slot, modifier, attribute);
+            return Objects.hash(slotGroup, modifier, attribute, display);
         }
     }
 
@@ -599,14 +612,7 @@ public class ItemUtils {
         ItemAttributeModifiers modifiers = getComponent(stack, DataComponents.ATTRIBUTE_MODIFIERS);
         modifiers = modifiers != null ? modifiers : ItemAttributeModifiers.EMPTY;
         for (var entry : modifiers.modifiers()) {
-            EquipmentSlot slot = null;
-            for (EquipmentSlot s : EquipmentSlot.values()) {
-                if (EquipmentSlotGroup.bySlot(s).equals(entry.slot())) {
-                    slot = s;
-                    break;
-                }
-            }
-            l.add(new AttributeData(slot, entry.modifier(), entry.attribute().value()));
+            l.add(new AttributeData(entry.slot(), entry.modifier(), entry.attribute().value(), entry.display()));
         }
         return l;
     }
@@ -652,7 +658,7 @@ public class ItemUtils {
             return null;
         }
         if (registryAccess == null) {
-            registryAccess = VanillaRegistries.createLookup();
+            registryAccess = VanillaRegistries.createWorldLookup();
         }
         ItemStack stack = new ItemReader(registryAccess).readItem(code);
         if (stack != null && !stack.isEmpty()) {
@@ -726,7 +732,7 @@ public class ItemUtils {
             return "";
         }
         if (registryAccess == null) {
-            registryAccess = VanillaRegistries.createLookup();
+            registryAccess = VanillaRegistries.createWorldLookup();
         }
 
         Identifier itemId = BuiltInRegistries.ITEM.getKey(itemStack.getItem());
@@ -842,11 +848,7 @@ public class ItemUtils {
     }
 
     public static String[] getLore(ItemStack stack) {
-        ItemLore lore = getComponent(stack, DataComponents.LORE);
-        if (lore == null) {
-            return new String[0];
-        }
-        return lore.lines().stream()
+        return AdventureBlockLore.editableLore(stack).stream()
                 .map(ChatUtils::componentToLegacyCodes)
                 .toArray(String[]::new);
     }
@@ -866,8 +868,16 @@ public class ItemUtils {
             return new PotionInformation(OptionalInt.empty(), Potions.WATER.value(), new ArrayList<>());
 
         OptionalInt color = contents.customColor().map(OptionalInt::of).orElse(OptionalInt.empty());
-        Potion potion = contents.potion().map(Holder::value).orElse(Potions.WATER.value());
-        List<MobEffectInstance> effects = new ArrayList<>(contents.customEffects());
+        Potion potion = contents.potion().map(Holder::value).orElse(null);
+        // customEffects() uses Minecraft's shallow effect-copy constructor, which drops
+        // hidden fallback effects. getAllEffects() exposes the full native instances;
+        // exclude the base potion's prefix and let the editor serialize an isolated draft.
+        List<MobEffectInstance> effects = new ArrayList<>();
+        int baseCount = contents.potion().map(p -> p.value().getEffects().size()).orElse(0);
+        int index = 0;
+        for (MobEffectInstance effect : contents.getAllEffects()) {
+            if (index++ >= baseCount) effects.add(effect);
+        }
 
         return new PotionInformation(color, potion, effects);
     }
@@ -889,7 +899,7 @@ public class ItemUtils {
         Fireworks fireworks = getComponent(stack, DataComponents.FIREWORKS);
         CompoundTag tag = new CompoundTag();
         if (fireworks != null) {
-            putByte(tag, "Flight", (byte) fireworks.flightDuration());
+            tag.putInt("Flight", fireworks.flightDuration());
             ListTag explosions = new ListTag();
             for (FireworkExplosion exp : fireworks.explosions()) {
                 explosions.add(new ExplosionInformation(exp.shape(), exp.hasTrail(), exp.hasTwinkle(),
@@ -900,8 +910,14 @@ public class ItemUtils {
         return tag;
     }
 
+    /** Old byte tags store the unsigned flight duration as a signed Java byte. */
+    public static int getFireworkFlight(CompoundTag tag, int fallback) {
+        int flight = tag.getInt("Flight").orElse(fallback);
+        return tag.get("Flight") instanceof ByteTag && flight < 0 ? flight + 256 : flight;
+    }
+
     public static void setFireworksFromTag(ItemStack stack, CompoundTag tag) {
-        int flight = getByte(tag, "Flight");
+        int flight = getFireworkFlight(tag, 0);
         ListTag explosionsTag = getList(tag, "Explosions", 10);
         List<FireworkExplosion> explosions = new ArrayList<>();
         for (int i = 0; i < explosionsTag.size(); i++) {
@@ -1033,14 +1049,12 @@ public class ItemUtils {
     }
 
     public static ItemStack setAttributes(List<AttributeData> attributes, ItemStack stack) {
-        ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
+        List<ItemAttributeModifiers.Entry> entries = new ArrayList<>();
         for (AttributeData data : attributes) {
-            EquipmentSlotGroup group = data.getSlot() == null ? EquipmentSlotGroup.ANY
-                    : EquipmentSlotGroup.bySlot(data.getSlot());
             var holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(data.getAttribute());
-            builder.add(holder, data.getModifier(), group);
+            entries.add(new ItemAttributeModifiers.Entry(holder, data.getModifier(), data.getSlotGroup(), data.getDisplay()));
         }
-        setComponent(stack, DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
+        setComponent(stack, DataComponents.ATTRIBUTE_MODIFIERS, new ItemAttributeModifiers(entries));
         return stack;
     }
 
@@ -1217,19 +1231,17 @@ public class ItemUtils {
     }
 
     public static ItemStack setLoreComponents(ItemStack stack, List<Component> lore) {
-        if (lore == null || lore.isEmpty()) {
-            stack.remove(DataComponents.LORE);
-            return stack;
-        }
-        setComponent(stack, DataComponents.LORE, new ItemLore(lore));
-        return stack;
+        return AdventureBlockLore.writeLore(stack, lore == null ? List.of() : lore);
     }
 
     public static ItemStack setPotionInformation(ItemStack stack, PotionInformation info) {
-        Optional<Holder<Potion>> potion = Optional.of(BuiltInRegistries.POTION.wrapAsHolder(info.getMain()));
+        Optional<Holder<Potion>> potion = info.getMain() == null ? Optional.empty()
+                : Optional.of(BuiltInRegistries.POTION.wrapAsHolder(info.getMain()));
         Optional<Integer> color = info.getCustomColor().isPresent() ? Optional.of(info.getCustomColor().getAsInt())
                 : Optional.empty();
-        PotionContents contents = new PotionContents(potion, color, info.getCustomEffects(), Optional.empty());
+        PotionContents existing = getComponent(stack, DataComponents.POTION_CONTENTS);
+        PotionContents contents = new PotionContents(potion, color, info.getCustomEffects(),
+                existing == null ? Optional.empty() : existing.customName());
         setComponent(stack, DataComponents.POTION_CONTENTS, contents);
         return stack;
     }
@@ -1270,13 +1282,17 @@ public class ItemUtils {
         }
     }
 
-    public record ContainerData(ContainerSize size, NonNullList<ItemStack> stacks) {
+    public record ContainerData(ContainerSize size, NonNullList<ItemStack> stacks, boolean bundle) {
+        public ContainerData(ContainerSize size, NonNullList<ItemStack> stacks) {
+            this(size, stacks, false);
+        }
+
         public ContainerData copy() {
             NonNullList<ItemStack> stackCopy = NonNullList.withSize(stacks.size(), air());
             for (int i = 0; i < stacks.size(); i++) {
                 stackCopy.set(i, stacks.get(i).copy());
             }
-            return new ContainerData(size(), stackCopy);
+            return new ContainerData(size(), stackCopy, bundle());
         }
     }
 
@@ -1285,30 +1301,7 @@ public class ItemUtils {
     }
 
     public static ContainerSize getContainerSize(ItemStack stack) {
-        if (!(stack.getItem() instanceof BlockItem bi)) {
-            return null;
-        }
-
-        Block b = bi.getBlock();
-        if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b instanceof ChestBlock || b == Blocks.CRAFTER) {
-            return new ContainerSize(9, 3);
-        }
-        if (b == Blocks.DISPENSER || b == Blocks.DROPPER) {
-            return new ContainerSize(3, 3);
-        }
-        if (b instanceof AbstractFurnaceBlock) {
-            return new ContainerSize(1, 2);
-        }
-        if (b == Blocks.JUKEBOX || b == Blocks.DECORATED_POT) {
-            return new ContainerSize(1, 1);
-        }
-        if (b == Blocks.HOPPER) {
-            return new ContainerSize(5, 1);
-        }
-        if (b == Blocks.CHISELED_BOOKSHELF) {
-            return new ContainerSize(3, 2);
-        }
-        return null;
+        return ContainerItemData.size(stack);
     }
 
     public static void loadTagItems(ItemStack stack, ContainerData data) {
@@ -1328,7 +1321,7 @@ public class ItemUtils {
         }
 
         ListTag items = getList(blockTag, "Items", Tag.TAG_COMPOUND);
-        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createLookup();
+        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createWorldLookup();
 
         for (int i = 0; i < items.size(); i++) {
             CompoundTag item = getCompound(items, i);
@@ -1361,36 +1354,12 @@ public class ItemUtils {
             return air();
         }
 
-        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createLookup();
+        net.minecraft.core.HolderLookup.Provider registryAccess = VanillaRegistries.createWorldLookup();
         return parseStack(registryAccess, getCompound(blockTag, "RecordItem"));
     }
 
     public static ContainerData fetchContainerData(ItemStack stack) {
-        ContainerSize size = getContainerSize(stack);
-
-        if (!(size != null && stack.getItem() instanceof BlockItem bi)) {
-            return null;
-        }
-
-        NonNullList<ItemStack> stacks = NonNullList.withSize(size.sizeX() * size.sizeY(), air());
-
-        Block b = bi.getBlock();
-        ContainerData data = new ContainerData(size, stacks);
-        if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b instanceof ChestBlock
-                || b == Blocks.DISPENSER || b == Blocks.DROPPER || b instanceof AbstractFurnaceBlock
-                || b == Blocks.HOPPER || b == Blocks.CRAFTER || b == Blocks.CHISELED_BOOKSHELF
-                || b == Blocks.DECORATED_POT) {
-            ItemContainerContents contents = getComponent(stack, DataComponents.CONTAINER);
-            if (contents != null) {
-                contents.copyInto(stacks);
-            }
-        } else if (b == Blocks.JUKEBOX) {
-            data.stacks.set(0, loadCD(stack));
-        } else {
-            return null;
-        }
-
-        return data;
+        return ContainerItemData.read(stack);
     }
 
     public static ItemStack setContainerData(ItemStack stack, ContainerData data) {
@@ -1398,27 +1367,7 @@ public class ItemUtils {
     }
 
     public static ItemStack setContainerData(ItemStack stack, NonNullList<ItemStack> stacks) {
-        if (!(stack.getItem() instanceof BlockItem bi)) {
-            return stack;
-        }
-
-        Block b = bi.getBlock();
-        if (b instanceof ShulkerBoxBlock || b == Blocks.BARREL || b instanceof ChestBlock
-                || b == Blocks.DISPENSER || b == Blocks.DROPPER || b == Blocks.HOPPER
-                || b instanceof AbstractFurnaceBlock || b == Blocks.CRAFTER || b == Blocks.CHISELED_BOOKSHELF
-                || b == Blocks.DECORATED_POT) {
-            setComponent(stack, DataComponents.CONTAINER, ItemContainerContents.fromItems(stacks));
-        } else if (b == Blocks.JUKEBOX) {
-            ItemStack cd = stacks.get(0);
-            if (cd.getItem() == Items.AIR) {
-                return stack;
-            }
-            CompoundTag blockTag = getOrCreateTagElement(stack, "BlockEntityTag");
-            Tag itemTag = saveStack(cd, VanillaRegistries.createLookup());
-            blockTag.put("RecordItem", itemTag);
-            setTag(stack, getTag(stack));
-        }
-        return stack;
+        return ContainerItemData.write(stack, stacks);
     }
 
     public static <T> Identifier getRegistry(Registry<T> registry, T obj) {

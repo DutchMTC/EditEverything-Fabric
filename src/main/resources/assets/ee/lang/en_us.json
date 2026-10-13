@@ -9,6 +9,8 @@
   "key.category.ee.key.act": "Edit Everything",
   "key.categories.ee.key.ee": "Edit Everything",
   "itemGroup.ee": "Edit Everything",
+  "itemGroup.ee.saved": "Saved items",
+  "itemGroup.ee.operator": "Operator items",
 
   "gui.ee.error": "Error",
   "gui.ee.cancel": "Cancel",
@@ -135,6 +137,10 @@
   "gui.ee.modifier.meta.dataComponents.decodeError": "Decode error",
   "gui.ee.modifier.meta.dataComponents.missingValue": "Missing 'value' tag",
   "gui.ee.modifier.meta.adventure.note": "Only works for players in Adventure mode.",
+  "gui.ee.modifier.meta.adventure.lore.break.all": "Can break all blocks",
+  "gui.ee.modifier.meta.adventure.lore.break.except": "Can break all blocks except:",
+  "gui.ee.modifier.meta.adventure.lore.place.all": "Can be placed on all blocks",
+  "gui.ee.modifier.meta.adventure.lore.place.except": "Can be placed on all blocks except:",
   "gui.ee.modifier.meta.adventure.mode": "Mode",
   "gui.ee.modifier.meta.adventure.mode.only": "Only",
   "gui.ee.modifier.meta.adventure.mode.except": "Everything Except",
@@ -296,6 +302,7 @@
   "cmd.ee.error.playeronly": "This command can only be used by a player.",
   "cmd.ee.toggle.requested": "Requested",
   "cmd.ee.color.set.gui": "Open the picker",
+  "gui.ee.modifier.meta.setColor.recent": "Recent",
   "cmd.ee.argument.player.unknown": "Unknown player '%s'",
   "cmd.ee.argument.player.noconnection": "No connection!"
 }

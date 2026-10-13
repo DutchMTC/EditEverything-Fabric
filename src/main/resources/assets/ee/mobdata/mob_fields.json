@@ -2,16 +2,29 @@
   "entities": {
     "allay": {
       "feature_sets": [
-        "breedable",
-        "tameable"
+        "health",
+        "mob"
       ],
-      "fields": null,
+      "fields": [
+        {
+          "field": "DuplicationCooldown",
+          "label": "Duplication cooldown (ticks)",
+          "type": "number",
+          "help": "Ticks before this allay can duplicate again.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "Inventory",
+          "label": "Inventory",
+          "type": "inventory",
+          "slots": 1,
+          "help": "Items collected by this allay. The item it is holding is edited in Equipment."
+        }
+      ],
       "label": "Allay",
       "tags": [
-        "breedable",
         "flying",
-        "passive",
-        "tameable"
+        "passive"
       ],
       "type": "mob"
     },
@@ -24,37 +37,52 @@
     },
     "armadillo": {
       "feature_sets": [
+        "health",
+        "ageable",
         "breedable",
-        "bucket",
-        "tameable",
-        "breedable"
+        "mob"
       ],
       "fields": [
         {
           "field": "state",
           "label": "State",
+          "type": "select",
           "options": [
             {
-              "label": "idle",
+              "label": "Default",
               "value": ""
             },
             {
-              "label": "unrolling",
-              "value": "unrolling"
+              "label": "Idle",
+              "value": "idle"
             },
             {
-              "label": "scared",
+              "label": "Rolling",
+              "value": "rolling"
+            },
+            {
+              "label": "Scared",
               "value": "scared"
+            },
+            {
+              "label": "Unrolling",
+              "value": "unrolling"
             }
-          ],
-          "type": "select"
+          ]
+        },
+        {
+          "field": "scute_time",
+          "label": "Next scute (ticks)",
+          "type": "number",
+          "help": "Ticks before the next scute drop.",
+          "nbt_type": "int"
         }
       ],
       "label": "Armadillo",
       "tags": [
         "animal",
-        "breedable",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
@@ -74,10 +102,10 @@
     },
     "axolotl": {
       "feature_sets": [
+        "health",
+        "ageable",
         "breedable",
-        "bucket",
-        "tameable",
-        "breedable"
+        "mob"
       ],
       "fields": [
         {
@@ -111,24 +139,33 @@
           ],
           "type": "select"
         },
-        "#frombucket"
+        {
+          "field": "FromBucket",
+          "help": "Fish placed with buckets do not despawn naturally.",
+          "i": 12,
+          "label": "From Bucket",
+          "type": "bool"
+        }
       ],
       "label": "Axolotl",
       "tags": [
         "animal",
         "aquatic",
-        "breedable",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
     "bat": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
         {
           "field": "BatFlags",
           "help": "1 when hanging upside-down from a block, 0 when flying.",
-          "label": "BatFlags",
+          "label": "Hanging",
           "type": "bool"
         }
       ],
@@ -142,81 +179,75 @@
     },
     "bee": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "anger",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
-          "field": "Anger",
-          "help": "Time left in ticks until the bee's anger ends. If this is zero, it is not angry.",
-          "label": "Anger",
-          "max": 2000000000,
-          "min": 0,
-          "type": "number"
-        },
-        {
           "field": "HasNectar",
-          "help": "Whether it is carrying pollen.",
-          "label": "Has Nectar",
-          "type": "bool"
+          "label": "Has nectar",
+          "type": "bool",
+          "help": "Whether this bee is carrying nectar.",
+          "default": false
         },
         {
           "field": "HasStung",
-          "help": "Whether it has stung a mob or player.",
-          "label": "Has Stung",
-          "type": "bool"
+          "label": "Has stung",
+          "type": "bool",
+          "help": "A bee that has stung will eventually die.",
+          "default": false
         },
-        "#hurtby_j115",
-        "#hurtby_j116",
         {
           "field": "TicksSincePollination",
-          "help": "Number of ticks passed since its last pollination.",
-          "label": "Ticks Since Pollination",
-          "max": 2000000000,
-          "min": 0,
-          "type": "number"
+          "label": "Since pollination (ticks)",
+          "type": "number",
+          "help": "Ticks since this bee last pollinated.",
+          "nbt_type": "int"
         },
         {
           "field": "CannotEnterHiveTicks",
-          "help": "Time left in ticks until the bee can enter a beehive.",
-          "label": "Cannot Enter Hive Ticks",
-          "max": 2000000000,
-          "min": 0,
-          "type": "number"
+          "label": "Hive cooldown (ticks)",
+          "type": "number",
+          "help": "Ticks before this bee can enter a hive again.",
+          "nbt_type": "int"
         },
         {
           "field": "CropsGrownSincePollination",
-          "help": "Used to limit number of crops it can grow.",
-          "label": "Crops Grown Since Pollination",
-          "max": 2000000000,
-          "min": 0,
-          "type": "number"
+          "label": "Crops grown",
+          "type": "number",
+          "help": "Number of crops grown since the last pollination.",
+          "nbt_type": "int"
         },
         {
-          "field": "HivePos",
-          "help": "Coordinates of its hive.",
-          "label": "Hive Pos",
-          "type": "coordinates"
+          "field": "hive_pos",
+          "label": "Hive position",
+          "type": "block-position"
         },
         {
-          "field": "FlowerPos",
-          "help": "Stores coordinates of the flower it is circling.",
-          "label": "Flower Pos",
-          "type": "coordinates"
+          "field": "flower_pos",
+          "label": "Flower position",
+          "type": "block-position"
         }
       ],
       "label": "Bee",
       "tags": [
         "animal",
         "arthropod",
-        "breedable",
         "flying",
-        "neutral"
+        "neutral",
+        "breedable"
       ],
       "type": "mob"
     },
     "blaze": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Blaze",
       "tags": [
         "flying",
@@ -233,8 +264,19 @@
       "type": "common"
     },
     "bogged": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [
+        {
+          "field": "sheared",
+          "label": "Sheared",
+          "type": "bool",
+          "help": "Whether this bogged has been sheared.",
+          "default": false
+        }
+      ],
       "label": "Bogged",
       "tags": [
         "hostile",
@@ -243,8 +285,11 @@
       "type": "mob"
     },
     "breeze": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Breeze",
       "tags": [
         "flying",
@@ -261,63 +306,167 @@
     },
     "camel": {
       "feature_sets": [
+        "tameable",
+        "health",
+        "ageable",
         "breedable",
-        "tameable"
+        "mob"
       ],
       "fields": [
-        "#saddleitem",
-        "#tame",
-        "#temper",
-        "#bred",
-        "#eatinghaystack"
+        {
+          "field": "Tame",
+          "label": "Tamed",
+          "type": "bool",
+          "help": "Whether this horse-family mob is tame. Choose its owner separately.",
+          "default": false
+        },
+        {
+          "field": "Temper",
+          "label": "Temper",
+          "type": "number",
+          "help": "Higher temper makes this mob easier to tame.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 100,
+          "default": 0
+        },
+        {
+          "field": "Bred",
+          "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+          "i": 5,
+          "label": "Bred",
+          "type": "bool"
+        },
+        {
+          "field": "EatingHaystack",
+          "i": 10,
+          "label": "EatingHaystack",
+          "type": "bool"
+        },
+        {
+          "field": "LastPoseTick",
+          "label": "Last pose change (world tick)",
+          "type": "number",
+          "help": "World tick of the last sitting or standing transition.",
+          "nbt_type": "long"
+        }
       ],
       "label": "Camel",
       "tags": [
         "animal",
-        "breedable",
         "passive",
         "rideable",
+        "breedable",
         "tameable"
       ],
       "type": "mob"
     },
     "camel_husk": {
-      "feature_sets": [],
+      "feature_sets": [
+        "tameable",
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#saddleitem",
-        "#tame",
-        "#temper",
-        "#bred",
-        "#eatinghaystack"
+        {
+          "field": "Tame",
+          "label": "Tamed",
+          "type": "bool",
+          "help": "Whether this horse-family mob is tame. Choose its owner separately.",
+          "default": false
+        },
+        {
+          "field": "Temper",
+          "label": "Temper",
+          "type": "number",
+          "help": "Higher temper makes this mob easier to tame.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 100,
+          "default": 0
+        },
+        {
+          "field": "Bred",
+          "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+          "i": 5,
+          "label": "Bred",
+          "type": "bool"
+        },
+        {
+          "field": "EatingHaystack",
+          "i": 10,
+          "label": "EatingHaystack",
+          "type": "bool"
+        },
+        {
+          "field": "LastPoseTick",
+          "label": "Last pose change (world tick)",
+          "type": "number",
+          "help": "World tick of the last sitting or standing transition.",
+          "nbt_type": "long"
+        }
       ],
       "label": "Camel Husk",
       "tags": [
         "hostile",
-        "undead"
+        "undead",
+        "tameable"
       ],
       "type": "mob"
     },
     "cat": {
       "feature_sets": [
+        "tameable",
+        "health",
+        "ageable",
         "breedable",
-        "tameable"
+        "mob"
       ],
       "fields": [
-        "#cat_colors_119",
-        "#collar_color"
+        {
+          "field": "CollarColor",
+          "i": 9,
+          "label": "Collar Color",
+          "options": "#colors16",
+          "type": "select"
+        },
+        {
+          "field": "sound_variant",
+          "label": "Sound variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:cat_sound_variant"
+        },
+        {
+          "field": "variant",
+          "label": "Variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:cat_variant"
+        },
+        {
+          "field": "Sitting",
+          "label": "Sit",
+          "type": "bool",
+          "help": "Whether this tame mob has been ordered to sit.",
+          "default": false
+        }
       ],
       "label": "Cat",
       "tags": [
         "animal",
-        "breedable",
         "passive",
+        "breedable",
         "tameable"
       ],
       "type": "mob"
     },
     "cave_spider": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Cave Spider",
       "tags": [
         "arthropod",
@@ -327,43 +476,63 @@
     },
     "chicken": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
-          "field": "variant",
-          "label": "Variant (1.21.5+)",
-          "options": "#climate3",
-          "type": "select"
-        },
-        {
           "field": "IsChickenJockey",
-          "help": "If true, then the chicken can naturally despawn.",
-          "label": "Is Chicken Jockey",
-          "type": "bool"
+          "label": "Chicken jockey",
+          "type": "bool",
+          "help": "Whether this chicken is treated as part of a jockey.",
+          "default": false
         },
         {
           "field": "EggLayTime",
-          "help": "Ticks countdown until the chicken lays its egg, laying at 0. Timer resets to a new random number between 6000 and 12000.",
-          "label": "Egg Lay Time",
-          "type": "number"
+          "label": "Next egg (ticks)",
+          "type": "number",
+          "help": "Ticks before this chicken lays its next egg.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "sound_variant",
+          "label": "Sound variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:chicken_sound_variant"
+        },
+        {
+          "field": "variant",
+          "label": "Variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:chicken_variant"
         }
       ],
       "label": "Chicken",
       "tags": [
         "animal",
-        "breedable",
         "flying",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
     "cod": {
       "feature_sets": [
-        "bucket"
+        "health",
+        "mob"
       ],
       "fields": [
-        "#frombucket"
+        {
+          "field": "FromBucket",
+          "help": "Fish placed with buckets do not despawn naturally.",
+          "i": 12,
+          "label": "From Bucket",
+          "type": "bool"
+        }
       ],
       "label": "Cod",
       "tags": [
@@ -375,7 +544,10 @@
       "type": "mob"
     },
     "copper_golem": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
         {
           "field": "weather_state",
@@ -407,10 +579,10 @@
         },
         {
           "field": "next_weather_age",
-          "help": "Number of ticks until the golem's next weathering state change. (-1 is random 504000 to 552000 ticks, -2 is waxed)",
-          "label": "Next Weather Age",
-          "min": -2,
-          "type": "number"
+          "label": "Next oxidation (ticks)",
+          "type": "number",
+          "help": "Age at which this copper golem will next oxidize. -1 means no scheduled oxidation.",
+          "nbt_type": "long"
         }
       ],
       "label": "Copper Golem",
@@ -422,27 +594,47 @@
     },
     "cow": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
+          "field": "sound_variant",
+          "label": "Sound variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:cow_sound_variant"
+        },
+        {
           "field": "variant",
-          "label": "Variant (1.21.5+)",
-          "options": "#climate3",
-          "type": "select"
+          "label": "Variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:cow_variant"
         }
       ],
       "label": "Cow",
       "tags": [
         "animal",
-        "breedable",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
     "creaking": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [
+        {
+          "field": "home_pos",
+          "label": "Home position",
+          "type": "block-position"
+        }
+      ],
       "label": "Creaking",
       "tags": [
         "hostile"
@@ -450,29 +642,44 @@
       "type": "mob"
     },
     "creeper": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
         {
           "field": "powered",
           "label": "Charged",
-          "type": "bool"
+          "type": "bool",
+          "help": "Whether this creeper is charged by lightning.",
+          "default": false
         },
         {
           "field": "Fuse",
-          "label": "Fuse",
-          "placeholder": "30",
-          "type": "number"
+          "label": "Fuse (ticks)",
+          "type": "number",
+          "help": "Ticks before this creeper explodes.",
+          "nbt_type": "short",
+          "min": 0,
+          "max": 32767,
+          "default": 30
         },
         {
           "field": "ExplosionRadius",
-          "label": "ExplosionRadius",
-          "placeholder": "3",
-          "type": "number"
+          "label": "Explosion radius",
+          "type": "number",
+          "help": "Radius of this creeper's explosion.",
+          "nbt_type": "byte",
+          "min": 0,
+          "max": 127,
+          "default": 3
         },
         {
           "field": "ignited",
           "label": "Ignited",
-          "type": "bool"
+          "type": "bool",
+          "help": "Starts this creeper's explosion countdown.",
+          "default": false
         }
       ],
       "label": "Creeper",
@@ -482,39 +689,25 @@
       "type": "mob"
     },
     "dolphin": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "ageable",
+        "mob"
+      ],
       "fields": [
         {
           "field": "GotFish",
-          "help": "Dolphin got fish from a player",
-          "label": "GotFish",
-          "type": "bool"
+          "label": "Fed fish",
+          "type": "bool",
+          "help": "Whether this dolphin has been fed fish.",
+          "default": false
         },
         {
-          "field": "CanFindTreasure",
-          "help": "Dolphin can lead a player to treasure, require pos x, y, z",
-          "label": "CanFindTreasure",
-          "type": "bool"
-        },
-        {
-          "field": "TreasurePosX",
-          "help": "Coordinate destination when leading a player to treasure",
-          "label": "TreasurePosX",
-          "type": "number"
-        },
-        {
-          "field": "TreasurePosY",
-          "help": "Coordinate destination when leading a player to treasure",
-          "label": "TreasurePosY",
-          "max": 255,
-          "min": 0,
-          "type": "number"
-        },
-        {
-          "field": "TreasurePosZ",
-          "help": "Coordinate destination when leading a player to treasure",
-          "label": "TreasurePosZ",
-          "type": "number"
+          "field": "Moistness",
+          "label": "Moisture",
+          "type": "number",
+          "help": "Remaining moisture before a dolphin starts drying out.",
+          "nbt_type": "int"
         }
       ],
       "label": "Dolphin",
@@ -527,23 +720,65 @@
     },
     "donkey": {
       "feature_sets": [
+        "tameable",
+        "health",
+        "ageable",
         "breedable",
-        "tameable"
+        "mob"
       ],
       "fields": [
-        "#saddleitem",
-        "#tame",
-        "#temper",
-        "#bred",
-        "#chestedhorse",
-        "#eatinghaystack"
+        {
+          "field": "Tame",
+          "label": "Tamed",
+          "type": "bool",
+          "help": "Whether this horse-family mob is tame. Choose its owner separately.",
+          "default": false
+        },
+        {
+          "field": "Temper",
+          "label": "Temper",
+          "type": "number",
+          "help": "Higher temper makes this mob easier to tame.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 100,
+          "default": 0
+        },
+        {
+          "field": "Bred",
+          "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+          "i": 5,
+          "label": "Bred",
+          "type": "bool"
+        },
+        {
+          "field": "ChestedHorse",
+          "help": "If true the horse has a chest.",
+          "i": 8,
+          "label": "ChestedHorse",
+          "type": "bool"
+        },
+        {
+          "field": "EatingHaystack",
+          "i": 10,
+          "label": "EatingHaystack",
+          "type": "bool"
+        },
+        {
+          "field": "Items",
+          "label": "Chest contents",
+          "type": "inventory",
+          "slot_items": true,
+          "llama": false,
+          "help": "Items carried in this mob's chest. Adding contents also equips a chest."
+        }
       ],
       "label": "Donkey",
       "tags": [
         "animal",
-        "breedable",
         "passive",
         "rideable",
+        "breedable",
         "tameable"
       ],
       "type": "mob"
@@ -558,13 +793,23 @@
       "type": "projectile"
     },
     "drowned": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#isbaby",
-        "#canbreakdoors",
-        "#drownedconversiontime",
-        "#inwatertime",
-        "#spawnreinforcements"
+        {
+          "field": "IsBaby",
+          "i": 15,
+          "label": "IsBaby",
+          "type": "bool"
+        },
+        {
+          "field": "CanBreakDoors",
+          "i": 29,
+          "label": "CanBreakDoors",
+          "type": "bool"
+        }
       ],
       "label": "Drowned",
       "tags": [
@@ -581,8 +826,11 @@
       "type": "projectile"
     },
     "elder_guardian": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Elder Guardian",
       "tags": [
         "aquatic",
@@ -591,7 +839,10 @@
       "type": "mob"
     },
     "ender_dragon": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
         {
           "field": "DragonPhase",
@@ -648,6 +899,20 @@
             }
           ],
           "type": "select"
+        },
+        {
+          "field": "DragonDeathTime",
+          "label": "Death animation (ticks)",
+          "type": "number",
+          "help": "Progress of the dragon's death animation.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "sitting_damage_received",
+          "label": "Perching damage",
+          "type": "number",
+          "help": "Damage accumulated while the dragon is perched.",
+          "nbt_type": "float"
         }
       ],
       "label": "Ender Dragon",
@@ -667,13 +932,17 @@
       "type": "projectile"
     },
     "enderman": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "anger",
+        "mob"
+      ],
       "fields": [
         {
-          "field": "carriedBlockState.Name",
-          "help": "Recommended to use blocks, other items do not work.",
-          "label": "Carried Block",
-          "type": "text-autocomplete-blocks"
+          "field": "carriedBlockState",
+          "label": "Carried block",
+          "type": "block-state",
+          "help": "Block this enderman is carrying."
         }
       ],
       "label": "Enderman",
@@ -685,19 +954,17 @@
       "type": "mob"
     },
     "endermite": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
         {
           "field": "Lifetime",
-          "help": "How long the endermite has existed in ticks. Despawns when this reaches around 2400.",
-          "label": "Lifetime",
-          "type": "number"
-        },
-        {
-          "field": "PlayerSpawned",
-          "help": "Endermen attack the endermite if this value is 1",
-          "label": "PlayerSpawned",
-          "type": "bool"
+          "label": "Lifetime (ticks)",
+          "type": "number",
+          "help": "Ticks this endermite has lived. Persistence prevents its natural timed despawn.",
+          "nbt_type": "int"
         }
       ],
       "label": "Endermite",
@@ -709,10 +976,50 @@
     },
     "evoker": {
       "feature_sets": [
-        "raid"
+        "health",
+        "mob"
       ],
       "fields": [
-        "#spellticks"
+        {
+          "field": "SpellTicks",
+          "label": "Spell time (ticks)",
+          "type": "number",
+          "help": "Remaining spellcasting time.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "Wave",
+          "label": "Raid wave",
+          "type": "number",
+          "help": "Wave number assigned to this raider.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "CanJoinRaid",
+          "label": "Can join raids",
+          "type": "bool",
+          "help": "Whether this mob may join raids.",
+          "default": true
+        },
+        {
+          "field": "patrol_target",
+          "label": "Patrol target",
+          "type": "block-position"
+        },
+        {
+          "field": "PatrolLeader",
+          "label": "Patrol captain",
+          "type": "bool",
+          "help": "Whether this mob leads a patrol.",
+          "default": false
+        },
+        {
+          "field": "Patrolling",
+          "label": "Patrolling",
+          "type": "bool",
+          "help": "Whether this mob is part of a patrol.",
+          "default": false
+        }
       ],
       "label": "Evoker",
       "tags": [
@@ -795,8 +1102,10 @@
     },
     "fox": {
       "feature_sets": [
+        "health",
+        "ageable",
         "breedable",
-        "tameable"
+        "mob"
       ],
       "fields": [
         {
@@ -834,52 +1143,58 @@
           "type": "bool"
         },
         {
-          "field": "TrustedUUIDs",
-          "label": "TrustedUUIDs",
-          "type": "text",
-          "version_max": "j1.15"
-        },
-        {
           "field": "Trusted",
-          "label": "Trusted",
-          "type": "int-array",
-          "version_min": "j1.16"
+          "label": "Trusted players",
+          "type": "uuid-list",
+          "help": "Up to two players or entities this fox trusts.",
+          "max_entries": 2
         }
       ],
       "label": "Fox",
       "tags": [
         "animal",
-        "breedable",
         "passive",
-        "tameable"
+        "breedable"
       ],
       "type": "mob"
     },
     "frog": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
           "field": "variant",
           "label": "Variant",
-          "options": "#climate3",
-          "type": "select"
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:frog_variant"
         }
       ],
       "label": "Frog",
       "tags": [
         "animal",
         "aquatic",
-        "breedable",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
     "ghast": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#explosion_power"
+        {
+          "field": "ExplosionPower",
+          "label": "Explosion power",
+          "type": "number",
+          "help": "Explosion power of this ghast's fireballs.",
+          "nbt_type": "byte"
+        }
       ],
       "label": "Ghast",
       "tags": [
@@ -890,8 +1205,11 @@
       "type": "mob"
     },
     "giant": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Giant",
       "tags": [
         "hostile"
@@ -899,8 +1217,20 @@
       "type": "mob"
     },
     "glow_squid": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "ageable",
+        "mob"
+      ],
+      "fields": [
+        {
+          "field": "DarkTicksRemaining",
+          "label": "Dark time (ticks)",
+          "type": "number",
+          "help": "Ticks until this glow squid starts glowing again.",
+          "nbt_type": "int"
+        }
+      ],
       "label": "Glow Squid",
       "tags": [
         "animal",
@@ -911,27 +1241,48 @@
     },
     "goat": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
           "field": "IsScreamingGoat",
-          "help": "Java",
-          "label": "IsScreamingGoat",
-          "type": "bool"
+          "label": "Screaming goat",
+          "type": "bool",
+          "help": "Use the screaming goat behavior and sounds.",
+          "default": false
+        },
+        {
+          "field": "HasLeftHorn",
+          "label": "Left horn",
+          "type": "bool",
+          "help": "Whether this goat has its left horn.",
+          "default": true
+        },
+        {
+          "field": "HasRightHorn",
+          "label": "Right horn",
+          "type": "bool",
+          "help": "Whether this goat has its right horn.",
+          "default": true
         }
       ],
       "label": "Goat",
       "tags": [
         "animal",
-        "breedable",
-        "neutral"
+        "neutral",
+        "breedable"
       ],
       "type": "mob"
     },
     "guardian": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Guardian",
       "tags": [
         "aquatic",
@@ -940,22 +1291,50 @@
       "type": "mob"
     },
     "happy_ghast": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
+      ],
+      "fields": [
+        {
+          "field": "still_timeout",
+          "label": "Stay still (ticks)",
+          "type": "number",
+          "help": "Ticks this happy ghast remains still after a player interaction.",
+          "nbt_type": "int"
+        }
+      ],
       "label": "Happy Ghast",
       "tags": [
         "flying",
-        "rideable"
+        "rideable",
+        "breedable"
       ],
       "type": "mob"
     },
     "hoglin": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
-        "#immunezombification",
-        "#timeinoverworld",
+        {
+          "field": "IsImmuneToZombification",
+          "i": 33,
+          "label": "Immune To Zombification",
+          "type": "bool"
+        },
+        {
+          "field": "TimeInOverworld",
+          "label": "Overworld time (ticks)",
+          "type": "number",
+          "help": "Ticks spent in the Overworld before zombification.",
+          "nbt_type": "int"
+        },
         {
           "field": "CannotBeHunted",
           "help": "If true, piglins do not attack the hoglin.",
@@ -965,17 +1344,20 @@
       ],
       "label": "Hoglin",
       "tags": [
-        "breedable",
         "hostile",
         "nether",
-        "piglin"
+        "piglin",
+        "breedable"
       ],
       "type": "mob"
     },
     "horse": {
       "feature_sets": [
+        "tameable",
+        "health",
+        "ageable",
         "breedable",
-        "tameable"
+        "mob"
       ],
       "fields": [
         {
@@ -1044,37 +1426,83 @@
           "page_layout": "selectors",
           "type": "additive-matrix"
         },
-        "#saddleitem",
-        "#armoritem",
-        "#tame",
-        "#temper",
-        "#bred",
-        "#eatinghaystack",
         {
-          "field": "HorseJump",
-          "label": "HorseJump",
-          "type": "static",
-          "value": "This is an attribute under the attributes tab."
+          "field": "Tame",
+          "label": "Tamed",
+          "type": "bool",
+          "help": "Whether this horse-family mob is tame. Choose its owner separately.",
+          "default": false
+        },
+        {
+          "field": "Temper",
+          "label": "Temper",
+          "type": "number",
+          "help": "Higher temper makes this mob easier to tame.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 100,
+          "default": 0
+        },
+        {
+          "field": "Bred",
+          "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+          "i": 5,
+          "label": "Bred",
+          "type": "bool"
+        },
+        {
+          "field": "EatingHaystack",
+          "i": 10,
+          "label": "EatingHaystack",
+          "type": "bool"
         }
       ],
       "label": "Horse",
       "tags": [
         "animal",
-        "breedable",
         "passive",
         "rideable",
+        "breedable",
         "tameable"
       ],
       "type": "mob"
     },
     "husk": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#isbaby",
-        "#canbreakdoors",
-        "#drownedconversiontime",
-        "#inwatertime",
-        "#spawnreinforcements"
+        {
+          "field": "IsBaby",
+          "i": 15,
+          "label": "IsBaby",
+          "type": "bool"
+        },
+        {
+          "field": "CanBreakDoors",
+          "i": 29,
+          "label": "CanBreakDoors",
+          "type": "bool"
+        },
+        {
+          "field": "InWaterTime",
+          "label": "Underwater time (ticks)",
+          "type": "number",
+          "help": "Ticks spent underwater before drowned conversion. -1 means no exposure.",
+          "nbt_type": "int",
+          "min": -1,
+          "default": -1
+        },
+        {
+          "field": "DrownedConversionTime",
+          "label": "Zombie conversion (ticks)",
+          "type": "number",
+          "help": "Ticks until this husk converts into a zombie. -1 means not converting.",
+          "nbt_type": "int",
+          "min": -1,
+          "default": -1
+        }
       ],
       "label": "Husk",
       "tags": [
@@ -1084,9 +1512,51 @@
       "type": "mob"
     },
     "illusioner": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#spellticks"
+        {
+          "field": "SpellTicks",
+          "label": "Spell time (ticks)",
+          "type": "number",
+          "help": "Remaining spellcasting time.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "Wave",
+          "label": "Raid wave",
+          "type": "number",
+          "help": "Wave number assigned to this raider.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "CanJoinRaid",
+          "label": "Can join raids",
+          "type": "bool",
+          "help": "Whether this mob may join raids.",
+          "default": true
+        },
+        {
+          "field": "patrol_target",
+          "label": "Patrol target",
+          "type": "block-position"
+        },
+        {
+          "field": "PatrolLeader",
+          "label": "Patrol captain",
+          "type": "bool",
+          "help": "Whether this mob leads a patrol.",
+          "default": false
+        },
+        {
+          "field": "Patrolling",
+          "label": "Patrolling",
+          "type": "bool",
+          "help": "Whether this mob is part of a patrol.",
+          "default": false
+        }
       ],
       "label": "Illusioner",
       "tags": [
@@ -1095,13 +1565,18 @@
       "type": "mob"
     },
     "iron_golem": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "anger",
+        "mob"
+      ],
       "fields": [
         {
           "field": "PlayerCreated",
-          "help": "If true this golem was created by a player, and never attacks the player.",
-          "label": "PlayerCreated",
-          "type": "bool"
+          "label": "Player-created",
+          "type": "bool",
+          "help": "Whether this iron golem was created by a player.",
+          "default": false
         }
       ],
       "label": "Iron Golem",
@@ -1127,24 +1602,102 @@
     },
     "llama": {
       "feature_sets": [
+        "tameable",
+        "health",
+        "ageable",
         "breedable",
-        "tameable"
+        "mob"
       ],
       "fields": [
-        "#llama_variant",
-        "#llama_decoritem",
-        "#llama_strength",
-        "#tame",
-        "#temper",
-        "#bred",
-        "#chestedhorse",
-        "#eatinghaystack"
+        {
+          "field": "Variant",
+          "i": 16,
+          "label": "Color (Variant)",
+          "options": [
+            {
+              "label": "Random",
+              "value": ""
+            },
+            {
+              "label": "Creamy",
+              "value": "0"
+            },
+            {
+              "label": "White",
+              "value": "1"
+            },
+            {
+              "label": "Brown",
+              "value": "2"
+            },
+            {
+              "label": "Gray",
+              "value": "3"
+            }
+          ],
+          "type": "select"
+        },
+        {
+          "field": "Strength",
+          "help": "Higher numbers more carry capacify and better wolf defence.",
+          "i": 17,
+          "label": "Strength",
+          "max": "5",
+          "min": "1",
+          "type": "number",
+          "nbt_type": "int"
+        },
+        {
+          "field": "Tame",
+          "label": "Tamed",
+          "type": "bool",
+          "help": "Whether this horse-family mob is tame. Choose its owner separately.",
+          "default": false
+        },
+        {
+          "field": "Temper",
+          "label": "Temper",
+          "type": "number",
+          "help": "Higher temper makes this mob easier to tame.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 30,
+          "default": 0
+        },
+        {
+          "field": "Bred",
+          "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+          "i": 5,
+          "label": "Bred",
+          "type": "bool"
+        },
+        {
+          "field": "ChestedHorse",
+          "help": "If true the horse has a chest.",
+          "i": 8,
+          "label": "ChestedHorse",
+          "type": "bool"
+        },
+        {
+          "field": "EatingHaystack",
+          "i": 10,
+          "label": "EatingHaystack",
+          "type": "bool"
+        },
+        {
+          "field": "Items",
+          "label": "Chest contents",
+          "type": "inventory",
+          "slot_items": true,
+          "llama": true,
+          "help": "Items carried in this mob's chest. Adding contents also equips a chest."
+        }
       ],
       "label": "Llama",
       "tags": [
         "animal",
-        "breedable",
         "neutral",
+        "breedable",
         "tameable"
       ],
       "type": "mob"
@@ -1157,10 +1710,28 @@
       "type": "projectile"
     },
     "magma_cube": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#size",
-        "#wasongroung"
+        {
+          "field": "Size",
+          "label": "Size",
+          "type": "number",
+          "help": "Zero is small; one is medium; three is large. Larger values create larger cubes.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 64,
+          "default": 0
+        },
+        {
+          "field": "wasOnGround",
+          "help": "Doesn't take fall damage",
+          "i": 25,
+          "label": "wasOnGround",
+          "type": "bool"
+        }
       ],
       "label": "Magma Cube",
       "tags": [
@@ -1170,7 +1741,9 @@
       "type": "mob"
     },
     "mannequin": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health"
+      ],
       "fields": [
         {
           "field": "profile",
@@ -1340,7 +1913,10 @@
     },
     "mooshroom": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
@@ -1363,63 +1939,109 @@
           "type": "select"
         },
         {
-          "field": "EffectId",
-          "help": "Brown mooshroom only, A byte indicating the type of the status effect may give to a suspicious stew.",
-          "label": "Effect Id",
-          "type": "number"
-        },
-        {
-          "field": "EffectDuration",
-          "help": "Brown mooshroom only, How long suspicious stew effect will last.",
-          "label": "Effect Duration",
-          "type": "number"
+          "field": "stew_effects",
+          "label": "Suspicious stew effects",
+          "type": "stew-effects",
+          "help": "Effects given by the next suspicious stew milked from this mooshroom."
         }
       ],
       "label": "Mooshroom",
       "tags": [
         "animal",
-        "breedable",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
     "mule": {
       "feature_sets": [
-        "tameable"
+        "tameable",
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
-        "#saddleitem",
-        "#tame",
-        "#temper",
-        "#bred",
-        "#chestedhorse",
-        "#eatinghaystack"
+        {
+          "field": "Tame",
+          "label": "Tamed",
+          "type": "bool",
+          "help": "Whether this horse-family mob is tame. Choose its owner separately.",
+          "default": false
+        },
+        {
+          "field": "Temper",
+          "label": "Temper",
+          "type": "number",
+          "help": "Higher temper makes this mob easier to tame.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 100,
+          "default": 0
+        },
+        {
+          "field": "Bred",
+          "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+          "i": 5,
+          "label": "Bred",
+          "type": "bool"
+        },
+        {
+          "field": "ChestedHorse",
+          "help": "If true the horse has a chest.",
+          "i": 8,
+          "label": "ChestedHorse",
+          "type": "bool"
+        },
+        {
+          "field": "EatingHaystack",
+          "i": 10,
+          "label": "EatingHaystack",
+          "type": "bool"
+        },
+        {
+          "field": "Items",
+          "label": "Chest contents",
+          "type": "inventory",
+          "slot_items": true,
+          "llama": false,
+          "help": "Items carried in this mob's chest. Adding contents also equips a chest."
+        }
       ],
       "label": "Mule",
       "tags": [
         "animal",
         "passive",
         "rideable",
+        "breedable",
         "tameable"
       ],
       "type": "mob"
     },
     "nautilus": {
       "feature_sets": [
+        "tameable",
+        "health",
+        "ageable",
         "breedable",
-        "tameable"
+        "mob"
       ],
       "fields": [
-        "#saddleitem",
-        "#armornautilus"
+        {
+          "field": "Sitting",
+          "label": "Sit",
+          "type": "bool",
+          "help": "Whether this tame mob has been ordered to sit.",
+          "default": false
+        }
       ],
       "label": "Nautilus",
       "tags": [
         "animal",
         "aquatic",
-        "breedable",
         "passive",
         "rideable",
+        "breedable",
         "tameable"
       ],
       "type": "mob"
@@ -1433,8 +2055,10 @@
     },
     "ocelot": {
       "feature_sets": [
+        "health",
+        "ageable",
         "breedable",
-        "tameable"
+        "mob"
       ],
       "fields": [
         {
@@ -1447,15 +2071,17 @@
       "label": "Ocelot",
       "tags": [
         "animal",
-        "breedable",
         "passive",
-        "tameable"
+        "breedable"
       ],
       "type": "mob"
     },
     "panda": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
@@ -1474,14 +2100,17 @@
       "label": "Panda",
       "tags": [
         "animal",
-        "breedable",
-        "neutral"
+        "neutral",
+        "breedable"
       ],
       "type": "mob"
     },
     "parched": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Parched",
       "tags": [
         "hostile",
@@ -1491,7 +2120,9 @@
     },
     "parrot": {
       "feature_sets": [
-        "tameable"
+        "tameable",
+        "health",
+        "mob"
       ],
       "fields": [
         {
@@ -1526,10 +2157,11 @@
           "type": "select"
         },
         {
-          "field": "flyingSpeed",
-          "label": "flyingSpeed",
-          "type": "static",
-          "value": "This is an attribute under the attributes tab."
+          "field": "Sitting",
+          "label": "Sit",
+          "type": "bool",
+          "help": "Whether this tame mob has been ordered to sit.",
+          "default": false
         }
       ],
       "label": "Parrot",
@@ -1542,24 +2174,26 @@
       "type": "mob"
     },
     "phantom": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#size",
         {
-          "field": "AX",
-          "help": "Used with AY and AZ to set the circling location, resets when attacking player.",
-          "label": "AX",
-          "type": "number"
+          "field": "anchor_pos",
+          "label": "Flight anchor",
+          "type": "block-position",
+          "help": "Block position around which this phantom flies."
         },
         {
-          "field": "AY",
-          "label": "AY",
-          "type": "number"
-        },
-        {
-          "field": "AZ",
-          "label": "AZ",
-          "type": "number"
+          "field": "size",
+          "label": "Size",
+          "type": "number",
+          "help": "Size of this phantom.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 64,
+          "default": 0
         }
       ],
       "label": "Phantom",
@@ -1572,37 +2206,80 @@
     },
     "pig": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
-          "field": "variant",
-          "label": "Variant (1.21.5+)",
-          "options": "#climate3",
-          "type": "select"
+          "field": "sound_variant",
+          "label": "Sound variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:pig_sound_variant"
         },
-        "#saddleitem"
+        {
+          "field": "variant",
+          "label": "Variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:pig_variant"
+        }
       ],
       "label": "Pig",
       "tags": [
         "animal",
-        "breedable",
         "passive",
-        "rideable"
+        "rideable",
+        "breedable"
       ],
       "type": "mob"
     },
     "piglin": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#isbaby",
-        "#immunezombification",
-        "#timeinoverworld",
+        {
+          "field": "IsBaby",
+          "i": 15,
+          "label": "IsBaby",
+          "type": "bool"
+        },
+        {
+          "field": "IsImmuneToZombification",
+          "i": 33,
+          "label": "Immune To Zombification",
+          "type": "bool"
+        },
+        {
+          "field": "TimeInOverworld",
+          "label": "Overworld time (ticks)",
+          "type": "number",
+          "help": "Ticks spent in the Overworld before zombification.",
+          "nbt_type": "int"
+        },
         {
           "field": "CannotHunt",
           "help": "If set to true, the piglin does not attack hoglins.",
           "label": "CannotHunt",
           "type": "bool"
+        },
+        {
+          "field": "CanPickUpLoot",
+          "label": "Can pick up loot",
+          "type": "bool",
+          "help": "Whether can pick up loot is enabled.",
+          "default": false
+        },
+        {
+          "field": "Inventory",
+          "label": "Inventory",
+          "type": "inventory",
+          "slots": 8,
+          "help": "Items stored by this mob."
         }
       ],
       "label": "Piglin",
@@ -1614,15 +2291,30 @@
       "type": "mob"
     },
     "piglin_brute": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#immunezombification",
-        "#timeinoverworld",
         {
-          "field": "CannotHunt",
-          "help": "If set to true, the piglin does not attack hoglins.",
-          "label": "CannotHunt",
+          "field": "IsImmuneToZombification",
+          "i": 33,
+          "label": "Immune To Zombification",
           "type": "bool"
+        },
+        {
+          "field": "TimeInOverworld",
+          "label": "Overworld time (ticks)",
+          "type": "number",
+          "help": "Ticks spent in the Overworld before zombification.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "CanPickUpLoot",
+          "label": "Can pick up loot",
+          "type": "bool",
+          "help": "Whether can pick up loot is enabled.",
+          "default": false
         }
       ],
       "label": "Piglin Brute",
@@ -1635,9 +2327,51 @@
     },
     "pillager": {
       "feature_sets": [
-        "raid"
+        "health",
+        "mob"
       ],
-      "fields": null,
+      "fields": [
+        {
+          "field": "Wave",
+          "label": "Raid wave",
+          "type": "number",
+          "help": "Wave number assigned to this raider.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "CanJoinRaid",
+          "label": "Can join raids",
+          "type": "bool",
+          "help": "Whether this mob may join raids.",
+          "default": true
+        },
+        {
+          "field": "patrol_target",
+          "label": "Patrol target",
+          "type": "block-position"
+        },
+        {
+          "field": "PatrolLeader",
+          "label": "Patrol captain",
+          "type": "bool",
+          "help": "Whether this mob leads a patrol.",
+          "default": false
+        },
+        {
+          "field": "Patrolling",
+          "label": "Patrolling",
+          "type": "bool",
+          "help": "Whether this mob is part of a patrol.",
+          "default": false
+        },
+        {
+          "field": "Inventory",
+          "label": "Inventory",
+          "type": "inventory",
+          "slots": 5,
+          "help": "Items this pillager has collected."
+        }
+      ],
       "label": "Pillager",
       "tags": [
         "hostile",
@@ -1648,14 +2382,18 @@
     },
     "polar_bear": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "anger",
+        "ageable",
+        "breedable",
+        "mob"
       ],
-      "fields": null,
+      "fields": [],
       "label": "Polar Bear",
       "tags": [
         "animal",
-        "breedable",
-        "neutral"
+        "neutral",
+        "breedable"
       ],
       "type": "mob"
     },
@@ -1668,10 +2406,17 @@
     },
     "pufferfish": {
       "feature_sets": [
-        "bucket"
+        "health",
+        "mob"
       ],
       "fields": [
-        "#frombucket",
+        {
+          "field": "FromBucket",
+          "help": "Fish placed with buckets do not despawn naturally.",
+          "i": 12,
+          "label": "From Bucket",
+          "type": "bool"
+        },
         {
           "field": "PuffState",
           "label": "PuffState",
@@ -1707,7 +2452,10 @@
     },
     "rabbit": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
@@ -1755,41 +2503,79 @@
         },
         {
           "field": "MoreCarrotTicks",
-          "help": "Set to 40 when a carrot crop is eaten, then counts down by 0-2 every tick.",
-          "label": "MoreCarrotTicks",
-          "type": "number"
+          "label": "Carrot cooldown (ticks)",
+          "type": "number",
+          "help": "Ticks before this rabbit can raid another carrot crop.",
+          "nbt_type": "int"
         }
       ],
       "label": "Rabbit",
       "tags": [
         "animal",
-        "breedable",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
     "ravager": {
       "feature_sets": [
-        "raid"
+        "health",
+        "mob"
       ],
       "fields": [
         {
           "field": "AttackTick",
-          "help": "Attack cooldown for this ravager.",
-          "label": "AttackTick",
-          "type": "number"
+          "label": "Attack animation (ticks)",
+          "type": "number",
+          "help": "Remaining attack-animation time.",
+          "nbt_type": "int"
         },
         {
           "field": "RoarTick",
-          "help": "Roar attack cooldown for this ravager.",
-          "label": "RoarTick",
-          "type": "number"
+          "label": "Roar time (ticks)",
+          "type": "number",
+          "help": "Remaining roar time.",
+          "nbt_type": "int"
         },
         {
           "field": "StunTick",
-          "help": "Stun attack cooldown for this ravager.",
-          "label": "StunTick",
-          "type": "number"
+          "label": "Stun time (ticks)",
+          "type": "number",
+          "help": "Remaining stun time.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "Wave",
+          "label": "Raid wave",
+          "type": "number",
+          "help": "Wave number assigned to this raider.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "CanJoinRaid",
+          "label": "Can join raids",
+          "type": "bool",
+          "help": "Whether this mob may join raids.",
+          "default": true
+        },
+        {
+          "field": "patrol_target",
+          "label": "Patrol target",
+          "type": "block-position"
+        },
+        {
+          "field": "PatrolLeader",
+          "label": "Patrol captain",
+          "type": "bool",
+          "help": "Whether this mob leads a patrol.",
+          "default": false
+        },
+        {
+          "field": "Patrolling",
+          "label": "Patrolling",
+          "type": "bool",
+          "help": "Whether this mob is part of a patrol.",
+          "default": false
         }
       ],
       "label": "Ravager",
@@ -1802,10 +2588,40 @@
     },
     "salmon": {
       "feature_sets": [
-        "bucket"
+        "health",
+        "mob"
       ],
       "fields": [
-        "#frombucket"
+        {
+          "field": "FromBucket",
+          "help": "Fish placed with buckets do not despawn naturally.",
+          "i": 12,
+          "label": "From Bucket",
+          "type": "bool"
+        },
+        {
+          "field": "type",
+          "label": "Size",
+          "type": "select",
+          "options": [
+            {
+              "label": "Default",
+              "value": ""
+            },
+            {
+              "label": "Small",
+              "value": "small"
+            },
+            {
+              "label": "Medium",
+              "value": "medium"
+            },
+            {
+              "label": "Large",
+              "value": "large"
+            }
+          ]
+        }
       ],
       "label": "Salmon",
       "tags": [
@@ -1818,7 +2634,10 @@
     },
     "sheep": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
@@ -1836,13 +2655,16 @@
       "label": "Sheep",
       "tags": [
         "animal",
-        "breedable",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
     "shulker": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
         {
           "field": "Color",
@@ -1854,32 +2676,47 @@
           "field": "Peek",
           "help": "Height of the head of the shulker",
           "label": "Peek",
-          "max": 127,
+          "max": 100,
           "min": 0,
-          "type": "number"
+          "type": "number",
+          "nbt_type": "byte",
+          "default": 0
         },
         {
           "field": "AttachFace",
-          "help": "Direction of the block the shulker is attached to",
-          "label": "AttachFace",
-          "max": 127,
-          "min": -128,
-          "type": "number"
-        },
-        {
-          "field": "APX",
-          "label": "APX",
-          "type": "number"
-        },
-        {
-          "field": "APY",
-          "label": "APY",
-          "type": "number"
-        },
-        {
-          "field": "APZ",
-          "label": "APZ",
-          "type": "number"
+          "label": "Attached face",
+          "type": "select",
+          "options": [
+            {
+              "label": "Default",
+              "value": ""
+            },
+            {
+              "label": "Down",
+              "value": 0
+            },
+            {
+              "label": "Up",
+              "value": 1
+            },
+            {
+              "label": "North",
+              "value": 2
+            },
+            {
+              "label": "South",
+              "value": 3
+            },
+            {
+              "label": "West",
+              "value": 4
+            },
+            {
+              "label": "East",
+              "value": 5
+            }
+          ],
+          "help": "Face of the block this shulker attaches to."
         }
       ],
       "label": "Shulker",
@@ -1897,8 +2734,11 @@
       "type": "projectile"
     },
     "silverfish": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Silverfish",
       "tags": [
         "arthropod",
@@ -1907,8 +2747,30 @@
       "type": "mob"
     },
     "skeleton": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [
+        {
+          "field": "FreezingTime",
+          "label": "Powder snow time (ticks)",
+          "type": "number",
+          "help": "Exposure to powder snow before stray conversion.",
+          "nbt_type": "int",
+          "min": -1,
+          "default": -1
+        },
+        {
+          "field": "StrayConversionTime",
+          "label": "Stray conversion (ticks)",
+          "type": "number",
+          "help": "Remaining conversion time. -1 means not converting.",
+          "nbt_type": "int",
+          "min": -1,
+          "default": -1
+        }
+      ],
       "label": "Skeleton",
       "tags": [
         "hostile",
@@ -1918,14 +2780,42 @@
     },
     "skeleton_horse": {
       "feature_sets": [
-        "tameable"
+        "tameable",
+        "health",
+        "ageable",
+        "mob"
       ],
       "fields": [
-        "#saddleitem",
-        "#tame",
-        "#temper",
-        "#bred",
-        "#eatinghaystack",
+        {
+          "field": "Tame",
+          "label": "Tamed",
+          "type": "bool",
+          "help": "Whether this horse-family mob is tame. Choose its owner separately.",
+          "default": false
+        },
+        {
+          "field": "Temper",
+          "label": "Temper",
+          "type": "number",
+          "help": "Higher temper makes this mob easier to tame.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 100,
+          "default": 0
+        },
+        {
+          "field": "Bred",
+          "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+          "i": 5,
+          "label": "Bred",
+          "type": "bool"
+        },
+        {
+          "field": "EatingHaystack",
+          "i": 10,
+          "label": "EatingHaystack",
+          "type": "bool"
+        },
         {
           "field": "SkeletonTrap",
           "help": "If true than horse is a trapped, see SkeletonTrapTime",
@@ -1934,26 +2824,44 @@
         },
         {
           "field": "SkeletonTrapTime",
-          "help": "Incremented each tick when SkeletonTrap is set to 1. The horse despawns when it reaches 18000 (15 minutes).",
-          "label": "SkeletonTrapTime",
-          "min": "0",
-          "type": "number"
+          "label": "Trap age (ticks)",
+          "type": "number",
+          "help": "Time this skeleton horse trap has existed.",
+          "nbt_type": "int"
         }
       ],
       "label": "Skeleton Horse",
       "tags": [
         "passive",
         "rideable",
-        "tameable",
-        "undead"
+        "undead",
+        "tameable"
       ],
       "type": "mob"
     },
     "slime": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#size",
-        "#wasongroung"
+        {
+          "field": "Size",
+          "label": "Size",
+          "type": "number",
+          "help": "Zero is small; one is medium; three is large. Larger values create larger cubes.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 64,
+          "default": 0
+        },
+        {
+          "field": "wasOnGround",
+          "help": "Doesn't take fall damage",
+          "i": 25,
+          "label": "wasOnGround",
+          "type": "bool"
+        }
       ],
       "label": "Slime",
       "tags": [
@@ -1962,10 +2870,29 @@
       "type": "mob"
     },
     "sulfur_cube": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "ageable",
+        "mob"
+      ],
       "fields": [
-        "#size",
-        "#wasongroung",
+        {
+          "field": "Size",
+          "label": "Size",
+          "type": "number",
+          "help": "Zero is small; one is medium; three is large. Larger values create larger cubes.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 64,
+          "default": 0
+        },
+        {
+          "field": "wasOnGround",
+          "help": "Doesn't take fall damage",
+          "i": 25,
+          "label": "wasOnGround",
+          "type": "bool"
+        },
         {
           "field": "from_bucket",
           "help": "Sulfur cubes placed from buckets do not despawn naturally.",
@@ -1977,28 +2904,32 @@
           "help": "Ticks before the sulfur cube can be picked up with a bucket again.",
           "label": "Pickup Timer",
           "min": 0,
-          "type": "number"
+          "type": "number",
+          "nbt_type": "int"
         },
         {
           "field": "fuse",
           "help": "Ticks until an absorbed explosive block detonates. -1 means not primed.",
           "label": "Fuse",
           "min": -1,
-          "type": "number"
+          "type": "number",
+          "nbt_type": "int",
+          "default": -1
         },
         {
           "field": "equipment.body.id",
-          "help": "Block absorbed inside the sulfur cube, stored as body equipment.",
-          "label": "Absorbed Block",
-          "type": "text-autocomplete-blocks"
+          "label": "Absorbed block",
+          "type": "text-autocomplete-blocks",
+          "help": "Block absorbed inside this sulfur cube."
         },
         {
           "field": "equipment.body.count",
-          "help": "Item count for the absorbed block stack.",
-          "label": "Absorbed Block Count",
+          "label": "Absorbed block count",
+          "type": "number",
+          "nbt_type": "int",
           "min": 1,
-          "placeholder": "1",
-          "type": "number"
+          "max": 99,
+          "default": 1
         }
       ],
       "label": "Sulfur Cube",
@@ -2018,37 +2949,31 @@
     },
     "sniffer": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
-      "fields": null,
+      "fields": [],
       "label": "Sniffer",
       "tags": [
-        "breedable",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
     "snow_golem": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
         {
           "field": "Pumpkin",
-          "label": "Pumpkin",
-          "options": [
-            {
-              "label": "Default (pumpkin)",
-              "value": ""
-            },
-            {
-              "label": "No Pumpkin",
-              "value": 0
-            },
-            {
-              "label": "Pumpkin",
-              "value": 1
-            }
-          ],
-          "type": "select"
+          "label": "Pumpkin head",
+          "type": "bool",
+          "help": "Whether this snow golem is wearing its pumpkin.",
+          "default": true
         }
       ],
       "label": "Snow Golem",
@@ -2066,8 +2991,11 @@
       "type": "projectile"
     },
     "spider": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Spider",
       "tags": [
         "arthropod",
@@ -2076,8 +3004,12 @@
       "type": "mob"
     },
     "squid": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "ageable",
+        "mob"
+      ],
+      "fields": [],
       "label": "Squid",
       "tags": [
         "animal",
@@ -2087,8 +3019,11 @@
       "type": "mob"
     },
     "stray": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Stray",
       "tags": [
         "hostile",
@@ -2098,26 +3033,50 @@
     },
     "strider": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
-      "fields": [
-        "#saddleitem"
-      ],
+      "fields": [],
       "label": "Strider",
       "tags": [
-        "breedable",
         "nether",
         "passive",
-        "rideable"
+        "rideable",
+        "breedable"
       ],
       "type": "mob"
     },
     "tadpole": {
       "feature_sets": [
-        "bucket"
+        "health",
+        "mob"
       ],
       "fields": [
-        "#frombucket"
+        {
+          "field": "Age",
+          "label": "Age (ticks)",
+          "type": "number",
+          "nbt_type": "int",
+          "min": 0,
+          "default": 0,
+          "help": "Ticks this tadpole has grown. It becomes a frog at 24000 ticks unless aging is stopped."
+        },
+        {
+          "field": "FromBucket",
+          "help": "Fish placed with buckets do not despawn naturally.",
+          "i": 12,
+          "label": "From Bucket",
+          "type": "bool"
+        },
+        {
+          "field": "AgeLocked",
+          "label": "Stop aging",
+          "type": "bool",
+          "help": "Prevents this tadpole from growing into a frog.",
+          "default": false
+        }
       ],
       "label": "Tadpole",
       "tags": [
@@ -2150,41 +3109,131 @@
     },
     "trader_llama": {
       "feature_sets": [
-        "tameable"
+        "tameable",
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
-        "#llama_variant",
-        "#llama_strength",
-        "#tame",
-        "#temper",
-        "#bred",
-        "#chestedhorse",
-        "#eatinghaystack",
+        {
+          "field": "Variant",
+          "i": 16,
+          "label": "Color (Variant)",
+          "options": [
+            {
+              "label": "Random",
+              "value": ""
+            },
+            {
+              "label": "Creamy",
+              "value": "0"
+            },
+            {
+              "label": "White",
+              "value": "1"
+            },
+            {
+              "label": "Brown",
+              "value": "2"
+            },
+            {
+              "label": "Gray",
+              "value": "3"
+            }
+          ],
+          "type": "select"
+        },
+        {
+          "field": "Strength",
+          "help": "Higher numbers more carry capacify and better wolf defence.",
+          "i": 17,
+          "label": "Strength",
+          "max": "5",
+          "min": "1",
+          "type": "number",
+          "nbt_type": "int"
+        },
+        {
+          "field": "Tame",
+          "label": "Tamed",
+          "type": "bool",
+          "help": "Whether this horse-family mob is tame. Choose its owner separately.",
+          "default": false
+        },
+        {
+          "field": "Temper",
+          "label": "Temper",
+          "type": "number",
+          "help": "Higher temper makes this mob easier to tame.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 30,
+          "default": 0
+        },
+        {
+          "field": "Bred",
+          "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+          "i": 5,
+          "label": "Bred",
+          "type": "bool"
+        },
+        {
+          "field": "ChestedHorse",
+          "help": "If true the horse has a chest.",
+          "i": 8,
+          "label": "ChestedHorse",
+          "type": "bool"
+        },
+        {
+          "field": "EatingHaystack",
+          "i": 10,
+          "label": "EatingHaystack",
+          "type": "bool"
+        },
         {
           "field": "DespawnDelay",
-          "help": " A timer for trader llamas to despawn.",
-          "label": "Despawn Delay",
-          "type": "number"
+          "label": "Despawn time (ticks)",
+          "type": "number",
+          "help": "Ticks until this wandering trader or trader llama despawns.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "Items",
+          "label": "Chest contents",
+          "type": "inventory",
+          "slot_items": true,
+          "llama": true,
+          "help": "Items carried in this mob's chest. Adding contents also equips a chest."
         }
       ],
       "label": "Trader Llama",
       "tags": [
         "animal",
+        "breedable",
         "tameable"
       ],
       "type": "mob"
     },
     "tropical_fish": {
       "feature_sets": [
-        "bucket"
+        "health",
+        "mob"
       ],
       "fields": [
-        "#frombucket",
+        {
+          "field": "FromBucket",
+          "help": "Fish placed with buckets do not despawn naturally.",
+          "i": 12,
+          "label": "From Bucket",
+          "type": "bool"
+        },
         {
           "field": "Variant",
           "label": "Variant",
           "max": "235799809",
-          "type": "number"
+          "type": "number",
+          "nbt_type": "int"
         }
       ],
       "label": "Tropical Fish",
@@ -2198,83 +3247,60 @@
     },
     "turtle": {
       "feature_sets": [
-        "breedable"
+        "health",
+        "ageable",
+        "breedable",
+        "mob"
       ],
       "fields": [
         {
-          "field": "HasEgg",
-          "label": "HasEgg",
-          "type": "bool"
+          "field": "home_pos",
+          "label": "Home beach",
+          "type": "block-position",
+          "help": "Beach where this turtle returns to lay eggs."
         },
         {
-          "field": "HomePosX",
-          "label": "HomePosX",
-          "type": "number"
-        },
-        {
-          "field": "HomePosY",
-          "label": "HomePosY",
-          "max": 255,
-          "min": 0,
-          "type": "number"
-        },
-        {
-          "field": "HomePosZ",
-          "label": "HomePosZ",
-          "type": "number"
-        },
-        {
-          "field": "TravelPosX",
-          "label": "TravelPosX",
-          "type": "number"
-        },
-        {
-          "field": "TravelPosY",
-          "label": "TravelPosY",
-          "max": 255,
-          "min": 0,
-          "type": "number"
-        },
-        {
-          "field": "TravelPosZ",
-          "label": "TravelPosZ",
-          "type": "number"
+          "field": "has_egg",
+          "label": "Has egg",
+          "type": "bool",
+          "help": "Whether this turtle is ready to lay eggs.",
+          "default": false
         }
       ],
       "label": "Turtle",
       "tags": [
         "animal",
         "aquatic",
-        "breedable",
-        "passive"
+        "passive",
+        "breedable"
       ],
       "type": "mob"
     },
     "vex": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
         {
-          "field": "BoundX",
-          "help": "Wanders within a 15×11×15 cuboid range centered at coordinates X,Y,Z ",
-          "label": "BoundX",
-          "type": "number"
+          "field": "bound_pos",
+          "label": "Bound position",
+          "type": "block-position"
         },
         {
-          "field": "BoundY",
-          "label": "BoundY",
-          "type": "number"
+          "field": "life_ticks",
+          "label": "Lifetime (ticks)",
+          "type": "number",
+          "help": "Ticks before this summoned vex starts taking lifetime damage.",
+          "nbt_type": "int",
+          "min": 0
         },
         {
-          "field": "BoundZ",
-          "label": "BoundZ",
-          "type": "number"
-        },
-        {
-          "field": "LifeTicks",
-          "help": " Ticks of life remaining, decreasing by 1 per tick. On reaching zero, the vex takes damage and LifeTicks is set to 20.",
-          "label": "LifeTicks",
-          "min": "1",
-          "type": "number"
+          "field": "owner",
+          "label": "Owner mob",
+          "type": "uuid",
+          "mob_reference": true,
+          "help": "Mob that summoned this vex. Choose a nearby mob or enter its UUID."
         }
       ],
       "label": "Vex",
@@ -2287,17 +3313,211 @@
     },
     "villager": {
       "feature_sets": [
-        "breedable",
-        "trader"
+        "health",
+        "ageable",
+        "trader",
+        "mob"
       ],
       "fields": [
-        "#villager_type",
-        "#villager_profession",
-        "#villager_level"
+        {
+          "field": "VillagerData.type",
+          "i": 28,
+          "label": "Biome Type",
+          "options": [
+            {
+              "label": "Desert",
+              "value": "desert"
+            },
+            {
+              "label": "Jungle",
+              "value": "jungle"
+            },
+            {
+              "label": "Plains",
+              "value": "plains"
+            },
+            {
+              "label": "Savanna",
+              "value": "savanna"
+            },
+            {
+              "label": "Snow",
+              "value": "snow"
+            },
+            {
+              "label": "Swamp",
+              "value": "swamp"
+            },
+            {
+              "label": "Taiga",
+              "value": "taiga"
+            }
+          ],
+          "type": "select",
+          "value": "plains"
+        },
+        {
+          "field": "VillagerData.profession",
+          "i": 26,
+          "label": "Profession",
+          "options": [
+            {
+              "label": "Armorer",
+              "value": "armorer"
+            },
+            {
+              "label": "Butcher",
+              "value": "butcher"
+            },
+            {
+              "label": "Cartographer",
+              "value": "cartographer"
+            },
+            {
+              "label": "Cleric",
+              "value": "cleric"
+            },
+            {
+              "label": "Farmer",
+              "value": "farmer"
+            },
+            {
+              "label": "Fisherman",
+              "value": "fisherman"
+            },
+            {
+              "label": "Fletcher",
+              "value": "fletcher"
+            },
+            {
+              "label": "Leatherworker",
+              "value": "leatherworker"
+            },
+            {
+              "label": "Librarian",
+              "value": "librarian"
+            },
+            {
+              "label": "Mason",
+              "value": "mason"
+            },
+            {
+              "label": "Nitwit",
+              "value": "nitwit"
+            },
+            {
+              "label": "Shepherd",
+              "value": "shepherd"
+            },
+            {
+              "label": "Toolsmith",
+              "value": "toolsmith"
+            },
+            {
+              "label": "Weaponsmith",
+              "value": "weaponsmith"
+            }
+          ],
+          "type": "select",
+          "value": "farmer"
+        },
+        {
+          "field": "VillagerData.level",
+          "i": 27,
+          "label": "Level",
+          "options": [
+            {
+              "label": "Novice",
+              "value": "1"
+            },
+            {
+              "label": "Apprentice",
+              "value": "2"
+            },
+            {
+              "label": "Journeyman",
+              "value": "3"
+            },
+            {
+              "label": "Expert",
+              "value": "4"
+            },
+            {
+              "label": "Master",
+              "value": "5"
+            },
+            {
+              "label": "No Default Trades",
+              "value": "99"
+            }
+          ],
+          "type": "select",
+          "value": "2"
+        },
+        {
+          "field": "VillagerDataFinalized",
+          "label": "Keep villager appearance",
+          "type": "bool",
+          "help": "Prevents spawn initialization from choosing a different villager biome.",
+          "default": false
+        },
+        {
+          "field": "FoodLevel",
+          "label": "Food level",
+          "type": "number",
+          "help": "Food this villager has available for breeding.",
+          "nbt_type": "byte",
+          "min": 0,
+          "max": 127,
+          "default": 0
+        },
+        {
+          "field": "Xp",
+          "label": "Experience",
+          "type": "number",
+          "help": "Villager experience used for leveling.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "LastRestock",
+          "label": "Last restock (world tick)",
+          "type": "number",
+          "help": "World tick of the last trade restock.",
+          "nbt_type": "long"
+        },
+        {
+          "field": "LastGossipDecay",
+          "label": "Last gossip decay (world tick)",
+          "type": "number",
+          "help": "World tick when reputation last decayed.",
+          "nbt_type": "long"
+        },
+        {
+          "field": "RestocksToday",
+          "label": "Restocks today",
+          "type": "number",
+          "help": "How many times this villager has restocked today.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 2,
+          "default": 0
+        },
+        {
+          "field": "Gossips",
+          "label": "Player reputation",
+          "type": "gossip",
+          "help": "Reputation this villager has for each player."
+        },
+        {
+          "field": "Inventory",
+          "label": "Inventory",
+          "type": "inventory",
+          "slots": 8,
+          "help": "Items stored by this mob."
+        }
       ],
       "label": "Villager",
       "tags": [
-        "breedable",
         "passive",
         "trader",
         "villager"
@@ -2306,14 +3526,49 @@
     },
     "vindicator": {
       "feature_sets": [
-        "raid"
+        "health",
+        "mob"
       ],
       "fields": [
         {
           "field": "Johnny",
-          "help": "Enables Johhny behaviour",
-          "label": "Johnny",
-          "type": "bool"
+          "label": "Johnny behavior",
+          "type": "bool",
+          "help": "Makes this vindicator attack most other mobs.",
+          "default": false
+        },
+        {
+          "field": "Wave",
+          "label": "Raid wave",
+          "type": "number",
+          "help": "Wave number assigned to this raider.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "CanJoinRaid",
+          "label": "Can join raids",
+          "type": "bool",
+          "help": "Whether this mob may join raids.",
+          "default": true
+        },
+        {
+          "field": "patrol_target",
+          "label": "Patrol target",
+          "type": "block-position"
+        },
+        {
+          "field": "PatrolLeader",
+          "label": "Patrol captain",
+          "type": "bool",
+          "help": "Whether this mob leads a patrol.",
+          "default": false
+        },
+        {
+          "field": "Patrolling",
+          "label": "Patrolling",
+          "type": "bool",
+          "help": "Whether this mob is part of a patrol.",
+          "default": false
         }
       ],
       "label": "Vindicator",
@@ -2326,32 +3581,29 @@
     },
     "wandering_trader": {
       "feature_sets": [
-        "trader"
+        "health",
+        "ageable",
+        "mob"
       ],
       "fields": [
         {
           "field": "DespawnDelay",
-          "help": "A timer for trader to despawn.",
-          "label": "Despawn Delay",
-          "type": "number"
+          "label": "Despawn time (ticks)",
+          "type": "number",
+          "help": "Ticks until this wandering trader or trader llama despawns.",
+          "nbt_type": "int"
         },
         {
-          "field": "WanderTarget.X",
-          "help": "Destination toward where this trader wanders.",
-          "label": "WanderTarget X",
-          "type": "number"
+          "field": "wander_target",
+          "label": "Wander target",
+          "type": "block-position"
         },
         {
-          "field": "WanderTarget.Y",
-          "help": "Destination toward where this trader wanders.",
-          "label": "WanderTarget Y",
-          "type": "number"
-        },
-        {
-          "field": "WanderTarget.Z",
-          "help": "Destination toward where this trader wanders.",
-          "label": "WanderTarget Z",
-          "type": "number"
+          "field": "Inventory",
+          "label": "Inventory",
+          "type": "inventory",
+          "slots": 8,
+          "help": "Items stored by this mob."
         }
       ],
       "label": "Wandering Trader",
@@ -2363,8 +3615,18 @@
       "type": "mob"
     },
     "warden": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [
+        {
+          "field": "anger.suspects",
+          "label": "Anger targets",
+          "type": "anger-suspects",
+          "help": "Targets this warden is angry with, and its anger toward each target."
+        }
+      ],
       "label": "Warden",
       "tags": [
         "hostile"
@@ -2380,9 +3642,44 @@
     },
     "witch": {
       "feature_sets": [
-        "raid"
+        "health",
+        "mob"
       ],
-      "fields": null,
+      "fields": [
+        {
+          "field": "Wave",
+          "label": "Raid wave",
+          "type": "number",
+          "help": "Wave number assigned to this raider.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "CanJoinRaid",
+          "label": "Can join raids",
+          "type": "bool",
+          "help": "Whether this mob may join raids.",
+          "default": true
+        },
+        {
+          "field": "patrol_target",
+          "label": "Patrol target",
+          "type": "block-position"
+        },
+        {
+          "field": "PatrolLeader",
+          "label": "Patrol captain",
+          "type": "bool",
+          "help": "Whether this mob leads a patrol.",
+          "default": false
+        },
+        {
+          "field": "Patrolling",
+          "label": "Patrolling",
+          "type": "bool",
+          "help": "Whether this mob is part of a patrol.",
+          "default": false
+        }
+      ],
       "label": "Witch",
       "tags": [
         "hostile",
@@ -2392,14 +3689,18 @@
       "type": "mob"
     },
     "wither": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
         {
           "field": "Invul",
           "help": "Ticks of invulnerability left, Countsdown to zero.",
           "label": "Invulnerability",
           "min": 0,
-          "type": "number"
+          "type": "number",
+          "nbt_type": "int"
         }
       ],
       "label": "Wither",
@@ -2412,8 +3713,11 @@
       "type": "mob"
     },
     "wither_skeleton": {
-      "feature_sets": [],
-      "fields": null,
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
+      "fields": [],
       "label": "Wither Skeleton",
       "tags": [
         "hostile",
@@ -2431,88 +3735,64 @@
     },
     "wolf": {
       "feature_sets": [
+        "tameable",
+        "health",
+        "anger",
+        "ageable",
         "breedable",
-        "tameable"
+        "mob"
       ],
       "fields": [
         {
-          "field": "variant",
-          "label": "Variant (1.20.5+)",
-          "options": [
-            {
-              "label": "Default",
-              "value": ""
-            },
-            {
-              "label": "Ashen",
-              "value": "ashen"
-            },
-            {
-              "label": "Black",
-              "value": "black"
-            },
-            {
-              "label": "Chestnut",
-              "value": "chestnut"
-            },
-            {
-              "label": "Pale",
-              "value": "pale"
-            },
-            {
-              "label": "Rusty",
-              "value": "rusty"
-            },
-            {
-              "label": "Snowy",
-              "value": "snowy"
-            },
-            {
-              "label": "Spotted",
-              "value": "spotted"
-            },
-            {
-              "label": "Striped",
-              "value": "striped"
-            },
-            {
-              "label": "Woods",
-              "value": "woods"
-            }
-          ],
+          "field": "CollarColor",
+          "i": 9,
+          "label": "Collar Color",
+          "options": "#colors16",
           "type": "select"
-        },
-        "#collar_color",
-        {
-          "field": "ux.equipment.body",
-          "label": "Armor (1.20.5+)",
-          "type": "checkbox",
-          "value": "{\"id\":\"wolf_armor\"}"
-        },
-        {
-          "field": "Angry",
-          "label": "Angry",
-          "type": "bool"
         },
         {
           "field": "Sitting",
-          "label": "Sitting",
-          "type": "bool"
+          "label": "Sit",
+          "type": "bool",
+          "help": "Whether this tame mob has been ordered to sit.",
+          "default": false
+        },
+        {
+          "field": "sound_variant",
+          "label": "Sound variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:wolf_sound_variant"
+        },
+        {
+          "field": "variant",
+          "label": "Variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:wolf_variant"
         }
       ],
       "label": "Wolf",
       "tags": [
         "animal",
-        "breedable",
         "neutral",
+        "breedable",
         "tameable"
       ],
       "type": "mob"
     },
     "zoglin": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#isbaby"
+        {
+          "field": "IsBaby",
+          "i": 15,
+          "label": "IsBaby",
+          "type": "bool"
+        }
       ],
       "label": "Zoglin",
       "tags": [
@@ -2524,13 +3804,41 @@
       "type": "mob"
     },
     "zombie": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#isbaby",
-        "#canbreakdoors",
-        "#drownedconversiontime",
-        "#inwatertime",
-        "#spawnreinforcements"
+        {
+          "field": "IsBaby",
+          "i": 15,
+          "label": "IsBaby",
+          "type": "bool"
+        },
+        {
+          "field": "CanBreakDoors",
+          "i": 29,
+          "label": "CanBreakDoors",
+          "type": "bool"
+        },
+        {
+          "field": "InWaterTime",
+          "label": "Underwater time (ticks)",
+          "type": "number",
+          "help": "Ticks spent underwater before drowned conversion. -1 means no exposure.",
+          "nbt_type": "int",
+          "min": -1,
+          "default": -1
+        },
+        {
+          "field": "DrownedConversionTime",
+          "label": "Drowned conversion (ticks)",
+          "type": "number",
+          "help": "Remaining conversion time. -1 means not converting.",
+          "nbt_type": "int",
+          "min": -1,
+          "default": -1
+        }
       ],
       "label": "Zombie",
       "tags": [
@@ -2540,45 +3848,274 @@
       "type": "mob"
     },
     "zombie_horse": {
-      "feature_sets": [],
+      "feature_sets": [
+        "tameable",
+        "health",
+        "ageable",
+        "mob"
+      ],
       "fields": [
-        "#saddleitem",
-        "#tame",
-        "#temper",
-        "#bred",
-        "#eatinghaystack"
+        {
+          "field": "Tame",
+          "label": "Tamed",
+          "type": "bool",
+          "help": "Whether this horse-family mob is tame. Choose its owner separately.",
+          "default": false
+        },
+        {
+          "field": "Temper",
+          "label": "Temper",
+          "type": "number",
+          "help": "Higher temper makes this mob easier to tame.",
+          "nbt_type": "int",
+          "min": 0,
+          "max": 100,
+          "default": 0
+        },
+        {
+          "field": "Bred",
+          "help": "If true mob stays near other horses set the same. Remains 0 after breeding.",
+          "i": 5,
+          "label": "Bred",
+          "type": "bool"
+        },
+        {
+          "field": "EatingHaystack",
+          "i": 10,
+          "label": "EatingHaystack",
+          "type": "bool"
+        }
       ],
       "label": "Zombie Horse",
       "tags": [
         "neutral",
-        "undead"
+        "undead",
+        "tameable"
       ],
       "type": "mob"
     },
     "zombie_nautilus": {
-      "feature_sets": [],
+      "feature_sets": [
+        "tameable",
+        "health",
+        "mob"
+      ],
       "fields": [
-        "#saddleitem",
-        "#armornautilus"
+        {
+          "field": "variant",
+          "label": "Variant",
+          "type": "registry",
+          "help": "Choose from the variants registered by Minecraft and this world's data packs.",
+          "registry": "minecraft:zombie_nautilus_variant"
+        },
+        {
+          "field": "Sitting",
+          "label": "Sit",
+          "type": "bool",
+          "help": "Whether this tame mob has been ordered to sit.",
+          "default": false
+        }
       ],
       "label": "Zombie Nautilus",
       "tags": [
         "aquatic",
         "neutral",
-        "undead"
+        "undead",
+        "tameable"
       ],
       "type": "mob"
     },
     "zombie_villager": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "trader",
+        "mob"
+      ],
       "fields": [
-        "#villager_type",
-        "#villager_profession",
-        "#villager_level",
-        "#isbaby",
-        "#canbreakdoors",
-        "#drownedconversiontime",
-        "#inwatertime"
+        {
+          "field": "VillagerData.type",
+          "i": 28,
+          "label": "Biome Type",
+          "options": [
+            {
+              "label": "Desert",
+              "value": "desert"
+            },
+            {
+              "label": "Jungle",
+              "value": "jungle"
+            },
+            {
+              "label": "Plains",
+              "value": "plains"
+            },
+            {
+              "label": "Savanna",
+              "value": "savanna"
+            },
+            {
+              "label": "Snow",
+              "value": "snow"
+            },
+            {
+              "label": "Swamp",
+              "value": "swamp"
+            },
+            {
+              "label": "Taiga",
+              "value": "taiga"
+            }
+          ],
+          "type": "select",
+          "value": "plains"
+        },
+        {
+          "field": "VillagerData.profession",
+          "i": 26,
+          "label": "Profession",
+          "options": [
+            {
+              "label": "Armorer",
+              "value": "armorer"
+            },
+            {
+              "label": "Butcher",
+              "value": "butcher"
+            },
+            {
+              "label": "Cartographer",
+              "value": "cartographer"
+            },
+            {
+              "label": "Cleric",
+              "value": "cleric"
+            },
+            {
+              "label": "Farmer",
+              "value": "farmer"
+            },
+            {
+              "label": "Fisherman",
+              "value": "fisherman"
+            },
+            {
+              "label": "Fletcher",
+              "value": "fletcher"
+            },
+            {
+              "label": "Leatherworker",
+              "value": "leatherworker"
+            },
+            {
+              "label": "Librarian",
+              "value": "librarian"
+            },
+            {
+              "label": "Mason",
+              "value": "mason"
+            },
+            {
+              "label": "Nitwit",
+              "value": "nitwit"
+            },
+            {
+              "label": "Shepherd",
+              "value": "shepherd"
+            },
+            {
+              "label": "Toolsmith",
+              "value": "toolsmith"
+            },
+            {
+              "label": "Weaponsmith",
+              "value": "weaponsmith"
+            }
+          ],
+          "type": "select",
+          "value": "farmer"
+        },
+        {
+          "field": "VillagerData.level",
+          "i": 27,
+          "label": "Level",
+          "options": [
+            {
+              "label": "Novice",
+              "value": "1"
+            },
+            {
+              "label": "Apprentice",
+              "value": "2"
+            },
+            {
+              "label": "Journeyman",
+              "value": "3"
+            },
+            {
+              "label": "Expert",
+              "value": "4"
+            },
+            {
+              "label": "Master",
+              "value": "5"
+            },
+            {
+              "label": "No Default Trades",
+              "value": "99"
+            }
+          ],
+          "type": "select",
+          "value": "2"
+        },
+        {
+          "field": "IsBaby",
+          "i": 15,
+          "label": "IsBaby",
+          "type": "bool"
+        },
+        {
+          "field": "CanBreakDoors",
+          "i": 29,
+          "label": "CanBreakDoors",
+          "type": "bool"
+        },
+        {
+          "field": "VillagerDataFinalized",
+          "label": "Keep villager appearance",
+          "type": "bool",
+          "help": "Prevents spawn initialization from choosing a different villager biome.",
+          "default": false
+        },
+        {
+          "field": "ConversionTime",
+          "label": "Cure time (ticks)",
+          "type": "number",
+          "help": "Ticks remaining before curing. -1 means this zombie villager is not being cured.",
+          "nbt_type": "int",
+          "min": -1,
+          "max": 2147483647,
+          "default": -1
+        },
+        {
+          "field": "Xp",
+          "label": "Experience",
+          "type": "number",
+          "help": "Villager experience used for leveling.",
+          "nbt_type": "int"
+        },
+        {
+          "field": "Gossips",
+          "label": "Player reputation",
+          "type": "gossip",
+          "help": "Player reputation retained when this zombie villager is cured."
+        },
+        {
+          "field": "ConversionPlayer",
+          "label": "Curing player",
+          "type": "uuid",
+          "help": "Player credited for curing this zombie villager.",
+          "requires_nonnegative": "ConversionTime"
+        }
       ],
       "label": "Zombie Villager",
       "tags": [
@@ -2589,24 +4126,23 @@
       "type": "mob"
     },
     "zombified_piglin": {
-      "feature_sets": [],
+      "feature_sets": [
+        "health",
+        "anger",
+        "mob"
+      ],
       "fields": [
-        "#isbaby",
-        "#canbreakdoors",
-        "#drownedconversiontime",
-        "#inwatertime",
-        "#spawnreinforcements",
         {
-          "field": "AngerTime",
-          "help": "Counts down to 0",
-          "label": "AngerTime",
-          "type": "number"
+          "field": "IsBaby",
+          "i": 15,
+          "label": "IsBaby",
+          "type": "bool"
         },
         {
-          "field": "AngryAt",
-          "help": "The UUID of the mob is angry at",
-          "label": "AngryAt",
-          "type": "int-array"
+          "field": "CanBreakDoors",
+          "i": 29,
+          "label": "CanBreakDoors",
+          "type": "bool"
         }
       ],
       "label": "Zombified Piglin",
@@ -2973,6 +4509,13 @@
       "label": "InWaterTime",
       "type": "number"
     },
+    "invulnerable_time": {
+      "field": "invulnerable_time",
+      "help": "Ticks remaining until this entity is no longer temporarily invulnerable.",
+      "label": "Invulnerable Time",
+      "min": 0,
+      "type": "number"
+    },
     "isbaby": {
       "field": "IsBaby",
       "i": 15,
@@ -3332,7 +4875,125 @@
       "i": 25,
       "label": "wasOnGround",
       "type": "bool"
+    },
+    "age": {
+      "field": "Age",
+      "label": "Age (ticks)",
+      "type": "number",
+      "help": "Negative ages are babies. Positive ages are the breeding cooldown. Zero is an adult.",
+      "nbt_type": "int",
+      "default": 0
+    },
+    "forced_age": {
+      "field": "ForcedAge",
+      "label": "Growth from feeding (ticks)",
+      "type": "number",
+      "help": "Growth accumulated from feeding a baby.",
+      "nbt_type": "int",
+      "min": 0,
+      "default": 0
+    },
+    "age_locked": {
+      "field": "AgeLocked",
+      "label": "Stop aging",
+      "type": "bool",
+      "help": "Keeps this mob at its current age, like using a golden dandelion.",
+      "default": false
+    },
+    "in_love": {
+      "field": "InLove",
+      "label": "Breeding time (ticks)",
+      "type": "number",
+      "help": "Remaining time this animal can breed. Zero means it is not in love.",
+      "nbt_type": "int",
+      "min": 0,
+      "default": 0
+    },
+    "love_cause": {
+      "field": "LoveCause",
+      "label": "Breeding player",
+      "type": "uuid",
+      "help": "Player credited for feeding this animal and causing breeding."
+    },
+    "owner": {
+      "field": "Owner",
+      "label": "Owner",
+      "type": "uuid",
+      "help": "Choose the owner. Cats, wolves, parrots and nautiluses become tame when an owner is set."
+    },
+    "mob_home": {
+      "field": "home_pos",
+      "label": "Home position",
+      "type": "block-position",
+      "help": "The center of this mob's home area. Some mobs use a home to limit wandering.",
+      "controls_home": true
+    },
+    "mob_home_radius": {
+      "field": "home_radius",
+      "label": "Home radius (blocks)",
+      "type": "number",
+      "help": "Radius around the home position. -1 means there is no home restriction.",
+      "nbt_type": "int",
+      "min": -1,
+      "default": -1
+    },
+    "left_handed": {
+      "field": "LeftHanded",
+      "label": "Left-handed",
+      "type": "bool",
+      "help": "Use the left hand as this mob's main hand.",
+      "default": false
+    },
+    "loot_table": {
+      "field": "DeathLootTable",
+      "label": "Death loot table",
+      "type": "identifier",
+      "help": "Custom loot table used when this mob dies. Clear for normal drops."
+    },
+    "loot_seed": {
+      "field": "DeathLootTableSeed",
+      "label": "Loot seed",
+      "type": "number",
+      "help": "Random seed for the death loot table. Zero chooses a random seed.",
+      "nbt_type": "long",
+      "default": 0
+    },
+    "anger_target": {
+      "field": "angry_at",
+      "label": "Angry at",
+      "type": "uuid",
+      "help": "The entity this mob is angry with. You can choose a player or enter an entity UUID."
+    },
+    "anger_end": {
+      "field": "anger_end_time",
+      "label": "Anger time (ticks)",
+      "type": "anger-timer",
+      "help": "Ticks until this mob stops being angry. The editor stores the native world-time deadline."
+    },
+    "health": {
+      "field": "Health",
+      "label": "Current health",
+      "type": "number",
+      "nbt_type": "float",
+      "min": 0,
+      "health_limit": true,
+      "help": "Current health, in half-heart points. Increase maximum health in Attributes before setting a higher value. Zero creates a dead mob."
+    },
+    "absorption": {
+      "field": "AbsorptionAmount",
+      "label": "Absorption hearts",
+      "type": "number",
+      "nbt_type": "float",
+      "min": 0,
+      "default": 0,
+      "help": "Extra health, in half-heart points. Minecraft may update this when absorption effects change."
+    },
+    "leash": {
+      "field": "leash",
+      "label": "Leash",
+      "type": "leash",
+      "help": "Attach this mob to a player, another mob or a fence. The target must exist in the same world."
     }
   },
-  "version": "26.2"
+  "version": "26.3"
 }

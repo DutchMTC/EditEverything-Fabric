@@ -1,9 +1,11 @@
 package com.dutchmtc.ee.gui.modifier.mob;
 
 import com.dutchmtc.ee.gui.components.EEButton;
+import com.dutchmtc.ee.gui.components.EETextField;
 import com.dutchmtc.ee.mobdata.NbtPath;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ItemUtils;
+
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -37,13 +39,19 @@ public class GuiMobCoordinatesEditor extends Screen {
     private EditBox xField;
     private EditBox yField;
     private EditBox zField;
+    private EEButton apply;
 
     private int originalX;
     private int originalY;
     private int originalZ;
+    private boolean initialized;
 
-    public GuiMobCoordinatesEditor(Screen parent, Consumer<CompoundTag> setter, MobPropertyEditorState state,
-                                   String fieldPath, String label) {
+    public GuiMobCoordinatesEditor(
+            Screen parent,
+            Consumer<CompoundTag> setter,
+            MobPropertyEditorState state,
+            String fieldPath,
+            String label) {
         super(Component.literal(label));
         this.parent = parent;
         this.setter = setter;
@@ -55,21 +63,28 @@ public class GuiMobCoordinatesEditor extends Screen {
 
     @Override
     protected void init() {
+        String[] draft =
+                xField == null
+                        ? null
+                        : new String[] {xField.getValue(), yField.getValue(), zField.getValue()};
         int cx = width / 2;
         int top = 35;
 
         int[] xyz = read();
-        originalX = xyz[0];
-        originalY = xyz[1];
-        originalZ = xyz[2];
+        if (!initialized) {
+            originalX = xyz[0];
+            originalY = xyz[1];
+            originalZ = xyz[2];
+            initialized = true;
+        }
 
-        xField = new EditBox(font, cx - 100, top, 200, 20, Component.literal("X"));
-        yField = new EditBox(font, cx - 100, top + 24, 200, 20, Component.literal("Y"));
-        zField = new EditBox(font, cx - 100, top + 48, 200, 20, Component.literal("Z"));
+        xField = new EETextField(font, cx - 100, top, 200, 20, Component.literal("X"));
+        yField = new EETextField(font, cx - 100, top + 24, 200, 20, Component.literal("Y"));
+        zField = new EETextField(font, cx - 100, top + 48, 200, 20, Component.literal("Z"));
 
-        xField.setValue(String.valueOf(originalX));
-        yField.setValue(String.valueOf(originalY));
-        zField.setValue(String.valueOf(originalZ));
+        xField.setValue(draft == null ? String.valueOf(xyz[0]) : draft[0]);
+        yField.setValue(draft == null ? String.valueOf(xyz[1]) : draft[1]);
+        zField.setValue(draft == null ? String.valueOf(xyz[2]) : draft[2]);
 
         xField.setResponder(v -> writeFromInputs());
         yField.setResponder(v -> writeFromInputs());
@@ -79,15 +94,35 @@ public class GuiMobCoordinatesEditor extends Screen {
         addRenderableWidget(yField);
         addRenderableWidget(zField);
 
-        addRenderableWidget(new EEButton(cx - 100, height - 25, 100, 20, Component.translatable("gui.ee.cancel"),
-                b -> onCancel()));
-        addRenderableWidget(new EEButton(cx + 1, height - 25, 99, 20, Component.translatable("gui.done"),
-                b -> {
-                    setter.accept(state.tag);
-                    if (minecraft != null) {
-                        minecraft.gui.setScreen(parent);
-                    }
-                }));
+        addRenderableWidget(
+                new EEButton(
+                        cx - 100,
+                        height - 25,
+                        100,
+                        20,
+                        Component.translatable("gui.ee.cancel"),
+                        b -> onCancel()));
+        apply =
+                addRenderableWidget(
+                        new EEButton(
+                                cx + 1,
+                                height - 25,
+                                99,
+                                20,
+                                Component.translatable("gui.done"),
+                                b -> {
+                                    if (invalidReason() != null) return;
+                                    setter.accept(state.tag);
+                                    if (minecraft != null) {
+                                        minecraft.gui.setScreen(parent);
+                                    }
+                                }));
+        writeFromInputs();
+    }
+
+    @Override
+    public void onClose() {
+        onCancel();
     }
 
     private void onCancel() {
@@ -102,17 +137,19 @@ public class GuiMobCoordinatesEditor extends Screen {
         Tag t = NbtPath.getTag(state.tag, parts);
         if (t instanceof ListTag list && list.size() >= 3) {
             mode = Mode.LIST;
-            return new int[] { readNum(list.get(0)), readNum(list.get(1)), readNum(list.get(2)) };
+            return new int[] {readNum(list.get(0)), readNum(list.get(1)), readNum(list.get(2))};
         }
         if (t instanceof CompoundTag ct) {
             mode = Mode.COMPOUND;
             keyX = pickKey(ct, "X", "x");
             keyY = pickKey(ct, "Y", "y");
             keyZ = pickKey(ct, "Z", "z");
-            return new int[] { ItemUtils.getInt(ct, keyX), ItemUtils.getInt(ct, keyY), ItemUtils.getInt(ct, keyZ) };
+            return new int[] {
+                ItemUtils.getInt(ct, keyX), ItemUtils.getInt(ct, keyY), ItemUtils.getInt(ct, keyZ)
+            };
         }
         mode = Mode.COMPOUND;
-        return new int[] { 0, 0, 0 };
+        return new int[] {0, 0, 0};
     }
 
     private static int readNum(Tag t) {
@@ -135,19 +172,36 @@ public class GuiMobCoordinatesEditor extends Screen {
         int y = parseIntOr(yField.getValue(), originalY, yField);
         int z = parseIntOr(zField.getValue(), originalZ, zField);
         write(x, y, z);
+        if (apply != null) {
+            String reason = invalidReason();
+            apply.active = reason == null;
+            apply.setTooltip(
+                    reason == null
+                            ? null
+                            : net.minecraft.client.gui.components.Tooltip.create(
+                                    Component.literal(reason)));
+        }
+    }
+
+    private String invalidReason() {
+        return java.util.stream.Stream.of(xField, yField, zField)
+                .map(EETextField::error)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     private static int parseIntOr(String s, int fallback, EditBox box) {
         if (s == null || s.isEmpty() || "-".equals(s)) {
-            box.setTextColor(0xE0E0E0);
+            EETextField.validate(box, "Enter a whole coordinate from -2147483648 to 2147483647.");
             return fallback;
         }
         try {
             int v = Integer.parseInt(s);
-            box.setTextColor(0xE0E0E0);
+            EETextField.validate(box, null);
             return v;
         } catch (NumberFormatException e) {
-            box.setTextColor(0xFF0000);
+            EETextField.validate(box, "Enter a whole coordinate from -2147483648 to 2147483647.");
             return fallback;
         }
     }
@@ -174,11 +228,14 @@ public class GuiMobCoordinatesEditor extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {}
+
+    @Override
+    public void extractRenderState(
+            GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         super.extractBackground(graphics, mouseX, mouseY, delta);
         GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
         super.extractRenderState(graphics, mouseX, mouseY, delta);
         GuiUtils.drawCenterString(graphics, font, label, width / 2, 10, 0xFFFFFFFF);
     }
 }
-

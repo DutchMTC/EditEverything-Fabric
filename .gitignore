@@ -23,3 +23,19 @@ run
 
 # Files from Forge MDK
 forge*changelog.txt
+
+# runtime and generated artifacts
+/logs/
+/crash-reports/
+/release-jars/
+/superseded-jars/
+
+# local documentation captures and audit output
+/docs/screenshots/
+/tools/audit_mob_properties.py
+__pycache__/
+*.py[cod]
+
+# operating system metadata
+.DS_Store
+Thumbs.db

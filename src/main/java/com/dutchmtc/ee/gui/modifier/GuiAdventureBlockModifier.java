@@ -1,652 +1,392 @@
 package com.dutchmtc.ee.gui.modifier;
 
 import com.dutchmtc.ee.gui.components.EEButton;
-import com.dutchmtc.ee.gui.selector.GuiBlockTypeListSelector;
+import com.dutchmtc.ee.gui.components.EEDropdownButton;
+import com.dutchmtc.ee.gui.components.EETheme;
+import com.dutchmtc.ee.mixin.AdventureModePredicateAccessor;
+import com.dutchmtc.ee.mixin.EditBoxAccessor;
 import com.dutchmtc.ee.utils.GuiUtils;
+import com.dutchmtc.ee.utils.AdventureBlockLore;
 import com.dutchmtc.ee.utils.ItemUtils;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.advancements.predicates.BlockPredicate;
 import net.minecraft.advancements.predicates.DataComponentMatchers;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.AdventureModePredicate;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemLore;
+import net.minecraft.world.level.block.Block;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 
+/** Shared draft editor for the two Adventure-mode block permissions. */
 public class GuiAdventureBlockModifier extends GuiModifier<ItemStack> {
-    private static final int MARGIN = 10;
-    private static final int PADDING = 10;
-    private static final int HEADER_H = 36;
-    private static final int ROW_H = 22;
-    private static final int REMOVE_W = 18;
-    private static final Component NOTE = Component.translatable("gui.ee.modifier.meta.adventure.note");
-
+    private static final int ROW = 24;
     public enum Kind {
         CAN_BREAK("gui.ee.modifier.meta.canBreak", DataComponents.CAN_BREAK, "CanDestroy"),
         CAN_PLACE("gui.ee.modifier.meta.canPlace", DataComponents.CAN_PLACE_ON, "CanPlaceOn");
-
-        private final String titleKey;
+        private final String titleKey, legacyNbtKey;
         private final DataComponentType<AdventureModePredicate> componentType;
-        private final String legacyNbtKey;
-
-        Kind(String titleKey, DataComponentType<AdventureModePredicate> componentType, String legacyNbtKey) {
-            this.titleKey = titleKey;
-            this.componentType = componentType;
-            this.legacyNbtKey = legacyNbtKey;
+        Kind(String titleKey, DataComponentType<AdventureModePredicate> type, String legacyNbtKey) {
+            this.titleKey = titleKey; this.componentType = type; this.legacyNbtKey = legacyNbtKey;
         }
     }
-
     private enum Mode {
-        ONLY,
-        EVERYTHING_EXCEPT
+        ONLY("Only these blocks"), EXCEPT("All except these");
+        final String label;
+        Mode(String label) { this.label = label; }
     }
-
-    private final ItemStack stack;
+    private record BlockEntry(String id, String name, ItemStack icon, String searchText) {}
+    private final ItemStack original;
     private final Kind kind;
-    private final Set<String> allBlockIds;
-    private final Set<String> originalAllowedIds;
-    private final boolean originalTooltipVisible;
-
-    private final Set<String> selectedIds = new LinkedHashSet<>();
-    private final List<String> filteredIds = new ArrayList<>();
-    private final Map<String, ItemStack> displayStackCache = new HashMap<>();
-    private final Map<String, String> displayNameCache = new HashMap<>();
-
-    private Mode mode;
-    private boolean tooltipVisible;
-    private int scrollOffset = 0;
-    private String lastQuery = "";
-
+    private final Map<String, BlockEntry> blocks = new LinkedHashMap<>();
+    private final Set<String> originalAllowed = new LinkedHashSet<>(), selected = new LinkedHashSet<>();
+    private final List<BlockPredicate> originalPredicates;
+    private final List<BlockEntry> filtered = new ArrayList<>();
+    private final boolean originalTooltip;
+    private final Mode originalMode;
+    private Mode mode = Mode.ONLY;
+    private boolean tooltipVisible, browsing, menuOpen, draggingScroll;
+    private String query = "";
+    private int left, top, panelWidth, panelHeight, viewTop, viewBottom, scroll, menuFocus, keyboardRow = -1;
+    private double dragOffset;
     private EditBox search;
-    private EEButton modeButton;
-    private EEButton tooltipButton;
-    private String hoverTooltipId;
+    private EEButton browseButton, clearSearch, apply;
+    private EEDropdownButton modeButton;
 
     public GuiAdventureBlockModifier(Screen parent, ItemStack stack, Kind kind) {
-        super(parent, Component.translatable(kind.titleKey), s -> {
+        super(parent, Component.translatable(kind.titleKey), result -> {
+            if (!Objects.equals(stack.get(kind.componentType), result.get(kind.componentType)))
+                ItemUtils.setComponent(stack, kind.componentType, result.get(kind.componentType));
+            boolean visible = ItemUtils.isTooltipComponentVisible(result, kind.componentType);
+            if (visible != ItemUtils.isTooltipComponentVisible(stack, kind.componentType))
+                ItemUtils.setTooltipComponentVisible(stack, kind.componentType, visible);
+            AdventureBlockLore.copyManaged(result, stack);
+            // Migrate old permission lists on Apply without touching other custom data.
+            var tag = ItemUtils.getTag(stack).copy();
+            if (tag.contains(kind.legacyNbtKey)) { tag.remove(kind.legacyNbtKey); ItemUtils.setTag(stack, tag); }
         });
-        this.stack = stack;
-        this.kind = kind;
-        this.allBlockIds = getAllBlockIds();
-        this.originalAllowedIds = readAllowedIds(stack, kind);
-        this.originalTooltipVisible = ItemUtils.isTooltipComponentVisible(stack, kind.componentType);
-        this.tooltipVisible = this.originalTooltipVisible;
-        this.mode = computeInitialMode(this.allBlockIds, this.originalAllowedIds);
-        setSelectedIds(initialSelectedIds(this.mode, this.allBlockIds, this.originalAllowedIds));
-        refilter();
-    }
-
-    @Override
-    public boolean isModified() {
-        return !getAllowedIds().equals(originalAllowedIds) || tooltipVisible != originalTooltipVisible;
-    }
-
-    @Override
-    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        // do nothing
-    }
-
-    @Override
-    protected void init() {
-        clearWidgets();
-        super.init();
-
-        int left = panelLeft();
-        int top = panelTop();
-        int bottom = panelBottom();
-        int listLeft = left + PADDING;
-        int listWidth = listWidth();
-
-        String searchLabel = I18n.get("gui.ee.search") + ":";
-        int searchLabelW = font.width(searchLabel);
-        search = new EditBox(font, listLeft + searchLabelW + 6, top + 18, Math.max(80, listWidth - searchLabelW - 12), 16,
-                Component.literal(""));
-        search.setMaxLength(256);
-        search.setValue(lastQuery);
-        search.setResponder(value -> {
-            lastQuery = value == null ? "" : value;
-            refilter();
+        this.kind = kind; original = stack.copy();
+        BuiltInRegistries.BLOCK.forEach(block -> {
+            String id = BuiltInRegistries.BLOCK.getKey(block).toString(), name = block.getName().getString();
+            blocks.put(id, new BlockEntry(id, name, new ItemStack(block.asItem()), (name + " " + id).toLowerCase(Locale.ROOT)));
         });
+        AdventureModePredicate permission = original.get(kind.componentType);
+        originalPredicates = permission == null ? List.of()
+                : List.copyOf(((AdventureModePredicateAccessor) permission).ee$getPredicates());
+        if (permission != null) originalPredicates.forEach(predicate -> originalAllowed.addAll(ids(predicate)));
+        else readLegacy();
+        Set<String> excluded = difference(blocks.keySet(), originalAllowed);
+        if (!originalAllowed.isEmpty() && excluded.size() < originalAllowed.size()) mode = Mode.EXCEPT;
+        var stored = AdventureBlockLore.rule(original, kind.componentType);
+        if (stored.isPresent()) mode = stored.get().except() ? Mode.EXCEPT : Mode.ONLY;
+        originalMode = mode;
+        originalTooltip = stored.filter(AdventureBlockLore.Rule::except).map(AdventureBlockLore.Rule::show)
+                .orElseGet(() -> ItemUtils.isTooltipComponentVisible(original, kind.componentType));
+        tooltipVisible = originalTooltip;
+        selected.addAll(mode == Mode.ONLY ? originalAllowed : excluded);
+        filter();
+    }
+    private void readLegacy() {
+        for (Tag value : ItemUtils.getList(ItemUtils.getTag(original), kind.legacyNbtKey, Tag.TAG_STRING)) {
+            if (!(value instanceof StringTag text)) continue;
+            String entry = text.value();
+            Identifier id = Identifier.tryParse(entry.startsWith("#") ? entry.substring(1) : entry);
+            if (id == null) continue;
+            if (entry.startsWith("#")) BuiltInRegistries.BLOCK.get(TagKey.create(Registries.BLOCK, id))
+                    .ifPresent(set -> set.stream().forEach(holder -> originalAllowed.add(blockId(holder))));
+            else if (blocks.containsKey(id.toString())) originalAllowed.add(id.toString());
+        }
+    }
+    @Override public boolean isModified() { return mode != originalMode || tooltipVisible != originalTooltip || !allowed().equals(originalAllowed); }
+    @Override public void onClose() { onCancel(); }
+    @Override protected void setInitialFocus() {}
+    @Override public void init() {
+        clearFocus(); clearWidgets();
+        apply = null;
+        panelWidth = Math.min(480, width - 16); panelHeight = Math.min(350, height - 16);
+        left = (width - panelWidth) / 2; top = (height - panelHeight) / 2;
+        viewTop = top + 106; viewBottom = top + panelHeight - 40;
+        menuOpen = draggingScroll = false;
+        int ruleWidth = (panelWidth - 28) / 2;
+        modeButton = addRenderableWidget(new EEDropdownButton(left + 12, top + 33, ruleWidth, 20,
+                Component.literal(mode.label), b -> { menuOpen = !menuOpen; menuFocus = mode.ordinal(); }));
+        modeButton.setTooltip(Tooltip.create(Component.literal("Choose whether the listed blocks are allowed or excluded. Applies in Adventure mode.")));
+        addRenderableWidget(new EEButton(left + 16 + ruleWidth, top + 33, panelWidth - 28 - ruleWidth, 20,
+                Component.literal("Tooltip: " + (tooltipVisible ? "On" : "Off")), b -> {
+                    tooltipVisible = !tooltipVisible; b.setMessage(Component.literal("Tooltip: " + (tooltipVisible ? "On" : "Off")));
+                    refreshApply();
+                }) {
+            @Override protected void extractContents(GuiGraphicsExtractor g, int mx, int my, float delta) {
+                EETheme.bevel(g, getX(), getY(), getWidth(), getHeight(), tooltipVisible
+                        ? isHoveredOrFocused() ? EETheme.ON_HOVER : EETheme.ON
+                        : isHoveredOrFocused() ? EETheme.CONTROL_HOVER : EETheme.CONTROL, false);
+                g.text(font, getMessage(), getX() + (getWidth() - font.width(getMessage())) / 2,
+                        getY() + (getHeight() - font.lineHeight) / 2 + 1, tooltipVisible ? EETheme.LIGHT : EETheme.TEXT, false);
+            }
+        }).setTooltip(Tooltip.create(Component.literal("Show the block permission. All except uses an automatic lore section instead of Minecraft's full block list.")));
+        int searchWidth = panelWidth - 130;
+        search = new EditBox(font, left + 18, top + 80, searchWidth - 30, 18, Component.literal("Search blocks"));
+        search.setBordered(false); search.setTextShadow(false); search.setMaxLength(128);
+        search.setTextColor(EETheme.LIGHT); search.setTextColorUneditable(0xFFAEBBB5);
+        search.setHint(Component.literal("Search blocks...").withColor(0xAEBBB5)); search.setValue(query);
+        search.setResponder(value -> { query = value; scroll = 0; keyboardRow = -1; filter(); });
         addRenderableWidget(search);
-
-        int actionsY = top + HEADER_H;
-        int gap = 4;
-        int addW = 86;
-        int remaining = Math.max(120, listWidth - addW - gap * 2);
-        int modeW = remaining / 2;
-        int tooltipW = remaining - modeW;
-
-        addRenderableWidget(new EEButton(listLeft, actionsY, addW, 18,
-                Component.translatable("gui.ee.modifier.meta.adventure.add"), b -> openBlockSelector()));
-
-        modeButton = addRenderableWidget(new EEButton(listLeft + addW + gap, actionsY, modeW, 18,
-                getModeButtonText(), b -> toggleMode()));
-
-        tooltipButton = addRenderableWidget(new EEButton(listLeft + addW + gap + modeW + gap, actionsY, tooltipW, 18,
-                getTooltipButtonText(), b -> {
-            tooltipVisible = !tooltipVisible;
-            updateButtonTexts();
-        }));
-
-        addRenderableWidget(new EEButton(width / 2 - 96, bottom - 25, 94, 20,
+        clearSearch = addRenderableWidget(new EEButton(left + 12 + searchWidth - 21, top + 80, 18, 18,
+                Component.literal("×").withColor(0xBB5555), b -> { search.setValue(""); setFocused(search); }));
+        clearSearch.setTooltip(Tooltip.create(Component.literal("Clear search")));
+        browseButton = addRenderableWidget(new EEButton(left + panelWidth - 112, top + 79, 100, 20,
+                Component.empty(), b -> { browsing = !browsing; search.setValue(""); scroll = 0; keyboardRow = -1; filter(); }));
+        browseButton.setTooltip(Tooltip.create(Component.literal("Choose several blocks, then return to your selected list.")));
+        int footerWidth = (panelWidth - 28) / 2;
+        addRenderableWidget(new EEButton(left + 12, top + panelHeight - 28, footerWidth, 20,
                 Component.translatable("gui.ee.cancel"), b -> onCancel()));
-        addRenderableWidget(new EEButton(width / 2 + 2, bottom - 25, 94, 20,
-                Component.translatable("gui.done"), b -> {
-                    set(get());
-                    mc.gui.setScreen(parent);
-                }));
+        apply = addRenderableWidget(new EEButton(left + 16 + footerWidth, top + panelHeight - 28, footerWidth, 20,
+                Component.literal("Apply"), b -> { if (b.active) { set(get()); mc.gui.setScreen(parent); } }));
+        filter();
     }
-
-    @Override
-    public void tick() {
-        super.tick();
-        if (search == null) {
-            return;
+    private void filter() {
+        String[] tokens = query.strip().toLowerCase(Locale.ROOT).split("\\s+"); filtered.clear();
+        for (BlockEntry block : blocks.values()) {
+            if (!browsing && !selected.contains(block.id)) continue;
+            boolean match = true;
+            for (String token : tokens) if (!block.searchText.contains(token)) { match = false; break; }
+            if (match) filtered.add(block);
         }
-        String q = search.getValue();
-        if (!lastQuery.equals(q)) {
-            lastQuery = q;
-            refilter();
-        }
+        filtered.sort(Comparator.comparing(BlockEntry::name, String.CASE_INSENSITIVE_ORDER).thenComparing(BlockEntry::id));
+        scroll = Math.max(0, Math.min(scroll, maxScroll())); keyboardRow = Math.min(keyboardRow, filtered.size() - 1);
+        if (clearSearch != null) clearSearch.visible = !query.isEmpty();
+        if (browseButton != null) browseButton.setMessage(Component.literal(browsing ? "Done choosing" : "Add blocks"));
+        refreshApply();
     }
-
-    @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        super.extractBackground(graphics, mouseX, mouseY, partialTicks);
-        GuiUtils.drawGradientRect(graphics, 0, 0, width, height, 0xC0101010, 0xD0101010);
-
-        int left = panelLeft();
-        int top = panelTop();
-        int right = panelRight();
-        int bottom = panelBottom();
-
-        GuiUtils.drawRect(graphics, left, top, right, bottom, GuiUtils.COLOR_CONTAINER_BORDER | 0xFF000000);
-        GuiUtils.drawCenterString(graphics, font, getStringTitle(), width / 2, top + 6, 0xFFFFFFFF);
-        GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.search") + ":", search.getX(), search.getY(), 0xFFFFA000, search.getHeight());
-
-        int listLeft = left + PADDING;
-        int listTop = top + HEADER_H + 34;
-        int listRight = listLeft + listWidth();
-        int listBottom = bottom - 36;
-
-        GuiUtils.drawRect(graphics, listLeft - 2, listTop - 2, listRight + 2, listBottom + 2,
-                GuiUtils.COLOR_CONTAINER_SLOT | 0xFF000000);
-        String listTitle = mode == Mode.ONLY
-                ? I18n.get("gui.ee.modifier.meta.adventure.modebtn.only")
-                : I18n.get("gui.ee.modifier.meta.adventure.modebtn.except");
-        GuiUtils.text(graphics, font, listTitle + " list", listLeft, listTop - 12,
-                0xFFFFFFFF, font.lineHeight);
-        renderSelectedList(graphics, listLeft, listTop, listRight, listBottom, mouseX, mouseY);
-
-        int detailsLeft = listRight + PADDING;
-        int detailsRight = right - PADDING;
-        GuiUtils.drawRect(graphics, detailsLeft - 2, listTop - 2, detailsRight + 2, listBottom + 2,
-                GuiUtils.COLOR_CONTAINER_SLOT | 0xFF000000);
-        renderSummary(graphics, detailsLeft, listTop, detailsRight, listBottom);
-
-        super.extractRenderState(graphics, mouseX, mouseY, partialTicks);
-        renderHoverTooltip(graphics, mouseX, mouseY);
+    private AdventureBlockLore.Rule loreRule() { return new AdventureBlockLore.Rule(mode == Mode.EXCEPT, tooltipVisible, selected); }
+    private void refreshApply() {
+        if (apply == null) return;
+        apply.active = AdventureBlockLore.requiredLines(original, kind.componentType, loreRule()) <= ItemLore.MAX_LINES;
+        apply.setTooltip(apply.active ? null : Tooltip.create(Component.literal("The automatic section and regular lore exceed Minecraft's 256-line limit. Remove some lines or turn this tooltip off.")));
     }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (super.mouseClicked(event, doubleClick)) {
-            return true;
-        }
-
-        int mouseX = (int) event.x();
-        int mouseY = (int) event.y();
-        int listLeft = panelLeft() + PADDING;
-        int listTop = panelTop() + HEADER_H + 34;
-        int listRight = listLeft + listWidth();
-        int listBottom = panelBottom() - 36;
-
-        if (GuiUtils.isHover(listLeft, listTop, listRight - listLeft, listBottom - listTop, mouseX, mouseY)) {
-            int row = (mouseY - listTop) / ROW_H;
-            int visible = visibleRows(listTop, listBottom);
-            int idx = scrollOffset + row;
-            if (row >= 0 && row < visible && idx >= 0 && idx < filteredIds.size()) {
-                String id = filteredIds.get(idx);
-                int y = listTop + row * ROW_H;
-                int removeX = listRight - REMOVE_W - 4;
-                boolean removeHover = GuiUtils.isHover(removeX, y + 2, REMOVE_W, ROW_H - 4, mouseX, mouseY);
-                if (removeHover || event.button() == 1) {
-                    selectedIds.remove(id);
-                    refilter();
-                    playClick();
-                    return true;
-                }
-            }
-            return true;
-        }
-
-        return true;
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        int listLeft = panelLeft() + PADDING;
-        int listTop = panelTop() + HEADER_H + 34;
-        int listRight = listLeft + listWidth();
-        int listBottom = panelBottom() - 36;
-
-        if (!GuiUtils.isHover(listLeft, listTop, listRight - listLeft, listBottom - listTop, (int) mouseX, (int) mouseY)) {
-            return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
-        }
-
-        int visible = visibleRows(listTop, listBottom);
-        int maxOffset = Math.max(0, filteredIds.size() - visible);
-        if (verticalAmount < 0) {
-            scrollOffset = Math.min(maxOffset, scrollOffset + 1);
-        } else if (verticalAmount > 0) {
-            scrollOffset = Math.max(0, scrollOffset - 1);
-        }
-        return true;
-    }
-
-    protected ItemStack get() {
-        ItemUtils.setTooltipComponentVisible(stack, kind.componentType, tooltipVisible);
-        Set<String> allowed = getAllowedIds();
-        if (allowed.isEmpty()) {
-            ItemUtils.setComponent(stack, kind.componentType, null);
-        } else {
-            List<BlockPredicate> predicates = new ArrayList<>();
-            for (String id : allowed) {
-                Identifier rid = Identifier.tryParse(id);
-                if (rid == null) {
-                    continue;
-                }
-                Optional<Holder.Reference<net.minecraft.world.level.block.Block>> holder = BuiltInRegistries.BLOCK.get(rid);
-                if (holder.isEmpty()) {
-                    continue;
-                }
-                BlockPredicate predicate = new BlockPredicate(
-                        Optional.of(HolderSet.direct((Holder<net.minecraft.world.level.block.Block>) holder.get())),
-                        Optional.empty(),
-                        Optional.empty(),
-                        DataComponentMatchers.ANY
-                );
-                predicates.add(predicate);
-            }
-            ItemUtils.setComponent(stack, kind.componentType, new AdventureModePredicate(predicates));
-        }
-        return stack;
-    }
-
-    private void renderSelectedList(GuiGraphicsExtractor graphics, int listLeft, int listTop, int listRight, int listBottom,
-                                    int mouseX, int mouseY) {
-        hoverTooltipId = null;
-        int visible = visibleRows(listTop, listBottom);
-        int maxOffset = Math.max(0, filteredIds.size() - visible);
-        scrollOffset = Math.max(0, Math.min(scrollOffset, maxOffset));
-
-        if (filteredIds.isEmpty()) {
-            String label = selectedIds.isEmpty() ? "(no blocks)" : "(no search results)";
-            GuiUtils.text(graphics, font, label, listLeft + 6, listTop + 6, 0xFFAAAAAA, font.lineHeight);
-            return;
-        }
-
-        for (int row = 0; row < visible; row++) {
-            int idx = scrollOffset + row;
-            if (idx >= filteredIds.size()) {
-                break;
-            }
-
-            String id = filteredIds.get(idx);
-            ItemStack displayStack = displayStack(id);
-            String name = displayName(id, displayStack);
-            int y = listTop + row * ROW_H;
-
-            boolean hoveredRow = GuiUtils.isHover(listLeft, y, listRight - listLeft, ROW_H - 1, mouseX, mouseY);
-            int bg = hoveredRow ? 0x333A9BFF : 0x22000000;
-            GuiUtils.drawRect(graphics, listLeft, y, listRight, y + ROW_H - 1, bg);
-
-            if (!displayStack.isEmpty()) {
-                graphics.item(displayStack, listLeft + 4, y + 2);
-            }
-
-            String label = displayStack.isEmpty() ? id : name + " (" + id + ")";
-            int textX = listLeft + 26;
-            int textMaxW = listRight - textX - (REMOVE_W + 10);
-            GuiUtils.text(graphics, font, trimToWidth(label, textMaxW), textX, y + 7, 0xFFFFFFFF, font.lineHeight);
-
-            int removeX = listRight - REMOVE_W - 4;
-            boolean removeHover = GuiUtils.isHover(removeX, y + 2, REMOVE_W, ROW_H - 4, mouseX, mouseY);
-            GuiUtils.drawRect(graphics, removeX, y + 2, removeX + REMOVE_W, y + ROW_H - 2, removeHover ? 0xAAAA3333 : 0x66332222);
-            GuiUtils.drawCenterString(graphics, font, "-", removeX + REMOVE_W / 2, y + 6, 0xFFFFFFFF);
-
-            if (hoveredRow && !removeHover) {
-                hoverTooltipId = id;
-            }
-        }
-
-        if (filteredIds.size() > visible) {
-            String page = (scrollOffset + 1) + "-" + Math.min(filteredIds.size(), scrollOffset + visible) + " / " + filteredIds.size();
-            GuiUtils.text(graphics, font, page, listLeft + 6, listBottom + 4, 0xFF7F7F7F, font.lineHeight);
-        }
-    }
-
-    private void renderSummary(GuiGraphicsExtractor graphics, int left, int top, int right, int bottom) {
-        int y = top + 6;
-        GuiUtils.text(graphics, font, "Summary", left + 4, y, 0xFFFFFFFF, font.lineHeight);
-        y += 14;
-        GuiUtils.text(graphics, font, modeLineText(), left + 4, y, 0xFFFFA000, font.lineHeight);
-        y += 14;
-        GuiUtils.text(graphics, font, countLineText(), left + 4, y, 0xFFD0D0D0, font.lineHeight);
-        y += 14;
-        GuiUtils.text(graphics, font,
-                "Tooltip: " + I18n.get(tooltipVisible ? "gui.ee.yes" : "gui.ee.no"), left + 4, y, 0xFFD0D0D0,
-                font.lineHeight);
-        y += 18;
-
-        List<String> notes = wrapToWidth(NOTE.getString(), Math.max(50, right - left - 8));
-        for (String line : notes) {
-            if (y > bottom - 8) {
-                break;
-            }
-            GuiUtils.text(graphics, font, line, left + 4, y, 0xFFA0A0A0, font.lineHeight);
-            y += 12;
-        }
-    }
-
-    private void renderHoverTooltip(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
-        if (hoverTooltipId == null) {
-            return;
-        }
-        ItemStack display = displayStack(hoverTooltipId);
-        if (!display.isEmpty()) {
-            GuiUtils.setTooltipForNextFrame(graphics, font, display, mouseX, mouseY);
-            return;
-        }
-        GuiUtils.setTooltipForNextFrame(graphics, font, List.of(Component.literal(hoverTooltipId)), Optional.empty(), mouseX, mouseY);
-    }
-
-    private void toggleMode() {
-        Set<String> selected = new LinkedHashSet<>(selectedIds);
-        if (mode == Mode.ONLY) {
-            Set<String> excluded = selected.isEmpty() ? new LinkedHashSet<>() : difference(allBlockIds, selected);
-            mode = Mode.EVERYTHING_EXCEPT;
-            setSelectedIds(excluded);
-        } else {
-            // Keep EXCEPT -> ONLY empty instead of expanding to "all blocks".
-            Set<String> allowed = selected.isEmpty() ? new LinkedHashSet<>() : difference(allBlockIds, selected);
-            mode = Mode.ONLY;
-            setSelectedIds(allowed);
-        }
-        updateButtonTexts();
-        refilter();
-    }
-
-    private void openBlockSelector() {
-        Set<String> selected = new LinkedHashSet<>(selectedIds);
-        var blocks = BuiltInRegistries.BLOCK.stream()
-                .filter(block -> !selected.contains(ItemUtils.getRegistry(block).toString()));
-
-        getMinecraft().gui.setScreen(new GuiBlockTypeListSelector(this,
-                Component.translatable("gui.ee.modifier.meta.adventure.selectBlock"),
-                block -> {
-                    if (block == null) {
-                        return this;
-                    }
-                    String id = ItemUtils.getRegistry(block).toString();
-                    if (allBlockIds.contains(id)) {
-                        selectedIds.add(id);
-                        setSelectedIds(selectedIds);
-                        refilter();
-                    }
-                    return this;
-                }, blocks));
-    }
-
-    private void updateButtonTexts() {
-        if (modeButton != null) {
-            modeButton.setMessage(getModeButtonText());
-        }
-        if (tooltipButton != null) {
-            tooltipButton.setMessage(getTooltipButtonText());
-        }
-    }
-
-    private Component getModeButtonText() {
-        return Component.literal("Mode: ")
-                .append(Component.translatable(mode == Mode.ONLY
-                        ? "gui.ee.modifier.meta.adventure.modebtn.only"
-                        : "gui.ee.modifier.meta.adventure.modebtn.except"));
-    }
-
-    private Component getTooltipButtonText() {
-        return Component.literal("Tooltip: ")
-                .append(Component.translatable(tooltipVisible ? "gui.ee.yes" : "gui.ee.no"));
-    }
-
-    private String modeLineText() {
-        String modeLabel = mode == Mode.ONLY
-                ? I18n.get("gui.ee.modifier.meta.adventure.mode.only")
-                : I18n.get("gui.ee.modifier.meta.adventure.mode.except");
-        return I18n.get("gui.ee.modifier.meta.adventure.mode") + ": " + modeLabel;
-    }
-
-    private String countLineText() {
-        int total = allBlockIds.size();
-        if (mode == Mode.ONLY) {
-            int allowed = getAllowedIds().size();
-            return "Allowed: " + allowed + "/" + total;
-        }
-        int excluded = selectedIds.size();
-        return "Excluded: " + excluded + ", Allowed: " + Math.max(0, total - excluded) + "/" + total;
-    }
-
-    private void setSelectedIds(Set<String> ids) {
-        List<String> sorted = ids.stream()
-                .filter(id -> id != null && !id.isBlank() && allBlockIds.contains(id))
-                .distinct()
-                .sorted(String::compareToIgnoreCase)
-                .toList();
-        selectedIds.clear();
-        selectedIds.addAll(sorted);
-    }
-
-    private void refilter() {
-        String query = lastQuery == null ? "" : lastQuery.trim().toLowerCase(Locale.ROOT);
-        filteredIds.clear();
-        for (String id : selectedIds) {
-            ItemStack stack = displayStack(id);
-            String name = displayName(id, stack);
-            if (query.isEmpty()
-                    || id.toLowerCase(Locale.ROOT).contains(query)
-                    || name.toLowerCase(Locale.ROOT).contains(query)) {
-                filteredIds.add(id);
-            }
-        }
-        scrollOffset = 0;
-    }
-
-    private Set<String> getAllowedIds() {
-        Set<String> selected = new LinkedHashSet<>(selectedIds);
-        Set<String> allowed = mode == Mode.ONLY ? selected : difference(allBlockIds, selected);
-        allowed.retainAll(allBlockIds);
-        return allowed;
-    }
-
-    private ItemStack displayStack(String id) {
-        return displayStackCache.computeIfAbsent(id, GuiAdventureBlockModifier::toDisplayStack);
-    }
-
-    private String displayName(String id, ItemStack stack) {
-        return displayNameCache.computeIfAbsent(id, k -> stack.isEmpty() ? id : stack.getHoverName().getString());
-    }
-
-    private static Set<String> initialSelectedIds(Mode mode, Set<String> all, Set<String> allowed) {
-        return mode == Mode.ONLY ? new LinkedHashSet<>(allowed) : difference(all, allowed);
-    }
-
-    private static Mode computeInitialMode(Set<String> all, Set<String> allowed) {
-        if (allowed.isEmpty()) {
-            return Mode.ONLY;
-        }
-        Set<String> excluded = difference(all, allowed);
-        return excluded.size() < allowed.size() ? Mode.EVERYTHING_EXCEPT : Mode.ONLY;
-    }
-
-    private int panelLeft() {
-        return MARGIN;
-    }
-
-    private int panelTop() {
-        return MARGIN;
-    }
-
-    private int panelRight() {
-        return width - MARGIN;
-    }
-
-    private int panelBottom() {
-        return height - MARGIN;
-    }
-
-    private int listWidth() {
-        int available = panelRight() - panelLeft() - (PADDING * 3);
-        int preferred = available / 2;
-        return Math.max(160, Math.min(380, Math.min(available, preferred)));
-    }
-
-    private int visibleRows(int listTop, int listBottom) {
-        return Math.max(1, (listBottom - listTop) / ROW_H);
-    }
-
-    private String trimToWidth(String text, int maxWidth) {
-        if (font.width(text) <= maxWidth) {
-            return text;
-        }
-        int dots = font.width("...");
-        return font.plainSubstrByWidth(text, Math.max(0, maxWidth - dots)) + "...";
-    }
-
-    private List<String> wrapToWidth(String text, int maxWidth) {
-        List<String> lines = new ArrayList<>();
-        if (text == null || text.isBlank()) {
-            return lines;
-        }
-        String[] words = text.split("\\s+");
-        StringBuilder current = new StringBuilder();
-        for (String word : words) {
-            String candidate = current.isEmpty() ? word : current + " " + word;
-            if (font.width(candidate) <= maxWidth) {
-                current = new StringBuilder(candidate);
-            } else {
-                if (!current.isEmpty()) {
-                    lines.add(current.toString());
-                }
-                current = new StringBuilder(word);
-            }
-        }
-        if (!current.isEmpty()) {
-            lines.add(current.toString());
-        }
-        return lines;
-    }
-
-    private static Set<String> getAllBlockIds() {
-        Set<String> all = new LinkedHashSet<>();
-        for (Identifier id : BuiltInRegistries.BLOCK.keySet()) {
-            all.add(id.toString());
-        }
-        return all;
-    }
-
+    private Set<String> allowed() { return mode == Mode.ONLY ? new LinkedHashSet<>(selected) : difference(blocks.keySet(), selected); }
     private static Set<String> difference(Set<String> all, Set<String> minus) {
-        Set<String> out = new LinkedHashSet<>(all);
-        out.removeAll(minus);
-        return out;
+        Set<String> result = new LinkedHashSet<>(all); result.removeAll(minus); return result;
     }
-
-    private static Set<String> readAllowedIds(ItemStack stack, Kind kind) {
-        Set<String> allowed = new LinkedHashSet<>();
-        AdventureModePredicate predicate = ItemUtils.getComponent(stack, kind.componentType);
-        if (predicate != null) {
-            for (BlockPredicate bp : getPredicates(predicate)) {
-                bp.blocks().ifPresent(set -> {
-                    var unwrapped = set.unwrap();
-                    unwrapped.right().ifPresent(list -> list.forEach(holder -> {
-                        Identifier id = BuiltInRegistries.BLOCK.getKey(holder.value());
-                        if (id != null) {
-                            allowed.add(id.toString());
-                        }
-                    }));
-                });
+    private static String blockId(Holder<Block> block) { return BuiltInRegistries.BLOCK.getKey(block.value()).toString(); }
+    private Set<String> ids(BlockPredicate predicate) {
+        if (predicate.blocks().isEmpty()) return new LinkedHashSet<>(blocks.keySet());
+        Set<String> result = new LinkedHashSet<>(); predicate.blocks().get().stream().forEach(holder -> result.add(blockId(holder))); return result;
+    }
+    private HolderSet<Block> holders(Set<String> ids) {
+        return HolderSet.direct(ids.stream().map(id -> BuiltInRegistries.BLOCK.get(Identifier.parse(id)).orElseThrow())
+                .map(holder -> (Holder<Block>) holder).toList());
+    }
+    /** Keep tag/state/NBT/component restrictions on every retained block. */
+    protected ItemStack get() {
+        ItemStack result = original.copy(); Set<String> allowed = allowed();
+        if (!allowed.equals(originalAllowed) || original.get(kind.componentType) == null && !allowed.isEmpty()) {
+            List<BlockPredicate> predicates = new ArrayList<>(); Set<String> retained = new LinkedHashSet<>();
+            for (BlockPredicate predicate : originalPredicates) {
+                Set<String> before = ids(predicate), after = new LinkedHashSet<>(before); after.retainAll(allowed);
+                if (after.isEmpty()) continue;
+                retained.addAll(after);
+                predicates.add(after.equals(before) ? predicate : new BlockPredicate(Optional.of(holders(after)),
+                        predicate.properties(), predicate.nbt(), predicate.components()));
+            }
+            Set<String> added = difference(allowed, retained);
+            if (!added.isEmpty()) predicates.add(new BlockPredicate(Optional.of(holders(added)), Optional.empty(), Optional.empty(), DataComponentMatchers.ANY));
+            ItemUtils.setComponent(result, kind.componentType, predicates.isEmpty() ? null : new AdventureModePredicate(predicates));
+        }
+        boolean nativeVisible = mode == Mode.ONLY && tooltipVisible;
+        if (nativeVisible != ItemUtils.isTooltipComponentVisible(result, kind.componentType))
+            ItemUtils.setTooltipComponentVisible(result, kind.componentType, nativeVisible);
+        if (mode == Mode.EXCEPT || isModified() || AdventureBlockLore.rule(original, kind.componentType).isPresent())
+            AdventureBlockLore.writeRule(result, kind.componentType, loreRule());
+        var tag = ItemUtils.getTag(result).copy();
+        if (tag.contains(kind.legacyNbtKey)) { tag.remove(kind.legacyNbtKey); ItemUtils.setTag(result, tag); }
+        return result;
+    }
+    private int rowRight() { return left + panelWidth - 24; }
+    private int barX() { return left + panelWidth - 17; }
+    private int maxScroll() { return Math.max(0, filtered.size() * ROW - (viewBottom - viewTop)); }
+    private int thumbHeight() { int h = viewBottom - viewTop; return Math.max(16, h * h / Math.max(h, filtered.size() * ROW)); }
+    private int thumbY() { return viewTop + (viewBottom - viewTop - thumbHeight()) * scroll / Math.max(1, maxScroll()); }
+    private boolean insideView(double x, double y) { return x >= left + 12 && x < rowRight() && y >= viewTop && y < viewBottom; }
+    private int indexAt(double x, double y) {
+        if (!insideView(x, y)) return -1;
+        int index = ((int) y - viewTop + scroll) / ROW; return index >= 0 && index < filtered.size() ? index : -1;
+    }
+    private void dragTo(double y) {
+        int travel = viewBottom - viewTop - thumbHeight();
+        if (travel > 0) scroll = (int) Math.round(Math.max(0, Math.min(1, (y - dragOffset - viewTop) / travel)) * maxScroll());
+    }
+    private void toggleBlock(int index) {
+        if (index < 0 || index >= filtered.size()) return;
+        String id = filtered.get(index).id; if (!selected.remove(id)) selected.add(id); filter(); playClick();
+    }
+    private void chooseMode(int index) {
+        mode = Mode.values()[index]; modeButton.setMessage(Component.literal(mode.label)); menuOpen = false; playClick();
+        refreshApply();
+    }
+    @Override public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (menuOpen) {
+            if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && event.x() >= modeButton.getX() && event.x() < modeButton.getRight()
+                    && event.y() >= modeButton.getBottom() + 3 && event.y() < modeButton.getBottom() + 43)
+                chooseMode((int) (event.y() - modeButton.getBottom() - 3) / 20);
+            else menuOpen = false;
+            return true;
+        }
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+            if (maxScroll() > 0 && event.x() >= barX() - 3 && event.x() < barX() + 7 && event.y() >= viewTop && event.y() < viewBottom) {
+                clearFocus(); draggingScroll = true;
+                dragOffset = event.y() >= thumbY() && event.y() < thumbY() + thumbHeight() ? event.y() - thumbY() : thumbHeight() / 2.0;
+                dragTo(event.y()); return true;
+            }
+            int index = indexAt(event.x(), event.y());
+            if (index >= 0) { clearFocus(); keyboardRow = index; if (browsing || event.x() >= rowRight() - 23) toggleBlock(index); return true; }
+        }
+        return super.mouseClicked(event, doubleClick);
+    }
+    @Override public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        if (draggingScroll && event.button() == InputConstants.MOUSE_BUTTON_LEFT) { dragTo(event.y()); return true; }
+        return super.mouseDragged(event, dx, dy);
+    }
+    @Override public boolean mouseReleased(MouseButtonEvent event) {
+        if (draggingScroll) { draggingScroll = false; return true; } return super.mouseReleased(event);
+    }
+    @Override public boolean mouseScrolled(double x, double y, double horizontal, double vertical) {
+        if (menuOpen) return true;
+        if (x >= left + 12 && x < left + panelWidth - 10 && y >= viewTop && y < viewBottom) {
+            scroll = Math.max(0, Math.min(maxScroll(), scroll - (int) Math.round(vertical * ROW * 2))); return true;
+        }
+        return super.mouseScrolled(x, y, horizontal, vertical);
+    }
+    @Override public boolean charTyped(CharacterEvent event) { return menuOpen || super.charTyped(event); }
+    @Override public boolean keyPressed(KeyEvent event) {
+        int key = event.key();
+        if (menuOpen) {
+            if (key == InputConstants.KEY_ESCAPE) menuOpen = false;
+            else if (key == InputConstants.KEY_UP || key == InputConstants.KEY_DOWN) menuFocus = 1 - menuFocus;
+            else if (key == InputConstants.KEY_RETURN || key == InputConstants.KEY_NUMPADENTER) chooseMode(menuFocus);
+            return true;
+        }
+        if (event.hasControlDown() && key == InputConstants.KEY_F) { setFocused(search); return true; }
+        if ((search.isFocused() && key == InputConstants.KEY_DOWN) || getFocused() == null) {
+            int next = switch (key) {
+                case InputConstants.KEY_UP -> keyboardRow - 1;
+                case InputConstants.KEY_DOWN -> keyboardRow + 1;
+                case InputConstants.KEY_HOME -> 0;
+                case InputConstants.KEY_END -> filtered.size() - 1;
+                case InputConstants.KEY_PAGEUP -> keyboardRow - Math.max(1, (viewBottom - viewTop) / ROW);
+                case InputConstants.KEY_PAGEDOWN -> keyboardRow + Math.max(1, (viewBottom - viewTop) / ROW);
+                default -> -2;
+            };
+            if (next != -2 && !filtered.isEmpty()) {
+                clearFocus(); keyboardRow = Math.max(0, Math.min(filtered.size() - 1, next));
+                int y = keyboardRow * ROW;
+                if (y < scroll) scroll = y;
+                if (y + ROW > scroll + viewBottom - viewTop) scroll = y + ROW - (viewBottom - viewTop);
+                scroll = Math.max(0, Math.min(maxScroll(), scroll)); return true;
+            }
+            if (key == InputConstants.KEY_DELETE || browsing && (key == InputConstants.KEY_SPACE
+                    || key == InputConstants.KEY_RETURN || key == InputConstants.KEY_NUMPADENTER)) { toggleBlock(keyboardRow); return true; }
+        }
+        return super.keyPressed(event);
+    }
+    @Override public void extractBackground(GuiGraphicsExtractor g, int mx, int my, float delta) {}
+    @Override public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float delta) {
+        super.extractBackground(g, mx, my, delta);
+        GuiUtils.drawGradientRect(g, 0, 0, width, height, 0x90101010, 0xB0101010);
+        EETheme.bevel(g, left, top, panelWidth, panelHeight, EETheme.PANEL, false);
+        GuiUtils.drawItemStack(g, original, left + 12, top + 10); g.text(font, title, left + 34, top + 14, EETheme.TEXT, false);
+        Component context = Component.translatable("selectWorld.gameMode.adventure");
+        g.text(font, context, left + panelWidth - 12 - font.width(context), top + 14, EETheme.MUTED, false);
+        String explanation = kind == Kind.CAN_BREAK
+                ? mode == Mode.ONLY ? "Break only the blocks below." : "Break any block except those below."
+                : mode == Mode.ONLY ? "Place on only the blocks below." : "Place on any block except those below.";
+        if (browsing) explanation = mode == Mode.EXCEPT ? "Choose blocks to exclude."
+                : kind == Kind.CAN_BREAK ? "Choose blocks this item can break." : "Choose blocks this item can be placed on.";
+        g.text(font, explanation, left + 12, top + 61, EETheme.MUTED, false);
+        EETheme.bevel(g, left + 12, top + 79, panelWidth - 130, 20, EETheme.INPUT, true);
+        ((EditBoxAccessor) search).ee$setTextY(search.getY() + 5);
+        EETheme.bevel(g, left + 12, viewTop - 1, panelWidth - 36, viewBottom - viewTop + 2, EETheme.INPUT, true);
+        int hovered = menuOpen ? -1 : indexAt(mx, my);
+        g.enableScissor(left + 13, viewTop, rowRight() - 1, viewBottom);
+        for (int index = scroll / ROW; index < filtered.size(); index++) {
+            int y = viewTop + index * ROW - scroll; if (y >= viewBottom) break;
+            BlockEntry block = filtered.get(index);
+            boolean picked = selected.contains(block.id), highlight = index == hovered || index == keyboardRow;
+            EETheme.rect(g, left + 13, y, panelWidth - 38, ROW, highlight ? 0xFF515F55 : 0xFF3F4843);
+            if (browsing && picked) EETheme.rect(g, left + 13, y + 3, 2, ROW - 6, 0xFF76B660);
+            if (!block.icon.isEmpty()) GuiUtils.drawItemStack(g, block.icon, left + 18, y + 4);
+            g.text(font, fit(block.name, panelWidth - 91), left + 40, y + 8, EETheme.LIGHT, false);
+            int controlX = rowRight() - 22;
+            boolean controlHover = index == hovered && (browsing || mx >= controlX);
+            if (browsing) EETheme.bevel(g, controlX, y + 3, 18, 18,
+                    picked ? controlHover ? EETheme.ON_HOVER : EETheme.ON : controlHover ? EETheme.CONTROL_HOVER : EETheme.CONTROL, false);
+            if (browsing && picked) {
+                EETheme.rect(g, controlX + 5, y + 11, 2, 3, EETheme.LIGHT);
+                for (int i = 0; i < 5; i++) EETheme.rect(g, controlX + 7 + i, y + 12 - i, 1, 2, EETheme.LIGHT);
+            } else if (browsing) {
+                EETheme.rect(g, controlX + 5, y + 11, 8, 2, EETheme.TEXT); EETheme.rect(g, controlX + 8, y + 8, 2, 8, EETheme.TEXT);
+            } else EETheme.removeButton(g, controlX, y + 3, 18, 18, controlHover, true);
+        }
+        g.disableScissor();
+        if (filtered.isEmpty()) {
+            String empty = !query.isBlank() ? "No matching blocks." : browsing ? "No blocks available."
+                    : mode == Mode.ONLY ? "No blocks allowed yet." : "All blocks are allowed.";
+            g.text(font, empty, left + 24, viewTop + 13, 0xFFD2DAD0, false);
+            if (query.isBlank() && !browsing) g.text(font, mode == Mode.ONLY
+                    ? "Use Add blocks to choose blocks." : "Use Add blocks to add exceptions.", left + 24, viewTop + 29, 0xFFAEBBB5, false);
+        }
+        if (maxScroll() > 0) EETheme.scrollbar(g, barX(), viewTop, 4, viewBottom - viewTop, thumbY(), thumbHeight(),
+                draggingScroll || mx >= barX() - 3 && mx < barX() + 7 && my >= viewTop && my < viewBottom);
+        super.extractRenderState(g, menuOpen ? -1 : mx, menuOpen ? -1 : my, delta);
+        if (hovered >= 0) {
+            BlockEntry block = filtered.get(hovered);
+            if (mx >= rowRight() - 23 || browsing) tooltip(g, (browsing && !selected.contains(block.id) ? "Add " : "Remove ") + block.name, mx, my);
+            else {
+                boolean restricted = originalPredicates.stream().anyMatch(predicate -> ids(predicate).contains(block.id)
+                        && (predicate.properties().isPresent() || predicate.nbt().isPresent() || !predicate.components().isEmpty()));
+                tooltip(g, block.name + (restricted ? "\nExisting state or data requirements are preserved." : ""), mx, my);
             }
         }
-
-        if (allowed.isEmpty()) {
-            CompoundTag tag = ItemUtils.getTag(stack);
-            ListTag list = ItemUtils.getList(tag, kind.legacyNbtKey, Tag.TAG_STRING);
-            for (Tag t : list) {
-                if (t instanceof StringTag st) {
-                    String v = st.value();
-                    if (v != null && !v.isBlank()) {
-                        allowed.add(v);
-                    }
-                }
-            }
+        if (menuOpen) {
+            int y = modeButton.getBottom() + 3;
+            EETheme.bevel(g, modeButton.getX() - 1, y - 1, modeButton.getWidth() + 2, 42, EETheme.PANEL, false);
+            for (int i = 0; i < Mode.values().length; i++) EEDropdownButton.renderOption(g, font,
+                    Component.literal(Mode.values()[i].label), ItemStack.EMPTY, modeButton.getX(), y + i * 20,
+                    modeButton.getWidth(), 20, mode.ordinal() == i, menuFocus == i
+                            || mx >= modeButton.getX() && mx < modeButton.getRight() && my >= y + i * 20 && my < y + (i + 1) * 20);
         }
-
-        allowed.retainAll(getAllBlockIds());
-        return allowed;
     }
-
-    private static ItemStack toDisplayStack(String id) {
-        Identifier rid = Identifier.tryParse(id);
-        if (rid == null) {
-            return ItemStack.EMPTY;
-        }
-        var block = BuiltInRegistries.BLOCK.getValue(rid);
-        if (block == null) {
-            return ItemStack.EMPTY;
-        }
-        var item = block.asItem();
-        if (item == Items.AIR) {
-            return ItemStack.EMPTY;
-        }
-        return new ItemStack(item);
+    private String fit(String text, int space) {
+        return font.width(text) <= space ? text : font.plainSubstrByWidth(text, Math.max(0, space - font.width("..."))) + "...";
     }
-
-    @SuppressWarnings("unchecked")
-    private static List<BlockPredicate> getPredicates(AdventureModePredicate predicate) {
-        try {
-            for (Field f : AdventureModePredicate.class.getDeclaredFields()) {
-                if (List.class.isAssignableFrom(f.getType())) {
-                    f.setAccessible(true);
-                    Object v = f.get(predicate);
-                    if (v instanceof List<?> list && (list.isEmpty() || list.get(0) instanceof BlockPredicate)) {
-                        return (List<BlockPredicate>) list;
-                    }
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return List.of();
+    private void tooltip(GuiGraphicsExtractor g, String text, int x, int y) {
+        g.setTooltipForNextFrame(font, font.split(Component.literal(text), Math.min(240, width - 24)), x, y);
     }
 }

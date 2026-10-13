@@ -4,9 +4,24 @@
   "package": "com.dutchmtc.ee.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
-    "ArmorStandAccessor"
+    "CreativeModeTabsAccessor",
+    "CreativeModeTabsMixin",
+    "AdventureModePredicateAccessor",
+    "ArmorStandAccessor",
+    "SignBlockPlacementMixin",
+    "SpawnEggPassengersMixin"
   ],
   "client": [
+    "BlockEntityRenderDispatcherAccessor",
+    "EditBoxAccessor",
+    "TextDisplayAccessor",
+    "CommandSuggestionsMixin",
+    "CommandSuggestionsAccessor",
+    "CommandSuggestionsAccessor$ListBounds",
+    "BookEditScreenMixin",
+    "BookViewScreenMixin",
+    "SignEditScreenMixin",
+    "GuiRendererMixin",
     "GameModeIconAccessor",
     "GameModeSwitcherScreenInvoker",
     "GameModeSwitcherScreenMixin",

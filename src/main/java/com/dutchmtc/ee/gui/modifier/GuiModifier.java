@@ -1,12 +1,12 @@
 package com.dutchmtc.ee.gui.modifier;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.dutchmtc.ee.gui.GuiEE;
 import com.dutchmtc.ee.gui.GuiConfirmation;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
@@ -48,7 +48,7 @@ public class GuiModifier<T> extends GuiEE {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_ESCAPE) {
+        if (event.key() == InputConstants.KEY_ESCAPE) {
             onCancel();
             return true;
         }

@@ -1,220 +1,166 @@
 package com.dutchmtc.ee.gui.modifier;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.dutchmtc.ee.gui.components.EEButton;
-import com.dutchmtc.ee.gui.selector.GuiButtonListSelector;
-import com.dutchmtc.ee.utils.GuiUtils;
-import com.dutchmtc.ee.utils.ItemUtils;
-import com.dutchmtc.ee.utils.GuiUtils;
-import com.dutchmtc.ee.utils.ItemUtils;
+import com.dutchmtc.ee.gui.components.EEDropdownButton;
+import com.dutchmtc.ee.gui.components.EETheme;
 import com.dutchmtc.ee.utils.ItemUtils.AttributeData;
-import com.dutchmtc.ee.utils.Tuple;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.client.resources.language.I18n;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 
-import java.awt.*;
-import java.util.ArrayList;
+import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
-public class GuiAttributeModifier extends GuiListModifier<List<AttributeData>> {
-
-    static class AttributeListElement extends ListElement {
-        private final EditBox amount;
-        private boolean errAmount = false;
-        private double amountValue;
-        private final AttributeData data;
-        private int operationValue;
-        private final Button slotButton;
-        private final Button typeButton;
-        private final Button operationButton;
-
-        public AttributeListElement(GuiAttributeModifier parent, AttributeData data) {
-            super(400, 50);
-            this.data = data;
-            int l = 5 + font.width(I18n.get("gui.ee.modifier.attr.amount") + " : ");
-            amount = new EditBox(font, 202 + l, 1, 154 - l, 18, Component.literal(""));
-            amount.setMaxLength(8);
-            amount.setValue(String.valueOf(amountValue = data.getModifier().amount()));
-            operationValue = data.getModifier().operation().id();
-            buttonList.add(slotButton = new EEButton(2, 0, 198, 20, Component.literal(""), b -> {
-                List<Tuple<String, EquipmentSlot>> slots = new ArrayList<>();
-                slots.add(new Tuple<>(I18n.get("gui.ee.none"), null));
-                for (EquipmentSlot slot : EquipmentSlot.values()) {
-                    String s = I18n.get("item.modifiers." + slot.getName());
-                    slots.add(new Tuple<>(s.endsWith(":") ? s.substring(0, s.length() - 1) : s, slot));
-                }
-                mc.gui.setScreen(new GuiButtonListSelector<>(parent,
-                        Component.translatable("gui.ee.modifier.attr.slot"), slots, s -> {
-                    data.setSlot(s);
-                    defineButtonText();
-                    return parent;
-                }));
-            }));
-            buttonList.add(typeButton = new EEButton(2, 21, 198, 20, Component.literal(""), b -> {
-                List<Tuple<String, Attribute>> attributes = new ArrayList<>();
-                BuiltInRegistries.ATTRIBUTE.forEach(atr -> {
-                    String desc = atr.getDescriptionId();
-                    attributes.add(new Tuple<>(I18n.get(desc), atr));
-                });
-                mc.gui.setScreen(new GuiButtonListSelector<>(parent,
-                        Component.translatable("gui.ee.modifier.attr.type"), attributes, atr -> {
-                    data.setAttribute(atr);
-                    defineButtonText();
-                    return parent;
-                }));
-            }));
-            buttonList.add(operationButton = new EEButton(202, 21, 157, 20, Component.literal(""), b -> {
-                List<Tuple<String, Integer>> operations = new ArrayList<>();
-                operations.add(new Tuple<>(I18n.get("gui.ee.modifier.attr.operation.0") + " (0)", 0));
-                operations.add(new Tuple<>(I18n.get("gui.ee.modifier.attr.operation.1") + " (1)", 1));
-                operations.add(new Tuple<>(I18n.get("gui.ee.modifier.attr.operation.2") + " (2)", 2));
-                mc.gui.setScreen(new GuiButtonListSelector<>(parent,
-                        Component.translatable("gui.ee.modifier.attr.operation"), operations, i -> {
-                    AttributeListElement.this.operationValue = i;
-                    defineButtonText();
-                    return parent;
-                }));
-            }));
-            buttonList.add(new RemoveElementButton(parent, 359, 0, 20, 20, this));
-            buttonList.add(new AddElementButton(parent, 381, 0, 20, 20, this, parent.supplier));
-            buttonList.add(new AddElementButton(parent, 359, 21, 43, 20, Component.translatable("gui.ee.give.copy"),
-                    this, () -> new AttributeListElement(parent, getData())));
-            defineButtonText();
+public class GuiAttributeModifier extends GuiAttributesEditor<List<AttributeData>, GuiAttributeModifier.Row> {
+    static final class Row {
+        final AttributeData data;
+        String value;
+        Row(AttributeData data) { this.data = data.copy(); value = display(data.getModifier().amount(), data.getModifier().operation()); }
+        Double amount() {
+            AttributeModifier modifier = data.getModifier();
+            if (Double.isFinite(modifier.amount()) && value.equals(display(modifier.amount(), modifier.operation())))
+                return modifier.amount();
+            return parse(value, modifier.operation());
         }
-
-        private void defineButtonText() {
-            String s = (data.getSlot() == null ? I18n.get("gui.ee.none")
-                    : I18n.get("item.modifiers." + data.getSlot().getName()));
-            slotButton.setMessage(Component.translatable("gui.ee.modifier.attr.slot").append(" - ")
-                    .append((s.endsWith(":") ? s.substring(0, s.length() - 1) : s)));
-            
-            typeButton.setMessage(Component.translatable("gui.ee.modifier.attr.type").append(" - ")
-                    .append(Component.translatable(data.getAttribute().getDescriptionId())));
-            
-            operationButton.setMessage(Component.translatable("gui.ee.modifier.attr.operation").append(" - ")
-                    .append(Component.translatable("gui.ee.modifier.attr.operation." + operationValue)).append(" (")
-                    .append(String.valueOf(operationValue)).append(")"));
-        }
-
-        @Override
-        public void draw(GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
-            GuiUtils.drawRelative(graphics, amount, offsetX, offsetY, mouseX, mouseY, partialTicks);
-            GuiUtils.drawRightString(graphics, font, I18n.get("gui.ee.modifier.attr.amount") + " : ", amount,
-                    (errAmount ? Color.RED : Color.WHITE).getRGB(), offsetX, offsetY);
-            super.draw(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
-        }
-
-        @Override
-        public void init() {
-            amount.setFocused(false);
-        }
-
-        @Override
-        public boolean isFocused() {
-            return amount.isFocused();
-        }
-
-        @Override
-        public boolean charTyped(CharacterEvent event) {
-            return amount.charTyped(event);
-        }
-
-        @Override
-        public boolean keyPressed(KeyEvent event) {
-            amount.keyPressed(event);
-            return super.keyPressed(event);
-        }
-
-        @Override
-        public boolean match(String search) {
-            return slotButton.getMessage().getString().toLowerCase().contains(search.toLowerCase())
-                    || typeButton.getMessage().getString().toLowerCase().contains(search.toLowerCase())
-                    || operationButton.getMessage().getString().toLowerCase().contains(search.toLowerCase());
-        }
-
-        @Override
-        public void mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-            double mouseX = event.x();
-            double mouseY = event.y();
-            int mouseButton = event.button();
-            if (GuiUtils.isHover(amount, (int) mouseX, (int) mouseY)) {
-                amount.setFocused(true);
-            } else {
-                amount.setFocused(false);
-            }
-            amount.mouseClicked(event, doubleClick);
-            if (mouseButton == 1) {
-                if (GuiUtils.isHover(amount, (int) mouseX, (int) mouseY))
-                    amount.setValue("");
-            }
-            super.mouseClicked(event, doubleClick);
-        }
-
-        @Override
-        public void update() {
-            try {
-                amountValue = amount.getValue().isEmpty() ? 0 : Double.parseDouble(amount.getValue());
-                errAmount = false;
-            } catch (NumberFormatException e) {
-                errAmount = true;
-            }
-            super.update();
-        }
-
-        public AttributeData getData() {
-            data.setModifier(new AttributeModifier(data.getModifier().id(),
-                    amountValue, Operation.BY_ID.apply(operationValue)));
-            return data;
+        AttributeData output() {
+            AttributeData copy = data.copy();
+            Double amount = amount();
+            if (amount == null) throw new IllegalStateException("Invalid attribute amount");
+            copy.setModifier(new AttributeModifier(data.getModifier().id(), amount, data.getModifier().operation()));
+            return copy;
         }
     }
+    private static final List<String> OPERATIONS = List.of("Add amount", "Add base %", "Multiply total %");
+    private static final String[] HELP = {
+            "Adds or subtracts a fixed amount before percentage changes.",
+            "Base percentages add together. Applied after fixed additions, before total multipliers.",
+            "Multiplies the running total. Multiple total modifiers multiply together."
+    };
+    private final List<AttributeData> original;
 
-    private final Supplier<ListElement> supplier = () -> new AttributeListElement(this,
-            ItemUtils.AttributeModifierBuilder.ARMOR.buildData(EquipmentSlot.MAINHAND, 0, Operation.ADD_VALUE));
-
-    private final List<AttributeData> originalAttributes;
-
-    @SuppressWarnings("unchecked")
     public GuiAttributeModifier(Screen parent, List<AttributeData> attributes, Consumer<List<AttributeData>> setter) {
-        super(parent, Component.translatable("gui.ee.modifier.attr"), new ArrayList<>(), setter, new Tuple[0]);
-        this.originalAttributes = new ArrayList<>();
-        for (AttributeData data : attributes) {
-            this.originalAttributes.add(new AttributeData(data.getSlot(), data.getModifier(), data.getAttribute()));
-        }
-        attributes.forEach(attribute -> addListElement(new AttributeListElement(this, attribute)));
-        addListElement(new AddElementList(this, supplier));
+        super(parent, setter);
+        original = attributes.stream().map(AttributeData::copy).toList();
+        attributes.forEach(data -> rows.add(new Row(data)));
+        if (!rows.isEmpty()) selected = 0;
     }
-
-    @Override
-    public boolean isModified() {
-        List<AttributeData> current = get();
-        if (current.size() != originalAttributes.size()) return true;
-        for (int i = 0; i < current.size(); i++) {
-            if (!current.get(i).equals(originalAttributes.get(i))) return true;
+    static String display(double value, Operation operation) {
+        if (!Double.isFinite(value)) return Double.toString(value);
+        BigDecimal number = BigDecimal.valueOf(value);
+        if (operation != Operation.ADD_VALUE) number = number.movePointRight(2);
+        number = number.stripTrailingZeros();
+        return number.precision() - number.scale() <= 24 && number.scale() <= 24 ? number.toPlainString() : number.toString();
+    }
+    static Double parse(String text, Operation operation) {
+        try {
+            BigDecimal number = new BigDecimal(text.strip());
+            if (operation != Operation.ADD_VALUE) number = number.movePointLeft(2);
+            double value = number.doubleValue(); return Double.isFinite(value) ? value : null;
+        } catch (NumberFormatException | ArithmeticException ignored) { return null; }
+    }
+    static String slotName(EquipmentSlotGroup slot) {
+        return switch (slot) {
+            case ANY -> "Any slot";
+            case MAINHAND -> "Main hand";
+            case OFFHAND -> "Off hand";
+            case HAND -> "Either hand";
+            case FEET -> "Feet";
+            case LEGS -> "Legs";
+            case CHEST -> "Chest";
+            case HEAD -> "Head";
+            case ARMOR -> "Any armor slot";
+            case BODY -> "Body";
+            case SADDLE -> "Saddle";
+        };
+    }
+    @Override protected Attribute attribute(Row row) { return row.data.getAttribute(); }
+    @Override protected String summary(Row row) {
+        Double amount = row.amount();
+        return (amount == null ? "Invalid amount" : (amount >= 0 ? "+" : "") + row.value
+                + switch (row.data.getModifier().operation()) { case ADD_VALUE -> ""; case ADD_MULTIPLIED_BASE -> "% base";
+                    case ADD_MULTIPLIED_TOTAL -> "% total"; }) + " · " + slotName(row.data.getSlotGroup());
+    }
+    @Override protected Row create(Attribute attribute) {
+        return new Row(new AttributeData(EquipmentSlotGroup.MAINHAND,
+                new AttributeModifier(Identifier.fromNamespaceAndPath("ee", "attribute/" + UUID.randomUUID()), 0, Operation.ADD_VALUE),
+                attribute, ItemAttributeModifiers.Display.attributeModifiers()));
+    }
+    @Override protected void changeAttribute(Row row, Attribute attribute) { row.data.setAttribute(attribute); }
+    @Override protected boolean supportsDuplicate() { return true; }
+    @Override protected void duplicateSelected() {
+        Row row = current();
+        if (row == null || row.amount() == null) return;
+        AttributeData copy = row.output();
+        copy.setModifier(new AttributeModifier(Identifier.fromNamespaceAndPath("ee", "attribute/" + UUID.randomUUID()),
+                copy.getModifier().amount(), copy.getModifier().operation()));
+        rows.add(selected + 1, new Row(copy)); selected++;
+    }
+    private void operation(Row row, int index) {
+        Double amount = row.amount();
+        if (amount == null) return;
+        Operation next = Operation.values()[index];
+        row.data.setModifier(new AttributeModifier(row.data.getModifier().id(), amount, next));
+        row.value = display(amount, next); init();
+    }
+    @Override protected void buildDetails(Row row, int x, int y, int w) {
+        int amountWidth = Math.min(100, w / 3);
+        EEDropdownButton op = addRenderableWidget(new EEDropdownButton(x, y + 55, w - amountWidth - 8, 20,
+                Component.literal(OPERATIONS.get(row.data.getModifier().operation().ordinal())), b -> {
+                    if (row.amount() != null) openOptions((EEDropdownButton) b, OPERATIONS,
+                            row.data.getModifier().operation().ordinal(), i -> operation(row, i));
+                }));
+        op.setTooltip(Tooltip.create(Component.literal(row.amount() == null ? "Enter a valid amount before changing the operation."
+                : HELP[row.data.getModifier().operation().ordinal()])));
+        valueField = field(x + w - amountWidth + 6, y + 56, amountWidth - 12, 18, "Amount", row.value);
+        valueField.setMaxLength(64);
+        valueField.setResponder(value -> { row.value = value; refreshApply(); op.active = row.amount() != null;
+            op.setTooltip(Tooltip.create(Component.literal(row.amount() == null ? "Enter a valid amount before changing the operation."
+                    : HELP[row.data.getModifier().operation().ordinal()]))); });
+        op.active = row.amount() != null;
+        valueField.setTooltip(Tooltip.create(Component.literal(row.data.getModifier().operation() == Operation.ADD_VALUE
+                ? "A fixed amount. Negative values subtract."
+                : "Enter a percentage: 10 means +10%; -10 means -10%. Stored as Minecraft's decimal multiplier.")));
+        addRenderableWidget(new EEDropdownButton(x, y + 97, w, 20, Component.literal(slotName(row.data.getSlotGroup())),
+                b -> openOptions((EEDropdownButton) b, Arrays.stream(EquipmentSlotGroup.values()).map(GuiAttributeModifier::slotName).toList(),
+                        row.data.getSlotGroup().ordinal(), i -> { row.data.setSlotGroup(EquipmentSlotGroup.values()[i]); init(); })))
+                .setTooltip(Tooltip.create(Component.literal("The modifier takes effect while the item is held or equipped in this slot.")));
+    }
+    @Override protected String invalidReason(Row row) {
+        return row.amount() == null ? "Enter a finite number for " + name(row) + "." : null;
+    }
+    @Override protected void renderDetails(GuiGraphicsExtractor g, Row row, int x, int y, int w) {
+        label(g, "Operation", x, y + 42);
+        label(g, row.data.getModifier().operation() == Operation.ADD_VALUE ? "Amount" : "Percent", x + w - Math.min(100, w / 3), y + 42);
+        label(g, "Active in", x, y + 84);
+        inputSurface(g, valueField, row.amount() != null);
+        Double amount = row.amount();
+        String text;
+        if (amount == null) text = "Enter a valid number.";
+        else {
+            double result = row.data.getModifier().operation() == Operation.ADD_VALUE ? 10 + amount : 10 * (1 + amount);
+            text = Double.isFinite(result) ? "Example: 10 → " + display(result, Operation.ADD_VALUE) : "Example exceeds the number range.";
         }
+        g.text(font, fit(text, w), x, y + 127, amount == null ? 0xFFAA4444 : EETheme.MUTED, false);
+        if (panelHeight >= 270) {
+            int yy = y + 147;
+            for (var line : font.split(Component.literal(HELP[row.data.getModifier().operation().ordinal()]), w)) {
+                g.text(font, line, x, yy, EETheme.MUTED, false); yy += 12;
+            }
+        }
+    }
+    @Override public boolean isModified() {
+        if (rows.size() != original.size()) return true;
+        for (int i = 0; i < rows.size(); i++) if (rows.get(i).amount() == null || !rows.get(i).output().equals(original.get(i))) return true;
         return false;
     }
-
-    @Override
-    protected List<AttributeData> get() {
-        List<AttributeData> result = new ArrayList<>();
-        getElements().stream().filter(le -> le instanceof AttributeListElement).map(le -> (AttributeListElement) le)
-                .forEach(ale -> result.add(ale.getData()));
-        return result;
-    }
-
+    @Override protected List<AttributeData> get() { return rows.stream().map(Row::output).toList(); }
 }

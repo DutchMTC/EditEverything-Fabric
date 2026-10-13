@@ -112,7 +112,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
             btsDel[i] =
 
                     addRenderableWidget(new GuiValueButton<Integer>(width / 2 + 165, 21 + 21 * i % (elms * 21), 20, 20,
-                            Component.literal("-"), i, b -> {
+                            Component.literal("×"), i, b -> {
                         values.remove(b.getValue().intValue());
                         defineMenu();
                     }) {
@@ -122,7 +122,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
                             return Component.translatable("gui.narrate.button", I18n.get("gui.ee.delete"));
                         }
                     });
-            btsDel[i].setMessage(Component.literal("-").withStyle(ChatFormatting.RED));
+            btsDel[i].setMessage(Component.literal("×").withStyle(ChatFormatting.RED));
             btsAdd[i] = addRenderableWidget(new GuiValueButton<Integer>(width / 2 + 187, 21 + 21 * i % (elms * 21), 20,
                     20, Component.literal("+"), i, b -> {
                 values.add(Objects.requireNonNull(b.getValue()), "");
@@ -188,7 +188,7 @@ public class GuiStringArrayModifier extends GuiModifier<String[]> {
         int end = Math.min(values.size(), (page + 1) * elms);
 
         // Right-click: clear the hovered line and keep focus on it.
-        if (mouseButton == 1) {
+        if (GuiUtils.isRightMouseButton(mouseButton)) {
             for (int i = start; i < end; i++) {
                 if (GuiUtils.isHover(tfs[i], mouseX, mouseY)) {
                     tfs[i].setValue("");

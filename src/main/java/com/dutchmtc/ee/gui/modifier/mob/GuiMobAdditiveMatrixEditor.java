@@ -113,7 +113,7 @@ public class GuiMobAdditiveMatrixEditor extends Screen {
                     setter.accept(state.tag);
                     init(); // rebuild labels
                     return this;
-                }));
+                }).withCurrent(selection[groupIndex]));
     }
 
     private int computeValue() {

@@ -1,9 +1,8 @@
 {
   "pack": {
     "description": "Advanced Creative Tab 2 resources",
-    "pack_format": 85,
-    "min_format": 85,
-    "max_format": 85,
+    "min_format": [97, 1],
+    "max_format": [97, 1],
     "_comment": "Advanced Creative Tab 2."
   }
 }

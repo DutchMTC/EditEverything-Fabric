@@ -1,9 +1,9 @@
 package com.dutchmtc.ee.gui.modifier.nbtelement;
 
+import com.dutchmtc.ee.gui.components.EETextField;
 import com.dutchmtc.ee.gui.modifier.GuiListModifier;
+
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -13,12 +13,14 @@ public abstract class NBTNumericElement<T extends Number> extends NBTElement {
     private final EditBox field;
     private final String type;
 
-    public NBTNumericElement(String type, GuiListModifier<?> parent, String key, int sizeX, int sizeY, T value) {
+    public NBTNumericElement(
+            String type, GuiListModifier<?> parent, String key, int sizeX, int sizeY, T value) {
         super(parent, key, Math.max(sizeX, 200), Math.max(sizeY, 21));
         this.value = value;
         this.type = type;
-        fieldList.add(field = new EditBox(font, 2, 2, 196, 16, Component.literal("")));
+        fieldList.add(field = new EETextField(font, 2, 2, 196, 16, Component.literal("")));
         field.setValue(String.valueOf(value));
+        field.setResponder(text -> readInput());
     }
 
     public NBTNumericElement(String type, GuiListModifier<?> parent, String key, T value) {
@@ -40,7 +42,7 @@ public abstract class NBTNumericElement<T extends Number> extends NBTElement {
 
             @Override
             public void setNull() {
-                NBTNumericElement.this.setNull();
+                setValue(parseValue("0"));
             }
         };
     }
@@ -70,38 +72,21 @@ public abstract class NBTNumericElement<T extends Number> extends NBTElement {
         return field.getValue().toLowerCase().contains(search.toLowerCase()) || super.match(search);
     }
 
-    @Override
-    public boolean charTyped(CharacterEvent event) {
-        if (super.charTyped(event)) {
-            try {
-                if (field.getValue().isEmpty())
-                    setNull();
-                else
-                    value = parseValue(field.getValue());
-                field.setTextColor(0xffffffff);
-            } catch (NumberFormatException e) {
-                field.setTextColor(0xffff0000);
-            }
-            return true;
+    private void readInput() {
+        try {
+            if (field.getValue().isEmpty()) setNull();
+            else value = parseValue(field.getValue());
+            EETextField.validate(field, null);
+        } catch (NumberFormatException e) {
+            EETextField.validate(
+                    field, "Enter a valid " + getType() + " number within its supported range.");
         }
-        return false;
     }
 
     @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (super.keyPressed(event)) {
-            try {
-                if (field.getValue().isEmpty())
-                    setNull();
-                else
-                    value = parseValue(field.getValue());
-                field.setTextColor(0xffffffff);
-            } catch (NumberFormatException e) {
-                field.setTextColor(0xffff0000);
-            }
-            return true;
-        }
-        return false;
+    public void update() {
+        readInput();
+        super.update();
     }
 
     public abstract void setNull();
@@ -111,7 +96,6 @@ public abstract class NBTNumericElement<T extends Number> extends NBTElement {
     public void updateValue(T value) {
         this.value = value;
         field.setValue("" + value);
-        field.setTextColor(0xffffffff);
+        EETextField.validate(field, null);
     }
-
 }

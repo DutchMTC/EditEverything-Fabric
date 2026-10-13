@@ -1,135 +1,218 @@
-![Logo](https://cdn.modrinth.com/data/cached_images/28c59c57ce8075c46b6bd3032e4e6a5767346837.png)
+![Edit Everything](https://cdn.modrinth.com/data/cached_images/28c59c57ce8075c46b6bd3032e4e6a5767346837.png)
 
-**Edit Everything** is a comprehensive Minecraft Fabric mod designed to enhance your Creative Mode experience. Based on the "[Advanced Creative Tab](https://modrinth.com/mod/act)" Mod by ATE47, this mod provides a suite of powerful tools for editing items, managing inventories, and utilizing useful commands to streamline your creative workflow.
+# Edit Everything
 
-Whether you are a map maker, a server admin, or just someone who loves to experiment with custom items, Edit Everything gives you the control you need.
+**Edit Everything** lets you create custom items, mobs and decorations in Creative mode without writing NBT by hand. Make weapons with custom stats, food with special effects, containers filled with loot, styled signs and books, custom villagers, mob stacks and more. Save your creations and share them using item codes.
+
+## Getting started
+
+Hold an item in Creative mode and press **H** to edit it. Press **Y** to open the Item giver, or **N** for Saved items. You can change these keys in Minecraft's Controls settings.
+
+![Item editor](https://files.catbox.moe/tliehb.png)
 
 ## Features
 
-### 🛠️ Advanced Item Editor
-Modify every aspect of your items with an intuitive GUI.
+### Items, saved creations and sharing
 
-![General Item Editor Menu](https://cdn.modrinth.com/data/cached_images/a45b3a1bc70dcae5b64253516c3f5cfc9cab580f.png)
+- Change an item's material and amount while keeping its custom properties.
+- Find items from the creative catalog, your inventory or your saved creations.
+- Create stacks up to 99 where supported; damageable items remain limited to one.
+- Paste item codes or full `/give` commands to recreate items, with command autocomplete.
+- Save, edit, duplicate and import creations, or copy their item codes to share them.
+- Access your creations in **Saved items**, with special and hidden items in a separate **Operator items** creative tab.
 
-#### Meta & Data Components
-The Meta tab serves as a hub for advanced item properties.
-- **Unbreakable:** Toggle the unbreakable tag.
-- **Data Components:** Add, edit, or remove modern data components
-- **NBT Editor:** Edit raw NBT data directly with a tree-view editor.
+![Item browser](https://files.catbox.moe/uto6wy.png)
+![Saved items](https://files.catbox.moe/ckc8ne.png)
+![Item giver](https://files.catbox.moe/0wrbz6.png)
 
-![Meta Editor](https://cdn.modrinth.com/data/cached_images/3e288c481aaa0ec5a6c401915edfdcd5e1ee4d11.png)
-![Data Component Editor](https://cdn.modrinth.com/data/cached_images/4fd00c6cc51bd2a395a3eb6815efb25305781369_0.webp)
+### Names, lore, colors and gradients
 
-#### Adventure Mode (Can Place / Can Break)
-Easily configure the `CanPlaceOn` and `CanDestroy` tags for Adventure mode map making. Select blocks from a list to define where items can be used.
-![Adventure Editor Screenshot](path/to/adventure_editor_screenshot.png)
+- Customize item names, lore, entity names, signs, books and text displays.
+- Color individual letters or words using Minecraft colors, a color wheel or hex codes.
+- Create gradients with multiple colors and adjust where each color starts.
+- Apply **bold**, *italic*, underline, strikethrough and obfuscated text.
+- Reuse recent custom colors and gradients, or enter legacy color codes in supported text fields.
+- Dye leather armor and customize potion colors.
 
-#### Container Editor
-Edit the contents of containers (Chests, Shulker Boxes, Barrels, etc.) directly without placing them.
-![Chest Editor](https://cdn.modrinth.com/data/cached_images/d0f2b2792d971098332ea38e71af9172324d5151.png)
+![Styled item name](https://files.catbox.moe/2d1ylg.png)
+![Multi-color gradients](https://files.catbox.moe/c5fqx9.png)
 
-#### Command Block Editor
-Edit Command Block items (Command, Name, Auto-Execute) directly in your inventory.
-![Command Block Editor](https://cdn.modrinth.com/data/cached_images/0c3869b31261eba61f8ee2114fca90efb406449c.png)
+### Item properties, food and use behavior
 
-#### Attributes
-Customize attack damage, attack speed, max health, movement speed, and other attributes.
-![Attributes Editor](https://cdn.modrinth.com/data/cached_images/84e519991df3833e7c2b51f559768373770712bc_0.webp)
+- Set stack size, durability, damage, unbreakable state and repair cost.
+- Change item models, rarity, enchantment glint and tooltip style.
+- Turn items into food or drinks with custom hunger, saturation and consumption time.
+- Choose consumption sounds and the item returned after use.
+- Give or remove potion effects, clear all effects, randomly teleport the player or play a sound when consumed. Combine actions and set effect chances.
+- Customize break sounds, attack and interaction animations, use effects and cooldowns.
+- Edit raw data components and custom NBT for more advanced customization.
 
-#### Enchantments
-Add any enchantment at any level, even those not normally compatible.
-![Enchantments Editor](https://cdn.modrinth.com/data/cached_images/2ef28ae353a12fc76acadeb8ff00b67f273701f8_0.webp)
+![Food settings](https://files.catbox.moe/ay4881.png)
+![Food and drink actions](https://files.catbox.moe/k27zlk.png)
+![Available consumption actions](https://files.catbox.moe/b4v9vi.png)
 
-#### Potion Effects
-Create custom potions with specific effects, durations, amplifiers, and custom colors.
-![Potion Editor](https://cdn.modrinth.com/data/cached_images/b1b1394bbe9f3cadc7004bd0a383e3748c97603e_0.webp)
+### Enchantments and attributes
 
-#### Fireworks
-Design custom firework rockets with multiple explosions, colors, and fade effects.
-![Firework Editor](https://cdn.modrinth.com/data/cached_images/d6186a71d9491bd8a185e7f0034171c33c79dbae_0.webp)
+Add enchantments with creative levels **1–255**, including enchantments normally incompatible with the item. Edit stored enchantments on enchanted books too.
 
-#### Player Heads
-Get heads with specific textures or player names.
-![Player Head Editor](https://cdn.modrinth.com/data/cached_images/72256d8b04d1e3efb9398963df816a98831659b0.png)
+Change attributes such as attack damage, movement speed and maximum health. Assign item modifiers to equipment slots, add flat amounts or percentage bonuses, and change entity base values.
 
-#### Entity Editor
-Customize spawn egg entities and their equipment.
-![Entity Editor](https://cdn.modrinth.com/data/cached_images/3d37c45e3a13727492fda81405c7a494c3fc9dca.png)
+![Enchantments](https://files.catbox.moe/1btydb.png)
+![Attributes](https://files.catbox.moe/rski6n.png)
 
-#### Armor Stand Editor
-Edit Armor Stand items directly in your inventory. Configure the pose, equipment, and properties *before* you place it.
-- **Pose:** Adjust the pose of every body part (Head, Body, Arms, Legs) with precision sliders.
-- **Equipment:** Set the armor and held items.
-- **Properties:** Toggle flags like Invisible, Glowing, Small, Show Arms, No Base Plate, and more.
-- **Locks:** Configure interaction locks to prevent players from taking or swapping items.
+### Adventure-mode block permissions
 
-*Note: You can also use `/ee armorstand` on placed armor stands to copy them as an item. Applying changes directly to the entity requires server permissions.*
+Choose which blocks an item **Can Break** or **Can Place** on in Adventure mode. Allow only selected blocks, or allow everything except selected blocks. Choose whether players see these permissions in the item's tooltip.
 
-### 📦 Item Giver
-A powerful alternative to the standard Creative Inventory.
-- Search and filter items easily.
-- Access custom items and saved palettes.
-![Giver Menu](https://cdn.modrinth.com/data/cached_images/877a7b535a766a2246f2ed31e7fd3bdb78c2318d_0.webp)
+![Can Break permissions](https://files.catbox.moe/3jd33k.png)
+![Can Place permissions](https://files.catbox.moe/pdyj6z.png)
 
-### 📑 Creative Tab
-Save items you made to a Creative Tab
-![Creative Tab](https://cdn.modrinth.com/data/cached_images/447b116df2cb203cd708c350053e1b62530d7af5_0.webp)
+### Containers and bundles
 
-### 🎨 Color & Formatting
-- **Color Modifier:** Change the color of leather armor, potions, and more with a visual picker.
-- **Chat Formatting:** Built-in reference for chat color codes (`/ee format`).
-- **Palette:** Copy-paste color codes easily (`/ee palette`).
-![Color Picker](https://cdn.modrinth.com/data/cached_images/73a056771202b7eaf4b441891089d4f666456323.png)
+Prepare containers full of items before placing them. Drag, stack, split and move items as you would in a normal inventory.
 
-### 🎮 Enhanced Gamemode Switcher (F3 + F4)
-Edit Everything enhances the vanilla F3 + F4 gamemode switcher. It allows you to use this shortcut to switch gamemodes even if you don't have standard permission for the vanilla gamemode commands, provided the server supports the switch (or if you are in a singleplayer world where the mod handles the logic).
+Edit chests, shulker boxes and other block containers, furnace slots, chest and hopper minecarts, chest boats and rafts, bundles, lectern books and jukebox records.
+
+![Container contents](https://files.catbox.moe/cb0y12.png)
+![Bundle contents](https://files.catbox.moe/7l05t9.png)
+
+### Potions and entity effects
+
+Create custom drinkable, splash and lingering potions, plus tipped arrows. Combine effects, choose a potion color and set each effect's level and duration, including infinite duration. Effect levels **1–256** are supported.
+
+Configure particles, ambient effects and potion status icons. Apply custom effects to mobs as well.
+
+![Custom potions](https://files.catbox.moe/amt6gv.png)
+![Entity effects](https://files.catbox.moe/0tlbzb.png)
+
+### Signs
+
+Write and format both sides of signs and hanging signs. Give individual letters custom colors and gradients, add glowing text, choose a glow dye and wax the sign. Add commands that players can activate by clicking the sign.
+
+![Sign text and glow](https://files.catbox.moe/lu58q1.png)
+![Sign click actions](https://files.catbox.moe/ffwcb2.png)
+
+### Books
+
+- Write books with colored text, gradients and formatting.
+- Add clickable commands, web links, page links and copyable text.
+- Add hover text, item or entity information, and insertion text.
+- Change the author, title and copy generation.
+- Duplicate, reorder or remove pages, and preview interactive text.
+- Sign books or unlock Written Books to edit and sign them again.
+
+![Book editing](https://files.catbox.moe/48pscp.png)
+![Text click and hover actions](https://files.catbox.moe/t6onxv.png)
+
+### Mobs, equipment and mob stacks
+
+Customize mobs through their spawn eggs: names, behavior, attributes, effects and mob-specific settings. Change variants, owners, trusted players, leashes, inventories, timers, anger, villager gossip and more where supported by the mob.
+
+Equip mobs with custom items and set equipment drop chances. Stack mobs on top of one another, duplicate them and rearrange who rides whom.
+
+**NOTE**: On servers, mob stacking requires Edit Everything to be on both the client and the server.
+
+![Entity editor](https://files.catbox.moe/mjwayg.png)
+![Mob-specific properties](https://files.catbox.moe/5w30hf.png)
+![Mob equipment](https://files.catbox.moe/ofcpxo.png)
+![Mob stacks](https://files.catbox.moe/flow3i.png)
+
+### Villager trades
+
+Create custom villager trades with your own payment items and results. Add an optional second payment, set item amounts and adjust trade settings.
+
+![Custom villager trades](https://files.catbox.moe/28jsly.png)
+
+### Armor stands
+
+Pose each body part, equip custom items and lock equipment slots. Customize arms, base plates, size, visibility, glowing and names. Edit armor stand items, spawn eggs or a targeted placed armor stand with `/ee armorstand`.
+
+![Armor stand poses](https://files.catbox.moe/bwyvl0.png)
+![Armor stand equipment](https://files.catbox.moe/ecfeld.png)
+
+### Block, item and text displays
+
+Create **Block Displays**, **Item Displays** and **Text Displays**. Choose block states, displayed items and item poses, or styled multiline text.
+
+Position, rotate and resize displays. Configure billboard orientation, lighting, view distance, shadows and interpolation. Text displays support wrapping, alignment, opacity, backgrounds, shadows and see-through text.
+
+![Block Display](https://files.catbox.moe/bbq3wa.png)
+![Item Display](https://files.catbox.moe/ac4f86.png)
+![Text Display](https://files.catbox.moe/snm5c0.png)
+
+### Mannequins
+
+Customize mannequin skins using player profiles, custom textures or resource-pack textures. Choose wide or slim arms, poses, equipment, visible skin layers, main hand, immovability and formatted descriptions.
+
+![Mannequin customization](https://files.catbox.moe/vwtfbu.png)
+
+### Banners and shields
+
+Design banners and shields with a base color and up to **16 visible pattern layers**. Choose patterns and dyes, duplicate layers and rearrange their order.
+
+![Banner designs](https://files.catbox.moe/dstx5e.png)
+![Shield designs](https://files.catbox.moe/lesub8.png)
+
+### Fireworks
+
+Build rockets with multiple explosions and a custom flight duration. Choose each explosion's shape, colors, fade colors, trail and twinkle. Combine Minecraft dyes with custom colors, then duplicate or reorder explosions.
+
+![Firework rockets](https://files.catbox.moe/4d8fud.png)
+![Explosion colors and shapes](https://files.catbox.moe/ooc1b4.png)
+
+### Command blocks
+
+Configure Impulse, Repeating and Chain command blocks, plus command-block minecarts. Edit commands with server-command autocomplete, add formatted names and set activation, conditional execution, output tracking and facing where supported.
+
+![Command blocks](https://files.catbox.moe/wu2i49.png)
+![Command-block minecarts](https://files.catbox.moe/cwkkcu.png)
+
+### Player heads
+
+Create heads from a player name or UUID, or use a custom Minecraft texture URL, texture hash or Base64 value.
+
+![Player heads](https://files.catbox.moe/r394c9.png)
+
+### Creative tools
+
+Use gamemode shortcuts and the **F3 + F4** switcher without requiring OP, or generate random fireworks. See the commands below for more tools.
+
+## Multiplayer and permissions
+
+Use Creative mode to edit items. Servers control which items and custom data they accept. Sign actions, command blocks and changes to placed entities may require operator permissions; book commands use the reader's permissions. Gamemode shortcuts do not bypass server permissions.
+
+**Mob-stack spawning requires Edit Everything on both the client and server.** Singleplayer includes the server functionality.
 
 ## Commands
 
-The main command is `/ee` (or `/editeverything`).
+The main command is `/ee`, also available as `/editeverything`.
 
 | Command | Alias | Description |
-| :--- | :--- | :--- |
-| `/ee menu` | `/ee om` | Opens the main mod menu. |
-| `/ee edit` | `/ee e` | Opens the Item Editor / Giver interface. |
-| `/ee give <item>` | `/ee g` | Give yourself an item (supports custom NBT). |
-| `/ee opengiver` | | Opens the Item Giver GUI directly. |
-| `/ee instantclick` | | Toggles Instant Click (Instant Mine) mode. |
-| `/ee instantplace` | | Toggles Instant Place mode. |
-| `/ee color` | | Opens the Color Modifier for the held item. |
-| `/ee enchant <id> <lvl>` | | Enchants the held item. |
-| `/ee rename <name>` | | Renames the held item. Supports `&` for color codes. |
-| `/ee unbreakable [bool]` | | Toggles the Unbreakable tag on the held item. |
-| `/ee head <name>` | | Gives you the head of the specified player. |
-| `/ee armorstand` | `/ee as` | Opens the Armor Stand Editor for the target. |
-| `/ee randomfireworks` | `/ee rfw` | Gives a randomly generated firework rocket. |
-| `/ee info` | | Displays mod version, authors, and license info. |
-| `/ee format` | | Shows a list of chat formatting codes. |
-| `/ee palette` | | Shows a color palette with copyable codes. |
-| `/ee spectatortp <player>` | `/ee sptp` | Teleports to a player (useful for spectators). |
+| --- | --- | --- |
+| `/ee menu` | `/ee om` | Open Saved items. |
+| `/ee edit` | `/ee e` | Edit the held item. |
+| `/ee give <item>` | `/ee g` | Give an item from its item code. |
+| `/ee opengiver` | | Open the Item giver. |
+| `/ee color` | | Open the held item's color editor. |
+| `/ee enchant <id> <level>` | | Enchant the held item. |
+| `/ee rename <name>` | | Rename the held item; supports legacy `&` codes. |
+| `/ee unbreakable [bool]` | | Set or toggle unbreakable state. |
+| `/ee head <name>` | | Create a player head. |
+| `/ee armorstand` | `/ee as` | Work with a targeted armor stand. |
+| `/ee randomfireworks` | `/ee rfw` | Create a random firework rocket. |
+| `/ee info` | | Show mod information. |
+| `/ee format` | | Show chat formatting codes. |
+| `/ee palette` | | Show a copyable color palette. |
+| `/ee spectatortp <player>` | `/ee sptp` | Teleport to a player. |
+| `/ee help` | | Show command help. |
 
-### Gamemode Shortcuts
-Quickly switch gamemodes with these commands:
-- `/gm <mode>` (e.g., `/gm creative`, `/gm 1`, `/gm c`)
-- `/gmc` - Creative Mode
-- `/gms` - Survival Mode
-- `/gma` - Adventure Mode
-- `/gmsp` - Spectator Mode
+Gamemode shortcuts: `/gm <mode>`, `/gmc`, `/gms`, `/gma` and `/gmsp`. `/gm` accepts names, numbers and short forms, such as `/gm creative`, `/gm 1` or `/gm c`.
 
-## Installation
+## Credits and license
 
-1.  Install **Minecraft** (Version 1.21.10 - 1.21.11).
-2.  Install **Fabric Loader**.
-3.  Download **Edit Everything** and place the `.jar` file into your `mods` folder.
-4.  Ensure you have the **Fabric API** installed.
+Previously known as [Advanced Creative Tab](https://modrinth.com/mod/act) by ATE47.
 
-## Credits
+- **DutchMTC** — author and maintainer.
+- **ATE47** — creator of the original Advanced Creative Tab mod.
 
--   **DutchMTC**: Author / Maintainer
--   **ATE47**: Creator of the original "Advanced Creative Tab" mod.
-
-## License
-
-This project is licensed under the **LGPL-3.0** License.
-
-![License Badge](https://img.shields.io/badge/license-LGPL--3.0-blue.svg)
+Licensed under LGPL-3.0.

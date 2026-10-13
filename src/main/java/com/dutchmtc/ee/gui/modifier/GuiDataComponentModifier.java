@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
     private static final int LIST_WIDTH = 420;
@@ -54,7 +55,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
                     Component.translatable("gui.ee.modifier.meta.dataComponents.edit"),
                     b -> parent.openEditor(type)));
             buttonList.add(new EEButton(LIST_WIDTH - 42, buttonY, 40, 20,
-                    Component.literal("-").withStyle(ChatFormatting.RED),
+                    Component.literal("×").withStyle(ChatFormatting.RED),
                     b -> parent.removeComponent(type)));
         }
 
@@ -97,7 +98,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
         }
     }
 
-    private final ItemStack stack;
+    private ItemStack stack;
     private final ItemStack originalStack;
     private final List<ListElement> listElements;
 
@@ -119,12 +120,15 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
 
     @SuppressWarnings("unchecked")
     public GuiDataComponentModifier(Screen parent, ItemStack stack) {
-        this(parent, stack, new ArrayList<>());
+        this(parent, stack, ignored -> {});
     }
 
-    private GuiDataComponentModifier(Screen parent, ItemStack stack, List<ListElement> elements) {
-        super(parent, Component.translatable("gui.ee.modifier.meta.dataComponents"), elements, s -> {
-        }, new Tuple[0]);
+    public GuiDataComponentModifier(Screen parent, ItemStack stack, Consumer<ItemStack> setter) {
+        this(parent, stack, new ArrayList<>(), setter);
+    }
+
+    private GuiDataComponentModifier(Screen parent, ItemStack stack, List<ListElement> elements, Consumer<ItemStack> setter) {
+        super(parent, Component.translatable("gui.ee.modifier.meta.dataComponents"), elements, setter, new Tuple[0]);
         this.stack = stack;
         this.originalStack = stack.copy();
         this.listElements = elements;
@@ -169,7 +173,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
         if (getMinecraft().level != null) {
             return getMinecraft().level.registryAccess();
         }
-        return VanillaRegistries.createLookup();
+        return VanillaRegistries.createWorldLookup();
     }
 
     private String describeComponentValue(DataComponentType<?> type) {
@@ -191,7 +195,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
 
     private void removeComponent(DataComponentType<?> type) {
         ItemUtils.setComponent(stack, (DataComponentType<Object>) type, null);
-        getMinecraft().gui.setScreen(new GuiDataComponentModifier(parent, stack));
+        getMinecraft().gui.setScreen(new GuiDataComponentModifier(parent, stack, setter));
     }
 
     private void openAddSelector() {
@@ -246,12 +250,20 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
         Identifier id = BuiltInRegistries.DATA_COMPONENT_TYPE.getKey(type);
         String idStr = id != null ? id.toString() : String.valueOf(type);
 
-        Screen back = new RedirectScreen(() -> new GuiDataComponentModifier(GuiDataComponentModifier.this.parent, stack));
+        Screen back = new RedirectScreen(() -> new GuiDataComponentModifier(GuiDataComponentModifier.this.parent, stack, setter));
+
+        if (!forceGeneric && GuiItemSettingsEditor.supports(type)) {
+            return new GuiItemSettingsEditor(back, stack, this::copyEditedComponents)
+                    .selectSection(type);
+        }
 
         // Optional: route common components to dedicated UIs for better UX.
+        if (!forceGeneric && (type == DataComponents.WRITABLE_BOOK_CONTENT || type == DataComponents.WRITTEN_BOOK_CONTENT)
+                && com.dutchmtc.ee.utils.BookEditorData.supports(stack)) {
+            return new GuiBookEditor(back, stack, edited -> stack = edited.copy());
+        }
         if (!forceGeneric && type == DataComponents.POTION_CONTENTS) {
-            return new GuiPotionModifier(back, info -> ItemUtils.setPotionInformation(stack, info),
-                    ItemUtils.getPotionInformation(stack));
+            return new GuiPotionModifier(back, stack, edited -> stack = edited.copy());
         }
         if (!forceGeneric && type == DataComponents.FIREWORKS) {
             return new GuiFireworksModifer(back, tag -> ItemUtils.setFireworksFromTag(stack, tag),
@@ -265,7 +277,7 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
         if (!forceGeneric && type == DataComponents.STORED_ENCHANTMENTS) {
             return new GuiEnchModifier(back, ItemUtils.getEnchantments(stack, true),
                     list -> ItemUtils.setEnchantments(list, stack, true,
-                            getMinecraft().level != null ? getMinecraft().level.registryAccess() : null));
+                            getMinecraft().level != null ? getMinecraft().level.registryAccess() : null), true);
         }
         if (!forceGeneric && type == DataComponents.BANNER_PATTERNS && stack.getItem() instanceof ShieldItem) {
             return new GuiBannerEditor(back, stack, edited -> stack.applyComponents(edited.getComponentsPatch()));
@@ -320,5 +332,15 @@ public class GuiDataComponentModifier extends GuiListModifier<ItemStack> {
             return wrapper.get(keys.iterator().next());
         }
         return null;
+    }
+
+    private void copyEditedComponents(ItemStack edited) {
+        // Applying only the new patch would leave old overrides behind when a setting
+        // returns to its prototype value. Include removed components in the copy too.
+        java.util.Set<DataComponentType<?>> types = new java.util.HashSet<>();
+        stack.getComponents().forEach(component -> types.add(component.type()));
+        edited.getComponents().forEach(component -> types.add(component.type()));
+        for (DataComponentType<?> type : types) stack.copyFrom(type, edited);
+        stack.setCount(edited.getCount());
     }
 }

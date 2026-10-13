@@ -43,7 +43,6 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 
@@ -59,9 +58,9 @@ public class EEModClient implements ClientModInitializer {
         EEClientNetworking.initClient();
 
         // Register KeyMappings
-        giver = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.ee.giver", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, ACT_CATEGORY));
-        menu = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.ee.menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, ACT_CATEGORY));
-        edit = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.ee.edit", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, ACT_CATEGORY));
+        giver = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.ee.giver", InputConstants.Type.KEYBOARD, InputConstants.KEY_Y, ACT_CATEGORY));
+        menu = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.ee.menu", InputConstants.Type.KEYBOARD, InputConstants.KEY_N, ACT_CATEGORY));
+        edit = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.ee.edit", InputConstants.Type.KEYBOARD, InputConstants.KEY_H, ACT_CATEGORY));
 
         EEMod.registerInternalModule(GuiUtils.class);
 
@@ -182,6 +181,8 @@ public class EEModClient implements ClientModInitializer {
 
     private void onRenderTooltip(ItemStack stack, Item.TooltipContext context, TooltipFlag type, List<Component> lines) {
         Minecraft mc = Minecraft.getInstance();
+        // These screens own explicit item actions; their previews use ordinary item tooltips.
+        if (mc.gui.screen() instanceof GuiMenu || mc.gui.screen() instanceof GuiGiver) return;
 
         if (EEMod.doesDisableEETooltips()) {
             return;
@@ -192,13 +193,13 @@ public class EEModClient implements ClientModInitializer {
         }
 
         if (!(!(mc.gui.screen() instanceof GuiModifier) && KeyMappingHelper.getBoundKeyOf(giver).getValue() != 0
-                && isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) && mc.gui.screen() instanceof GuiMenu) {
+                && isKeyDown(InputConstants.KEY_LSHIFT)) && mc.gui.screen() instanceof GuiMenu) {
             lines.add(ModdedCommand
                     .createPrefix(I18n.get("gui.ee.leftClick"), ChatFormatting.YELLOW, ChatFormatting.GOLD)
                     .append(ModdedCommand.createText(
-                            I18n.get(isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT) ? "gui.ee.give.copy" : "gui.ee.give.editor"),
+                            I18n.get(isKeyDown(InputConstants.KEY_LSHIFT) ? "gui.ee.give.copy" : "gui.ee.give.editor"),
                             ChatFormatting.YELLOW)));
-            if (isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) {
+            if (isKeyDown(InputConstants.KEY_LSHIFT)) {
                 lines.add(ModdedCommand
                         .createPrefix(I18n.get("gui.ee.rightClick"), ChatFormatting.YELLOW,
                                 ChatFormatting.GOLD)
@@ -220,7 +221,7 @@ public class EEModClient implements ClientModInitializer {
             return;
         }
 
-        if (isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) {
+        if (isKeyDown(InputConstants.KEY_LSHIFT)) {
             CompoundTag compound = ItemUtils.getTag(stack);
             if (!type.isAdvanced()) {
                 lines.add(
@@ -231,7 +232,7 @@ public class EEModClient implements ClientModInitializer {
             // Tab lookup logic needs update for 1.21
             
              if (!(mc.gui.screen() instanceof GuiModifier)) {
-                if (KeyMappingHelper.getBoundKeyOf(giver).getValue() != 0 && isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT)) {
+                if (KeyMappingHelper.getBoundKeyOf(giver).getValue() != 0 && isKeyDown(InputConstants.KEY_LSHIFT)) {
                     if (isKeyDown(KeyMappingHelper.getBoundKeyOf(giver).getValue())) {
                         mc.gui.setScreen(new GuiGiver(mc.gui.screen(), stack));
                     }
@@ -242,7 +243,7 @@ public class EEModClient implements ClientModInitializer {
                 }
                 if (KeyMappingHelper.getBoundKeyOf(menu).getValue() != 0) {
                     if (isKeyDown(KeyMappingHelper.getBoundKeyOf(menu).getValue())) {
-                        var registryAccess = mc.level != null ? mc.level.registryAccess() : VanillaRegistries.createLookup();
+                        var registryAccess = mc.level != null ? mc.level.registryAccess() : VanillaRegistries.createWorldLookup();
                         String code = com.dutchmtc.ee.utils.ChatUtils.untranslateColorCodes(ItemUtils.getGiveCode(stack, registryAccess));
                         EEMod.saveItem(code);
                         mc.gui.setScreen(new GuiMenu(mc.gui.screen()));
@@ -264,15 +265,15 @@ public class EEModClient implements ClientModInitializer {
     }
 
     public static boolean isKeyDown(int key) {
-        return InputConstants.isKeyDown(Minecraft.getInstance().getWindow(), key);
+        return InputConstants.isKeyDown(key);
     }
 
     private static boolean isShiftDown() {
-        return isKeyDown(GLFW.GLFW_KEY_LEFT_SHIFT) || isKeyDown(GLFW.GLFW_KEY_RIGHT_SHIFT);
+        return isKeyDown(InputConstants.KEY_LSHIFT) || isKeyDown(InputConstants.KEY_RSHIFT);
     }
 
     private static boolean isControlDown() {
-        return isKeyDown(GLFW.GLFW_KEY_LEFT_CONTROL) || isKeyDown(GLFW.GLFW_KEY_RIGHT_CONTROL);
+        return isKeyDown(InputConstants.KEY_LCONTROL) || isKeyDown(InputConstants.KEY_RCONTROL);
     }
 
     public static void openGiver() {

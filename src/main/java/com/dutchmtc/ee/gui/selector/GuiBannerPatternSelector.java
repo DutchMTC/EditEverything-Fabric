@@ -174,7 +174,7 @@ public class GuiBannerPatternSelector extends GuiModifier<Holder<BannerPattern>>
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
         if (super.mouseClicked(event, doubleClick)) return true;
 
-        if (event.button() != 0) return false;
+        if (!GuiUtils.isLeftMouseButton(event.button())) return false;
 
         int left = MARGIN;
         int top = MARGIN;

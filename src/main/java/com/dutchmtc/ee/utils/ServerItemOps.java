@@ -3,6 +3,7 @@ package com.dutchmtc.ee.utils;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.Prediction;
 
 public final class ServerItemOps {
     private ServerItemOps() {
@@ -19,7 +20,7 @@ public final class ServerItemOps {
         }
         boolean added = player.getInventory().add(stack);
         if (!added) {
-            player.drop(stack, false);
+            player.drop(stack, false, Prediction.SERVER_ONLY);
         }
         player.containerMenu.broadcastChanges();
         return added;

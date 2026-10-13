@@ -1,5 +1,6 @@
 package com.dutchmtc.ee.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.dutchmtc.ee.utils.GuiUtils;
 import com.dutchmtc.ee.utils.ReflectionUtils;
 import net.minecraft.ChatFormatting;
@@ -10,7 +11,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,7 +73,7 @@ public class GuiEE extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_K && event.hasControlDown() && event.hasShiftDown()) {
+        if (event.key() == InputConstants.KEY_K && event.hasControlDown() && event.hasShiftDown()) {
             devMode ^= true; // toggle dev mode
         }
         return super.keyPressed(event);

@@ -67,7 +67,7 @@ public class GuiStringModifier extends GuiModifier<String> {
         double mouseX = event.x();
         double mouseY = event.y();
         int mouseButton = event.button();
-        if (GuiUtils.isHover(field, (int) mouseX, (int) mouseY) && mouseButton == 1)
+        if (GuiUtils.isHover(field, (int) mouseX, (int) mouseY) && GuiUtils.isRightMouseButton(mouseButton))
             field.setValue("");
         return super.mouseClicked(event, doubleClick);
     }

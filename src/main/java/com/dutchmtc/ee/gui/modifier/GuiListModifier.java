@@ -100,7 +100,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
 
         @Override
         protected void otherActionPerformed(AbstractWidget button, int mouseButton) {
-            if (mouseButton == 1 && right != null)
+            if (GuiUtils.isRightMouseButton(mouseButton) && right != null)
                 right.run();
             super.otherActionPerformed(button, mouseButton);
         }
@@ -190,16 +190,17 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             double mouseY = event.y();
             int mouseButton = event.button();
             buttonList.forEach(b -> {
+                if (!b.active || !b.visible) return;
                 if (GuiUtils.isHover(b, (int) mouseX, (int) mouseY)) {
                     if (b instanceof RunElementButton) {
-                        if (((RunElementButton) b).getLeft() != null && mouseButton == 0) {
+                        if (((RunElementButton) b).getLeft() != null && GuiUtils.isLeftMouseButton(mouseButton)) {
                             playClick();
                             ((RunElementButton) b).getLeft().run();
-                        } else if (((RunElementButton) b).getLeft() != null && mouseButton == 1) {
+                        } else if (((RunElementButton) b).getRightButton() != null && GuiUtils.isRightMouseButton(mouseButton)) {
                             playClick();
                             ((RunElementButton) b).getRightButton().run();
                         }
-                    } else if (mouseButton == 0) {
+                    } else if (GuiUtils.isLeftMouseButton(mouseButton)) {
                         playClick();
                         b.onClick(event, doubleClick);
                     } else
@@ -207,7 +208,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
                 }
             });
             fieldList.stream().filter(EditBox::isVisible).forEach(tf -> {
-                if (mouseButton == 1 && GuiUtils.isHover(tf, (int) mouseX, (int) mouseY)) {
+                if (GuiUtils.isRightMouseButton(mouseButton) && GuiUtils.isHover(tf, (int) mouseX, (int) mouseY)) {
                     tf.setValue("");
                     tf.setFocused(true);
                 } else {
@@ -239,6 +240,11 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         public void update() {
             // fieldList.stream().filter(EditBox::isVisible).forEach(EditBox::tick); // tick removed
         }
+
+        public String invalidReason() {
+            return fieldList.stream().map(com.dutchmtc.ee.gui.components.EETextField::error)
+                    .filter(java.util.Objects::nonNull).findFirst().orElse(null);
+        }
     }
 
     /**
@@ -247,12 +253,12 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
     public static class RemoveElementButton extends RunElementButton {
         public RemoveElementButton(GuiListModifier<?> parent, int x, int y, int widthIn, int heightIn,
                                    ListElement element) {
-            super(x, y, widthIn, heightIn, Component.literal("-"), () -> {
+            super(x, y, widthIn, heightIn, Component.literal("×"), () -> {
                 parent.elements.remove(element);
                 parent.needRedefine = true;
             }, null);
             // setFGColor(Objects.requireNonNull(ChatFormatting.RED.getColor()));
-            setMessage(Component.literal("-").withStyle(ChatFormatting.RED));
+            setMessage(Component.literal("×").withStyle(ChatFormatting.RED));
         }
 
         public RemoveElementButton(GuiListModifier<?> parent, int x, int y, ListElement element) {
@@ -303,6 +309,8 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
     private int page, maxPage, sizeX;
 
     private Button lastPage, nextPage;
+    private EEButton applyButton;
+    private String applyError;
 
     private final EditBox search;
 
@@ -463,6 +471,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
 
     @Override
     public void init() {
+        applyError = null;
         page = 0;
         int l = (doneButton ? 1 : 0);
         int d = (buttons.length + l + (cancelButton ? 1 : 0)) * 50;
@@ -476,7 +485,9 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             addRenderableWidget(new GuiValueButton<>(dl + 100 * (i + (cancelButton ? 1 : 0)), height - 21, 99, 20,
                     Component.translatable(buttons[i].a), buttons[i].b, b -> b.getValue().a.run()));
         if (doneButton)
-            addRenderableWidget(new EEButton(dl + 100 * (i + (cancelButton ? 1 : 0)), height - 21, 99, 20, Component.translatable("gui.done"), b -> {
+            applyButton = addRenderableWidget(new EEButton(dl + 100 * (i + (cancelButton ? 1 : 0)), height - 21, 99, 20, Component.translatable("gui.done"), b -> {
+                elements.forEach(ListElement::update);
+                if (invalidReason() != null) return;
                 set(get());
                 getMinecraft().gui.setScreen(parent);
             }));
@@ -567,7 +578,7 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
             search.setFocused(false);
             this.setFocused(null);
         }
-        if (mouseButton == 1) {
+        if (GuiUtils.isRightMouseButton(mouseButton)) {
             if (GuiUtils.isHover(search.getX(), search.getY(), search.getWidth(), search.getHeight(), (int) mouseX,
                     (int) mouseY)) {
                 search.setValue("");
@@ -651,7 +662,19 @@ public abstract class GuiListModifier<T> extends GuiModifier<T> {
         // search.tick(); // Removed
         for (List<ListElement> lel : visibleElements)
             lel.forEach(ListElement::update);
+        if (applyButton != null) {
+            String reason = invalidReason();
+            applyButton.active = reason == null;
+            if (!Objects.equals(reason, applyError)) {
+                applyError = reason;
+                applyButton.setTooltip(reason == null ? null : net.minecraft.client.gui.components.Tooltip.create(Component.literal(reason)));
+            }
+        }
         super.tick();
+    }
+
+    protected String invalidReason() {
+        return elements.stream().map(ListElement::invalidReason).filter(java.util.Objects::nonNull).findFirst().orElse(null);
     }
 
     @Override

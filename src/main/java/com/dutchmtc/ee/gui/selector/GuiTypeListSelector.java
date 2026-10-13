@@ -1,114 +1,67 @@
 package com.dutchmtc.ee.gui.selector;
 
-import com.dutchmtc.ee.gui.GuiConfirmation;
-import com.dutchmtc.ee.gui.ItemStackButtonWidget;
-import com.dutchmtc.ee.utils.ItemUtils;
-import com.dutchmtc.ee.utils.Tuple;
-import com.dutchmtc.ee.utils.VersionCompat;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.core.registries.BuiltInRegistries;
+import com.dutchmtc.ee.utils.ItemUtils;
 
-import java.util.ArrayList;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-public class GuiTypeListSelector extends GuiListSelector<ItemStack> {
-    private BiFunction<ItemStack, Boolean, Screen> extendedSetter;
-
-    static class TypeListElement extends ListElement {
-        private final GuiTypeListSelector parent;
-        private final ItemStack itemStack;
-
-        public TypeListElement(GuiTypeListSelector parent, ItemStack itemStack) {
-            super(24, 24);
-            this.parent = parent;
-            this.itemStack = itemStack;
-            buttonList.add(new ItemStackButtonWidget(0, 0, itemStack, b -> parent.select(b.getStack())));
-        }
-
-        @Override
-        public boolean match(String search) {
-            String s = search.toLowerCase();
-            return itemStack.getDisplayName().getString().toLowerCase().contains(s)
-                    || ItemUtils.getRegistry(itemStack).toString().toLowerCase().contains(s);
-        }
-
-        @Override
-        public void drawNext(net.minecraft.client.gui.GuiGraphicsExtractor graphics, int offsetX, int offsetY, int mouseX, int mouseY,
-                             float partialTicks) {
-            if (com.dutchmtc.ee.utils.GuiUtils.isHover(0, 0, 18, 18, mouseX, mouseY)) {
-                com.dutchmtc.ee.utils.GuiUtils.setTooltipForNextFrame(graphics, parent.getMinecraft().font, itemStack,
-                        mouseX + offsetX, mouseY + offsetY);
-            }
-            super.drawNext(graphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
+public class GuiTypeListSelector extends GuiItemBrowser<ItemStack> {
+    private ItemStack currentItem;
+    private boolean amountEnabled = true;
     public GuiTypeListSelector(Screen parent, Component name, Function<ItemStack, Screen> setter) {
-        this(parent, name, (is, keep) -> setter.apply(is));
+        super(parent, browserTitle(name), ItemStack::copy, stack -> setter.apply(stack.copy()), null);
     }
-
-    public GuiTypeListSelector(Screen parent, Component name, BiFunction<ItemStack, Boolean, Screen> setter) {
-        super(parent, name, new ArrayList<>(), is -> setter.apply(is, true), false, new Tuple[]{
-                new Tuple<>("gui.ee.inventory", new Tuple<Runnable, Runnable>(() -> {
-                }, () -> {
-                }))
-        });
-        // Fix button action because we need 'this' reference which is not available in super call
-        this.buttons[0].b.a = () -> {
-            getMinecraft().gui.setScreen(new GuiInventorySelector(this, Component.translatable("gui.ee.inventory"), invStack -> {
-                if (setter == null) {
-                    return null;
-                }
-
-                // Return the confirmation screen instead of navigating here.
-                // GuiListSelector.select() will handle switching to the returned screen.
-                return new GuiConfirmation(this, Component.translatable("gui.ee.copy_components_question"),
-                        () -> { // Confirm -> Copy components (keep=false)
-                            Screen s = setter.apply(invStack, false);
-                            getMinecraft().gui.setScreen(s == null ? GuiTypeListSelector.this.parent : s);
-                        },
-                        () -> { // Cancel -> Keep existing components (keep=true)
-                            Screen s = setter.apply(invStack, true);
-                            getMinecraft().gui.setScreen(s == null ? GuiTypeListSelector.this.parent : s);
-                        }
-                ) {
-                    @Override
-                    public void init() {
-                        super.init();
-                        // Custom button text without relying on Screen internals (renderables list is private in newer MC)
-                        if (getCancelButton() != null) {
-                            getCancelButton().setMessage(Component.translatable("gui.ee.keep_components"));
-                        }
-                        if (getConfirmButton() != null) {
-                            getConfirmButton().setMessage(Component.translatable("gui.ee.copy_components"));
-                        }
-                    }
-                };
-            }));
-        };
-
-        this.extendedSetter = setter;
-        NonNullList<ItemStack> stacks = NonNullList.create();
-        BuiltInRegistries.ITEM.forEach(i -> // Item.REGISTRY
-                stacks.add(new ItemStack(i)));
-        stacks.forEach(stack -> addListElement(new TypeListElement(this, stack)));
+    /** Change an existing item's type while retaining its edited components. */
+    public GuiTypeListSelector(Screen parent, Component name, Function<ItemStack, Screen> setter, ItemStack currentItem) {
+        this(parent, name, setter);
+        this.currentItem = currentItem.copy();
     }
-
-    public GuiTypeListSelector(Screen parent, Component name, Function<ItemStack, Screen> setter,
-                               NonNullList<ItemStack> stacks) {
+    public GuiTypeListSelector setAmountEnabled(boolean enabled) { amountEnabled = enabled; return this; }
+    @Override protected boolean supportsAir() { return true; }
+    @Override protected ItemStack initialSelection() { return currentItem; }
+    @Override protected boolean supportsAmount() { return amountEnabled && unrestricted(); }
+    @Override protected int defaultAmount(ItemStack stack) {
+        return currentItem != null ? currentItem.getCount() : super.defaultAmount(stack);
+    }
+    @Override protected int amountLimit(ItemStack stack) {
+        ItemStack result = currentItem != null ? ItemUtils.setItem(stack.getItem(), currentItem) : stack;
+        return result.has(DataComponents.MAX_DAMAGE) ? 1 : Item.ABSOLUTE_MAX_STACK_SIZE;
+    }
+    @Override public void select(ItemStack selected) {
+        super.select(selectionPreview(selected));
+    }
+    @Override protected ItemStack selectionPreview(ItemStack selected) {
+        if (selected.isEmpty()) return selected.copy();
+        ItemStack result = currentItem != null ? ItemUtils.setItem(selected.getItem(), currentItem) : selected.copy();
+        if (supportsAmount()) {
+            result.setCount(selected.getCount());
+            if (result.has(DataComponents.MAX_DAMAGE)) {
+                // A carried-over stack-size override must not make the new type invalid.
+                if (result.getMaxStackSize() > 1) result.set(DataComponents.MAX_STACK_SIZE, 1);
+            } else if (result.getCount() > result.getMaxStackSize()) {
+                result.set(DataComponents.MAX_STACK_SIZE, result.getCount());
+            }
+        }
+        return result;
+    }
+    @Override protected Component selectionLabel(ItemStack selected) {
+        return currentItem != null && !selected.isEmpty() ? selected.getItem().getName(selected) : super.selectionLabel(selected);
+    }
+    public GuiTypeListSelector(Screen parent, Component name, Function<ItemStack, Screen> setter, NonNullList<ItemStack> stacks) {
         this(parent, name, setter, stacks.stream());
     }
-
-    @SuppressWarnings("unchecked")
-    public GuiTypeListSelector(Screen parent, Component name, Function<ItemStack, Screen> setter,
-                               Stream<ItemStack> stacks) {
-        super(parent, name, new ArrayList<>(), setter, false, new Tuple[0]);
-        stacks.forEach(stack -> addListElement(new TypeListElement(this, stack)));
+    public GuiTypeListSelector(Screen parent, Component name, Function<ItemStack, Screen> setter, Stream<ItemStack> stacks) {
+        super(parent, browserTitle(name), ItemStack::copy, stack -> setter.apply(stack.copy()),
+                stacks.map(ItemStack::copy).toList());
+    }
+    private static Component browserTitle(Component name) {
+        return name.getString().equals(Component.translatable("gui.ee.modifier.type").getString())
+                ? Component.literal("Choose item type") : name;
     }
 }

@@ -1,6 +1,6 @@
 package com.dutchmtc.ee.utils;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.*;
 import com.dutchmtc.ee.EEMod;
 import com.dutchmtc.ee.internalcommand.InternalCommandModule;
@@ -14,17 +14,10 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.opengl.GL11;
 
-import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -83,24 +76,12 @@ public class GuiUtils {
     }
 
     public static void setTooltipForNextFrame(GuiGraphicsExtractor graphics, Font font, ItemStack stack, int mouseX, int mouseY) {
-        List<ClientTooltipComponent> components = new ArrayList<>();
-        var mc = Minecraft.getInstance();
-        var ctx = mc.level != null ? net.minecraft.world.item.Item.TooltipContext.of(mc.level) : net.minecraft.world.item.Item.TooltipContext.EMPTY;
-        for (var line : stack.getTooltipLines(ctx, mc.player, net.minecraft.world.item.TooltipFlag.NORMAL)) {
-            components.add(ClientTooltipComponent.create(line.getVisualOrderText()));
-        }
-        stack.getTooltipImage().ifPresent(img -> components.add(ClientTooltipComponent.create(img)));
-        graphics.tooltip(font, components, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
+        graphics.setTooltipForNextFrame(font, stack, mouseX, mouseY);
     }
 
     public static void setTooltipForNextFrame(GuiGraphicsExtractor graphics, Font font, List<net.minecraft.network.chat.Component> lines,
                                      Optional<TooltipComponent> tooltipImage, int mouseX, int mouseY) {
-        List<ClientTooltipComponent> components = new ArrayList<>(lines.size() + 1);
-        for (var line : lines) {
-            components.add(ClientTooltipComponent.create(line.getVisualOrderText()));
-        }
-        tooltipImage.ifPresent(img -> components.add(ClientTooltipComponent.create(img)));
-        graphics.tooltip(font, components, mouseX, mouseY, DefaultTooltipPositioner.INSTANCE, null);
+        graphics.setTooltipForNextFrame(font, lines, tooltipImage, mouseX, mouseY);
     }
 
     public static int blueToRed(int color) {
@@ -109,6 +90,14 @@ public class GuiUtils {
 
     public static boolean hasAlpha(int rgba) {
         return (rgba & 0xFF000000) != 0;
+    }
+
+    public static boolean isLeftMouseButton(int button) {
+        return button == InputConstants.MOUSE_BUTTON_LEFT;
+    }
+
+    public static boolean isRightMouseButton(int button) {
+        return button == InputConstants.MOUSE_BUTTON_RIGHT;
     }
 
     public static int asRGBA(int r, int g, int b, int a) {
@@ -186,22 +175,11 @@ public class GuiUtils {
     }
 
     public static void addToClipboard(String text) {
-        try {
-            StringSelection select = new StringSelection(text);
-            Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
-            cb.setContents(select, select);
-        } catch (Exception ignore) {
-        }
+        Minecraft.getInstance().keyboardHandler.setClipboard(text);
     }
 
     public static String getClipboardText() {
-        try {
-            Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
-            Object data = cb.getData(DataFlavor.stringFlavor);
-            return data instanceof String s ? s : "";
-        } catch (Exception ignore) {
-            return "";
-        }
+        return Minecraft.getInstance().keyboardHandler.getClipboard();
     }
 
     public static void displayScreen(Screen screen) {
@@ -239,11 +217,6 @@ public class GuiUtils {
         drawGradientRect(graphics, x - 3, y + height + 2, x + width + 3, y + height + 3, 0x5028007F, 0x5028007F);
         
         graphics.pose().popMatrix();
-    }
-
-    @Deprecated
-    public static void color3f(float r, float g, float b) {
-        GL11.glColor4f(r, g, b, 1.0f);
     }
 
     public static void drawCenterString(GuiGraphicsExtractor graphics, Font font, String text, int x, int y, int color) {
@@ -421,9 +394,15 @@ public class GuiUtils {
             return;
         var size = data.size();
         var stacks = data.stacks();
+        int rows = Math.min(3, size.sizeY());
+        if (data.bundle()) {
+            int entries = 0;
+            for (int i = 0; i < stacks.size(); i++) if (!stacks.get(i).isEmpty()) entries = i + 1;
+            rows = Math.max(1, Math.min(rows, (entries + size.sizeX() - 1) / size.sizeX()));
+        }
 
         var width = 9 * 18 + 8;
-        var height = font.lineHeight + 18 * size.sizeY() + 2 + (font.lineHeight + 2) * 2 + 8;
+        var height = font.lineHeight + 18 * rows + 2 + (font.lineHeight + 2) * 2 + 8;
 
         var box = getRelativeBoxPos(x, y, width, height, screenWidth, screenHeight);
         var rx = box.a;
@@ -442,13 +421,13 @@ public class GuiUtils {
         graphics.text(font, stack.getHoverName().getString(), cx, cy, 0xFFFFFFFF);
         
         cy += 2 + font.lineHeight;
-        drawRect(graphics, itemX - 1, cy - 1, itemX + size.sizeX() * 18 + 1, cy + size.sizeY() * 18 + 1,
+        drawRect(graphics, itemX - 1, cy - 1, itemX + size.sizeX() * 18 + 1, cy + rows * 18 + 1,
                 COLOR_CONTAINER_BORDER | 0xFF000000);
         
-        for (var j = 0; j < size.sizeY(); j++) {
+        for (var j = 0; j < rows; j++) {
             for (var i = 0; i < size.sizeX(); i++) {
                 var slot = size.indexOf(i, j);
-                var item = stacks.get(slot);
+                var item = slot < stacks.size() ? stacks.get(slot) : ItemStack.EMPTY;
                 var sx = itemX + 18 * i + 1;
                 drawRect(graphics, sx, cy + 1, sx + 16, cy + 1 + 16, COLOR_CONTAINER_SLOT | 0xFF000000);
                 graphics.item(item, sx, cy + 1);

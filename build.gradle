@@ -1,5 +1,5 @@
 plugins {
-	id 'net.fabricmc.fabric-loom' version '1.15.5'
+	id 'net.fabricmc.fabric-loom' version '1.17.21'
 	id 'maven-publish'
 }
 
@@ -56,6 +56,35 @@ java {
 	sourceCompatibility = JavaVersion.VERSION_25
 	targetCompatibility = JavaVersion.VERSION_25
 }
+
+// Headless trade layout/input and gradient checks, without a game launch or test-library dependency.
+sourceSets {
+	tradeUiTest {
+		compileClasspath += sourceSets.main.output
+		runtimeClasspath += sourceSets.main.output
+	}
+}
+
+tasks.register('tradeUiTest', JavaExec) {
+	dependsOn tasks.named('tradeUiTestClasses')
+	classpath = sourceSets.tradeUiTest.runtimeClasspath
+	mainClass = 'com.dutchmtc.ee.gui.modifier.mob.TradeInputRulesTest'
+	javaLauncher = javaToolchains.launcherFor {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+tasks.named('check') {
+	dependsOn tasks.named('tradeUiTest')
+}
+
+tasks.register('textColorPresetTest', JavaExec) {
+	dependsOn tasks.named('tradeUiTestClasses')
+	classpath = sourceSets.tradeUiTest.runtimeClasspath
+	mainClass = 'com.dutchmtc.ee.utils.TextColorPresetTest'
+	javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+}
+tasks.named('check') { dependsOn tasks.named('textColorPresetTest') }
 
 tasks.named("sourcesJar", Jar).configure {
 	// Prevent the sources JAR from being picked up as a Fabric mod if it ends up in a mods folder.
